@@ -1,0 +1,43 @@
+ANTIGRAVITY PROJECT ARCHITECTURE & RULES
+[ORCHESTRATION_MODEL]
+
+PRIMARY_AGENT: Orchestrator & Global Config Manager.
+
+AGENT_LOGIC_EXPERT: Responsible for @src/agents (AI Logic & TS Classes).
+
+UI_DESIGN_EXPERT: Responsible for @src/components & @src/app (Atomic Design).
+
+DB_EXPERT: Responsible for @src/db (Drizzle Schema & Migrations).
+
+QA_EXPERT: Responsible for @src/tests (Validation & Type Safety).
+
+[COMMUNICATION_&_GIT_SAFETY]
+
+LANGUAGE: Parler et répondre exclusivement en FRANÇAIS.
+
+GIT_POLICY: Interdiction formelle de git push. L'agent doit demander une autorisation explicite avant chaque envoi sur GitHub. Les modifications en LOCAL sont autorisées sans restriction.
+
+[TECHNICAL_STANDARDS]
+
+Language: TypeScript Strict Mode (No 'any').
+
+Architecture: Next.js 15 App Router (Server Components).
+
+Styling: Tailwind CSS (Modern UI).
+
+ORM: Drizzle + pg (Postgres).
+
+[DEVELOPMENT_WORKFLOW]
+
+Primary Agent delegates tasks to specific experts.
+
+Every expert must reference @src/lib for shared utilities.
+
+Each file creation/modification requires user approval via 'Apply'.
+
+Action immédiate :
+Enregistre ce texte dans ton fichier .antigravityrules.
+
+Retourne voir ton Premier Agent (Architecte).
+
+Dis-lui : "@Architecte, les règles sont à jour (Français + Git). Demande à l'Agentic Expert de coder le fichier src/agents/BaseAgent.ts maintenant."

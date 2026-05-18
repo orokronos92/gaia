@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1772637382831,
+      "tag": "0000_friendly_thor_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773036070498,
+      "tag": "0001_nosy_outlaw_kid",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773047493168,
+      "tag": "0002_bouncy_stark_industries",
+      "breakpoints": true
+    }
+  ]
+}
