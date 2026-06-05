@@ -1,6 +1,12 @@
 import { BaseAgent } from "./BaseAgent";
 import { RAGService } from "./knowledge/RAGService";
 import { Mistral } from "@mistralai/mistralai";
+import { MistralProvider } from "./MistralProvider";
+import {
+    RecetteAgent,
+    type RecetteAgentInput,
+    type RecetteAgentOutput,
+} from "./recette/RecetteAgent";
 
 interface CopilotInput {
     query: string;
@@ -44,7 +50,7 @@ Ton rôle est d'aider 'Marie' (Responsable Qualité) et son équipe.
 Tu dois répondre de manière polie, professionnelle et concise.
 Si la question porte sur la réglementation ou les procédures (ex: QUID, INCO, allégations, mention WFTO), tu DOIS te baser UNIQUEMENT sur le contexte fourni ci-dessous.
 Si le contexte ne contient pas la réponse, dis clairement que tu ne trouves pas la réponse dans la base documentaire.
-Ne fais jamais de calculs mathématiques complexes de recettes (redirige vers l'Agent de Recette automatique).
+Ne calcule jamais une recette toi-même : les pourcentages QUID et la conformité Demeter sont calculés de manière déterministe par l'Agent de Recette (onglet Recette). Pour tout calcul chiffré, renvoie l'utilisateur vers cet outil.
 
 ${contextText}
 
@@ -78,5 +84,16 @@ CONSIGNES :
             response: responseText,
             sourcesUsed: sources,
         };
+    }
+
+    /**
+     * Delegates a recipe computation to the (now real) Agent de Recette.
+     * Figures are deterministic; the LLM only phrases the ingredient list.
+     * Structured input comes from the Recette UI (SPEC-03), not free chat.
+     */
+    async executeRecette(input: RecetteAgentInput): Promise<RecetteAgentOutput> {
+        const apiKey = process.env.MISTRAL_API_KEY ?? "";
+        const recetteAgent = new RecetteAgent(new MistralProvider(apiKey));
+        return recetteAgent.execute(input);
     }
 }
