@@ -1,10 +1,90 @@
 import { Mistral } from "@mistralai/mistralai";
+import { z } from "zod";
 import mammoth from "mammoth";
 import * as xlsx from "xlsx";
 import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
 import crypto from "crypto";
+
+// Schéma de validation de la sortie Mistral — calqué EXACTEMENT sur le schéma JSON
+// décrit dans buildExtractionPrompt. Chaque champ tolère null ET l'omission (le code
+// d'écriture gère déjà ces cas via `p.x || null` / `p.x ?? false`) : le contrôle porte
+// sur le TYPE quand la valeur est présente, ce qui attrape une vraie malformation
+// (ex: degustateur renvoyé en string, conditionnementsOptions en objet). passthrough()
+// préserve toute clé non décrite pour ne pas altérer le flux nominal.
+const NullableString = z.string().nullable().optional();
+
+export const MistralExtractionSchema = z.object({
+    codeArticle: NullableString,
+    designation: NullableString,
+    typePlante: NullableString,
+    aromatise: z.boolean().nullable().optional(),
+    fournisseur: NullableString,
+    codeArticleFournisseur: NullableString,
+    designationFournisseur: NullableString,
+    origine: NullableString,
+    producteur: NullableString,
+    infoProducteur: NullableString,
+    typeProducteur: NullableString,
+    origineMpa: NullableString,
+    floId: NullableString,
+    epoqueRecolte: NullableString,
+    techniqueRecolte: NullableString,
+    organismeCertificateur: NullableString,
+    grade: NullableString,
+    volumineux: z.boolean().nullable().optional(),
+    plusieursInfusions: z.boolean().nullable().optional(),
+    nomLatin: NullableString,
+    allergenesMp: NullableString,
+    allegationsMp: NullableString,
+    labelsMP: z.array(z.string()).nullable().optional(),
+    labelsClient: z.array(z.string()).nullable().optional(),
+    dateDegustation: NullableString,
+    degustateur: z.array(z.string()).nullable().optional(),
+    numeroDeLot: NullableString,
+    momentDegustation: NullableString,
+    parametresInfusion: z.object({
+        poids: NullableString,
+        temperature: NullableString,
+        duree: NullableString,
+    }).nullable().optional(),
+    feuillesSechesAspect: NullableString,
+    feuillesSechesCouleur: NullableString,
+    feuillesSechesSenteur: NullableString,
+    feuillesInfuseesAspect: NullableString,
+    feuillesInfuseesCouleur: NullableString,
+    feuillesInfuseesSenteur: NullableString,
+    infusionAspectCouleur: NullableString,
+    infusionParfum: NullableString,
+    saveurBouche: NullableString,
+    sousDesignation: NullableString,
+    ingredientsSuggestion: NullableString,
+    ingredientsTexte: NullableString,
+    allergenes: NullableString,
+    allegationsPossibles: z.array(z.object({
+        libelle: NullableString,
+        nbTasses: NullableString,
+        description: NullableString,
+    })).nullable().optional(),
+    temperatureRecommandee: NullableString,
+    tempsRecommande: NullableString,
+    gamme: NullableString,
+    conditionnementsOptions: z.array(z.object({
+        gamme: NullableString,
+        format: NullableString,
+        grammage: NullableString,
+    })).nullable().optional(),
+    conditionnement: NullableString,
+    declinaisons: NullableString,
+    poidsNet: NullableString,
+    tempsInfusion: NullableString,
+    tempInfusion: NullableString,
+    commentaires: NullableString,
+    dateMiseMarche: NullableString,
+}).passthrough();
+
+export type MistralExtraction = z.infer<typeof MistralExtractionSchema>;
 
 // Lazy init — évite les crashs à l'import de module dans Next.js App Router
 let _mistral: Mistral | null = null;
@@ -285,17 +365,29 @@ ${combinedText.substring(0, 22000)}`;
         const rawOutput = (response.choices?.[0]?.message?.content as string) ?? "{}";
 
         // 4. Parsing sécurisé du JSON
-        let p: Record<string, any> = {};
+        let parsedJson: unknown;
         try {
             let clean = rawOutput.trim();
             if (clean.startsWith("```json")) clean = clean.substring(7);
             if (clean.startsWith("```")) clean = clean.substring(3);
             if (clean.endsWith("```")) clean = clean.substring(0, clean.length - 3);
-            p = JSON.parse(clean.trim());
+            parsedJson = JSON.parse(clean.trim());
         } catch (e) {
             console.error("[ImportWorker] Échec parsing JSON Mistral:", rawOutput);
             throw new Error(`Mistral a retourné un JSON invalide. Réponse brute: ${rawOutput.substring(0, 200)}`);
         }
+
+        // 4b. Validation de forme contre le schéma Zod avant tout usage (CLAUDE.md §7).
+        // On ne touche pas à la donnée valide ; on bloque l'écriture d'une donnée malformée.
+        const validation = MistralExtractionSchema.safeParse(parsedJson);
+        if (!validation.success) {
+            const issues = validation.error.issues
+                .map((i) => `${i.path.join(".") || "(racine)"}: ${i.message}`)
+                .join(" ; ");
+            console.error("[ImportWorker] Réponse Mistral invalide (Zod):", issues);
+            throw new Error(`La réponse de Mistral ne respecte pas le format attendu — ${issues}`);
+        }
+        const p: Record<string, any> = validation.data;
 
         // 5. Écriture en base — Produit
         // Les IDs sont gérés via returning() pour les produits
