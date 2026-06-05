@@ -1,3 +1,9 @@
+/**
+ * @deprecated Legacy provider. The project standard is Mistral only.
+ * Do not extend this class or import it in new code.
+ * Scheduled for removal once all consumers are migrated.
+ * See CLAUDE.md §7 (AI agents patterns) and §11 (NEVER list).
+ */
 import Anthropic from "@anthropic-ai/sdk";
 import { LLMProvider, LLMResponse } from "./BaseAgent";
 
