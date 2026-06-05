@@ -4,6 +4,7 @@ import { eq, desc } from "drizzle-orm"
 import EtiquetteClient from "./EtiquetteClient"
 import { notFound } from "next/navigation"
 import { getPublicUrl, findFileKeysByPrefix } from "@/lib/utils/s3-client"
+import { getRecetteOutputForProduit } from "@/db/queries/recettes"
 
 export default async function EtiquetteDetailPage(
     props: {
@@ -16,6 +17,7 @@ export default async function EtiquetteDetailPage(
     const data = await db
         .select({
             id: fichesEtiquettes.id,
+            produitId: fichesEtiquettes.produitId,
             title: produits.denominationFr,
             code: fichesEtiquettes.codeEtiquette,
             codePf: produits.codePf,
@@ -65,6 +67,15 @@ export default async function EtiquetteDetailPage(
             grade: produits.grade,
             volumineux: produits.volumineux,
             organismeCertificateur: produits.organismeCertificateur,
+            // SPEC-03 §6 — champs jusqu'ici non chargés
+            labelsClient: produits.labelsClient,
+            fournisseur: produits.fournisseur,
+            floId: produits.floId,
+            nomLatin: produits.nomLatin,
+            dateMiseMarche: produits.dateMiseMarche,
+            producteurJardin: produits.producteurJardin,
+            allegationChoisie: fichesEtiquettes.allegationChoisie,
+            nbTassesAllegation: fichesEtiquettes.nbTassesAllegation,
         })
         .from(fichesEtiquettes)
         .leftJoin(produits, eq(fichesEtiquettes.produitId, produits.id))
@@ -82,6 +93,9 @@ export default async function EtiquetteDetailPage(
         .orderBy(desc(fichesDegustation.creeLe))
         .limit(1);
 
+    // Recette QUID (SPEC-03) — lue côté serveur, mappée en RecetteAgentOutput.
+    const recette = await getRecetteOutputForProduit(data[0].produitId);
+
     const codePfLower = data[0]?.codePf?.toLowerCase() || "";
 
     // We search the Minio bucket dynamically for ALL files matching the codePf.
@@ -98,5 +112,5 @@ export default async function EtiquetteDetailPage(
         date: data[0].date ? new Date(data[0].date).toLocaleDateString("fr-FR") : "Récent"
     };
 
-    return <EtiquetteClient labelData={labelData} />
+    return <EtiquetteClient labelData={labelData} recette={recette} />
 }

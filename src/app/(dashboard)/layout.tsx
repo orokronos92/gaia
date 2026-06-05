@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
 import { NotificationProvider } from "@/components/providers/NotificationProvider"
 import { AIChatAssistant } from "@/components/features/AIChatAssistant"
+import { Toaster } from "@/components/ui/sonner"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -25,6 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 {/* Global Copilot Assistant UI */}
                 <AIChatAssistant />
+                <Toaster />
             </div>
         </NotificationProvider>
     )

@@ -23,13 +23,17 @@ import {
     Droplets,
     Eye,
     Wind,
-    Utensils
+    Utensils,
+    FlaskConical
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { RecettePanel } from "@/components/recette/RecettePanel"
+import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
+import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 
 // --- Helper pour vérifier si un champ "vide" Excel contient une vraie valeur
 const hasRealValue = (val: string | null | undefined) => {
@@ -83,7 +87,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData }: { labelData: any }) {
+export default function EtiquetteClient({ labelData, recette }: { labelData: any; recette: RecetteAgentOutput | null }) {
     // State
     const [auditingType, setAuditingType] = useState<string | null>(null)
     const [extractedData] = useState<any>(null)
@@ -233,6 +237,9 @@ export default function EtiquetteClient({ labelData }: { labelData: any }) {
                 <TabsList className="bg-stone-100/80 p-1 w-full md:w-auto inline-flex rounded-2xl mb-6 border border-stone-200/60 shadow-inner">
                     <TabsTrigger value="dossier" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
                         <ScrollText className="w-4 h-4 mr-2" /> Dossier Produit
+                    </TabsTrigger>
+                    <TabsTrigger value="recette" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
+                        <FlaskConical className="w-4 h-4 mr-2" /> Recette / QUID
                     </TabsTrigger>
                     <TabsTrigger value="audit" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
                         <Bot className="w-4 h-4 mr-2" /> Audit IA
@@ -579,6 +586,30 @@ export default function EtiquetteClient({ labelData }: { labelData: any }) {
 
                         </div>
                     </div>
+
+                    {/* SPEC-03 §6 — bloc additif : champs complémentaires + arbitrages */}
+                    <div className="mt-6">
+                        <DossierComplementaire
+                            floId={labelData.floId}
+                            nomLatin={labelData.nomLatin}
+                            dateMiseMarche={labelData.dateMiseMarche}
+                            labelsClient={labelData.labelsClient}
+                            organismeCertificateur={labelData.organismeCertificateur}
+                            estAromatise={labelData.estAromatise}
+                            fournisseur={labelData.fournisseur}
+                            producteurJardin={labelData.producteurJardin}
+                            infoProducteur={labelData.infoProducteur}
+                            typeProducteur={labelData.typeProducteur}
+                            numeroDeLot={labelData.degustation?.numeroDeLot}
+                            allegationChoisie={labelData.allegationChoisie}
+                            nbTassesAllegation={labelData.nbTassesAllegation}
+                        />
+                    </div>
+                </TabsContent>
+
+                {/* RECETTE / QUID (SPEC-03) */}
+                <TabsContent value="recette" className="mt-0 focus-visible:outline-none">
+                    <RecettePanel ficheId={labelData.id} recette={recette} />
                 </TabsContent>
 
                 {/* 2. AUDIT ZONE */}
