@@ -153,6 +153,9 @@ SCHÉMA JSON ATTENDU :
   "designationFournisseur": "string ou null",
   "origine": "string (pays ou région PMI) ou null",
   "producteur": "string ou null",
+  "infoProducteur": "string (infos producteur du bloc 'Informations PMI') ou null",
+  "typeProducteur": "string (type de producteur, ex: coopérative) ou null",
+  "origineMpa": "string (origine de la matière première agricole / MPA) ou null",
   "floId": "string (numéro FLO si présent) ou null",
   "epoqueRecolte": "string (ex: Printemps) ou null",
   "techniqueRecolte": "string ou null",
@@ -212,6 +215,7 @@ RÈGLES D'ENRICHISSEMENT :
 - Pour les listes d'options, n'extraire que les valeurs marquées ⟦SÉLECTIONNÉ⟧ (voir RÈGLES DE SÉLECTION)
 - "conditionnementsOptions": retiens TOUS les conditionnements ET gammes marqués SÉLECTIONNÉ comme un tableau d'objets {gamme, format, grammage}. Mets la gamme cochée DANS l'entrée correspondante (champ "gamme"), jamais dans un champ séparé. Une gamme seule sans format/grammage précisé donne une entrée avec format/grammage à null. Les déclinaisons futures (ex 'courant 2026') vont dans le champ "declinaisons" séparé, PAS dans conditionnementsOptions.
 - "degustateur": tableau de noms (un ou plusieurs dégustateurs marqués SÉLECTIONNÉ)
+- "infoProducteur" / "typeProducteur" / "origineMpa": à chercher dans le bloc "Informations PMI" (champs "Info producteur", "Type de producteur", "Origine MPA" = origine de la matière première agricole)
 - "allegationsPossibles": extraire TOUTES les options du FD (section Remarque), chacune avec son libellé et nb de tasses
 - "ingredientsSuggestion": liste simplifiée avant la liste QUID (souvent libellée 'Liste d'ingrédient :')
 - "declinaisons": texte sur des déclinaisons prévues (infusette, etc.)
