@@ -35,9 +35,55 @@ export class ImportWorker {
 
     // ─── Extracteurs de texte brut ────────────────────────────────────────────
 
+    // Glyphes de case à cocher résiduels (bruit Word) à retirer des libellés :
+    // ☐ U+2610, ☑ U+2611, ☒ U+2612, □ U+25A1, 🞎 U+1F78E, 🞏 U+1F78F.
+    private static readonly CHECKBOX_GLYPHS = /[☐-☒□\u{1F78E}\u{1F78F}]/gu;
+
     private static async extractDocxText(buffer: ArrayBuffer): Promise<string> {
-        const result = await mammoth.extractRawText({ buffer: Buffer.from(buffer) });
-        return `[DOCUMENT WORD - FICHE DÉGUSTATION]\n${result.value}`;
+        // On passe par convertToHtml (et non extractRawText) pour préserver le
+        // surlignage : dans les FD JDG le surligneur sert de "case cochée".
+        // Seul le texte surligné (jaune OU vert) est une valeur sélectionnée.
+        // Les deux couleurs sont mappées vers <mark> — on ne distingue pas la teinte.
+        const { value: html } = await mammoth.convertToHtml(
+            { buffer: Buffer.from(buffer) },
+            {
+                styleMap: [
+                    "highlight[color='yellow'] => mark",
+                    "highlight[color='green'] => mark",
+                ],
+            }
+        );
+
+        let text = html
+            // Marqueurs de sélection — un seul marqueur pour jaune et vert.
+            .replace(/<mark[^>]*>/g, "⟦SÉLECTIONNÉ⟧")
+            .replace(/<\/mark>/g, "⟦/SÉLECTIONNÉ⟧")
+            // Sauts de ligne : fins de bloc et <br> deviennent des newlines.
+            .replace(/<\/(p|h[1-6]|li|tr)>/gi, "\n")
+            .replace(/<br\s*\/?>/gi, "\n")
+            // Strip de tous les tags HTML restants.
+            .replace(/<[^>]+>/g, "")
+            // Suppression des glyphes de case à cocher résiduels.
+            .replace(ImportWorker.CHECKBOX_GLYPHS, "");
+
+        // Décodage des entités HTML (&amp; en dernier pour éviter le double-décodage).
+        text = text
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&nbsp;/g, " ")
+            .replace(/&amp;/g, "&");
+
+        // Recoller les marqueurs au libellé après retrait des glyphes/espaces parasites :
+        // "⟦SÉLECTIONNÉ⟧ non ⟦/SÉLECTIONNÉ⟧" → "⟦SÉLECTIONNÉ⟧non⟦/SÉLECTIONNÉ⟧".
+        text = text
+            .replace(/⟦SÉLECTIONNÉ⟧\s+/g, "⟦SÉLECTIONNÉ⟧")
+            .replace(/\s+⟦\/SÉLECTIONNÉ⟧/g, "⟦/SÉLECTIONNÉ⟧")
+            // Compactage des lignes vides multiples.
+            .replace(/\n{3,}/g, "\n\n");
+
+        return `[DOCUMENT WORD - FICHE DÉGUSTATION]\n${text}`;
     }
 
     private static extractXlsxText(buffer: ArrayBuffer): string {
@@ -158,10 +204,13 @@ SCHÉMA JSON ATTENDU :
   "dateMiseMarche": "string (date ou description) ou null"
 }
 
+RÈGLES DE SÉLECTION (IMPORTANT) :
+Les passages entourés de ⟦SÉLECTIONNÉ⟧...⟦/SÉLECTIONNÉ⟧ sont les valeurs cochées dans la fiche (équivalent d'une case cochée par surlignage). Quand une liste d'options est présente, retiens UNIQUEMENT les options marquées SÉLECTIONNÉ. Plusieurs options d'une même liste peuvent être sélectionnées (ex : plusieurs dégustateurs, plusieurs labels, plusieurs conditionnements). Si aucune option d'une liste n'est marquée, retourne null pour ce champ. Ignore tout symbole de case à cocher résiduel.
+
 RÈGLES D'ENRICHISSEMENT :
 - Si les % QUID sont dans l'Excel, intègre-les dans "ingredientsTexte" (ex: "Thé vert bio* 90%, citron* 10%")
 - Pour "aromatise": true si arôme naturel ou artificiel détecté dans les ingrédients
-- Extraire les checkboxes cochées uniquement (ignorer celles non cochées)
+- Pour les listes d'options, n'extraire que les valeurs marquées ⟦SÉLECTIONNÉ⟧ (voir RÈGLES DE SÉLECTION)
 - "allegationsPossibles": extraire TOUTES les options du FD (section Remarque), chacune avec son libellé et nb de tasses
 - "ingredientsSuggestion": liste simplifiée avant la liste QUID (souvent libellée 'Liste d'ingrédient :')
 - "declinaisons": texte sur des déclinaisons prévues (infusette, etc.)
