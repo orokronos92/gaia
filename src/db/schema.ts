@@ -80,8 +80,7 @@ export const produits = pgTable("produits", {
     labelsMP: json("labels_mp").$type<string[]>(),                      // ["AB", "FLO", "MH"...]
     labelsClient: json("labels_client").$type<string[]>(),              // ["AB", "WFTO"...]
     // ─── Produit fini ─────────────────────────────────────────────────────────
-    gammeConditionnement: varchar("gamme_conditionnement", { length: 255 }), // ex: Les Militants
-    conditionnementsOptions: json("conditionnements_options").$type<Record<string, any>>(), // gammes cochées avec grammages
+    conditionnementsOptions: json("conditionnements_options").$type<Array<{ gamme: string; format: string; grammage: string }>>(), // gammes/formats cochés (multi-valué)
     declinaisons: text("declinaisons"),                                 // ex: "infusette cristal JDG courant 2026"
     ingredientsSuggestion: text("ingredients_suggestion"),              // liste simplifiée avant formulation QUID
     allegationsPossibles: json("allegations_possibles").$type<Array<{libelle: string, nbTasses: string, description?: string}>>(), // options proposées dans le FD
@@ -97,7 +96,7 @@ export const fichesDegustation = pgTable("fiches_degustation", {
     id: uuid("id").primaryKey().defaultRandom(),
     produitId: uuid("produit_id").references(() => produits.id, { onDelete: 'cascade' }).notNull(),
     dateDegustation: varchar("date_degustation", { length: 50 }),       // ex: 29/07/2025
-    degustateur: varchar("degustateur", { length: 100 }),               // ex: Aurélie
+    degustateur: json("degustateur").$type<string[]>(),                 // un ou plusieurs dégustateurs, ex: ["Aurélie", "Patrice"]
     numeroDeLot: varchar("numero_de_lot", { length: 100 }),
     momentDegustation: varchar("moment_degustation", { length: 100 }), // matin / à tout moment...
     // ─── Paramètres dégustation ───────────────────────────────────────────────

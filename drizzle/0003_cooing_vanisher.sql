@@ -1,0 +1,1 @@
+ALTER TABLE "fiches_degustation" ALTER COLUMN "degustateur" SET DATA TYPE json USING json_build_array("degustateur");

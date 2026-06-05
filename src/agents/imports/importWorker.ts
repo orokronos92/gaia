@@ -166,7 +166,7 @@ SCHÉMA JSON ATTENDU :
   "labelsMP": ["liste des labels matières premières cochés: AB, MH, WFTO, Demeter, FLO, IGP, FFL, Elephant friendly..."],
   "labelsClient": ["liste des labels produit fini cochés: AB, MH, WFTO, Demeter..."],
   "dateDegustation": "string (ex: 29/07/2025) ou null",
-  "degustateur": "string (ex: Aurélie) ou null",
+  "degustateur": ["tableau des dégustateurs sélectionnés, ex: Aurélie, Patrice — un ou plusieurs noms"],
   "numeroDeLot": "string ou null",
   "momentDegustation": "string (ex: matin, à tout moment) ou null",
   "parametresInfusion": {
@@ -193,8 +193,7 @@ SCHÉMA JSON ATTENDU :
   "temperatureRecommandee": "string (température recommandée sur l'étiquette, ex: 95°C) ou null",
   "tempsRecommande": "string (temps recommandé sur l'étiquette, ex: 2-3min) ou null",
   "gamme": "string (grande famille produit: Rares & Précieux, Grand Classiques, Les Militants...) ou null",
-  "gammeConditionnement": "string (gamme principale cochée) ou null",
-  "conditionnementsOptions": { "gamme": "string", "format": "string", "grammage": "string" } ou null,
+  "conditionnementsOptions": [ { "gamme": "string", "format": "string", "grammage": "string" } ],
   "conditionnement": "string (ex: Vrac 100g, Sachets x20, tube métal...) ou null",
   "declinaisons": "string (déclinaisons prévues ex: 'infusette cristal JDG courant 2026') ou null",
   "poidsNet": "string (ex: 100 g) ou null",
@@ -211,6 +210,8 @@ RÈGLES D'ENRICHISSEMENT :
 - Si les % QUID sont dans l'Excel, intègre-les dans "ingredientsTexte" (ex: "Thé vert bio* 90%, citron* 10%")
 - Pour "aromatise": true si arôme naturel ou artificiel détecté dans les ingrédients
 - Pour les listes d'options, n'extraire que les valeurs marquées ⟦SÉLECTIONNÉ⟧ (voir RÈGLES DE SÉLECTION)
+- "conditionnementsOptions": retiens TOUS les conditionnements ET gammes marqués SÉLECTIONNÉ comme un tableau d'objets {gamme, format, grammage}. Mets la gamme cochée DANS l'entrée correspondante (champ "gamme"), jamais dans un champ séparé. Une gamme seule sans format/grammage précisé donne une entrée avec format/grammage à null. Les déclinaisons futures (ex 'courant 2026') vont dans le champ "declinaisons" séparé, PAS dans conditionnementsOptions.
+- "degustateur": tableau de noms (un ou plusieurs dégustateurs marqués SÉLECTIONNÉ)
 - "allegationsPossibles": extraire TOUTES les options du FD (section Remarque), chacune avec son libellé et nb de tasses
 - "ingredientsSuggestion": liste simplifiée avant la liste QUID (souvent libellée 'Liste d'ingrédient :')
 - "declinaisons": texte sur des déclinaisons prévues (infusette, etc.)
@@ -334,8 +335,9 @@ ${combinedText.substring(0, 22000)}`;
             allegationsMp: ensureString(p.allegationsMp) || null,
             labelsMP: Array.isArray(p.labelsMP) ? p.labelsMP : [],
             labelsClient: Array.isArray(p.labelsClient) ? p.labelsClient : [],
-            gammeConditionnement: ensureString(p.gammeConditionnement) || null,
-            conditionnementsOptions: p.conditionnementsOptions || null,
+            conditionnementsOptions: Array.isArray(p.conditionnementsOptions) && p.conditionnementsOptions.length > 0
+                ? p.conditionnementsOptions
+                : null,
             declinaisons: ensureString(p.declinaisons) || null,
             ingredientsSuggestion: ensureString(p.ingredientsSuggestion) || null,
             allegationsPossibles: Array.isArray(p.allegationsPossibles) && p.allegationsPossibles.length > 0
@@ -378,7 +380,9 @@ ${combinedText.substring(0, 22000)}`;
 
         // 7. Écriture en base — Fiche dégustation
         let ficheDegustationId: string | null = null;
-        const hasDegtData = p.dateDegustation || p.degustateur || p.feuillesSechesAspect
+        const hasDegtData = p.dateDegustation
+            || (Array.isArray(p.degustateur) && p.degustateur.length > 0)
+            || p.feuillesSechesAspect
             || p.saveurBouche || p.infusionParfum || p.infusionAspectCouleur;
 
         if (hasDegtData) {
@@ -387,7 +391,7 @@ ${combinedText.substring(0, 22000)}`;
                 id: ficheDegustationId,
                 produitId,
                 dateDegustation: p.dateDegustation || null,
-                degustateur: p.degustateur || null,
+                degustateur: Array.isArray(p.degustateur) && p.degustateur.length > 0 ? p.degustateur : null,
                 numeroDeLot: p.numeroDeLot || null,
                 momentDegustation: p.momentDegustation || null,
                 poidsInfuse: p.parametresInfusion?.poids || null,

@@ -72,7 +72,6 @@ export interface ImportAgentOutput {
     tempsRecommande: string | null;         // pour l'étiquette produit fini
     // ─── Conditionnement ────────────────────────────────────────────────────
     gamme: string | null;
-    gammeConditionnement: string | null; // ex: Les Militants (gamme principale cochée)
     conditionnementsOptions: Record<string, any> | null; // toutes les gammes/formats cochés
     conditionnement: string | null;
     // ─── Déclinaisons ───────────────────────────────────────────────────────
@@ -150,7 +149,6 @@ Schéma JSON attendu :
   "temperatureRecommandee": "string (température recommandée sur l'étiquette produit fini, ex: 95°C) ou null",
   "tempsRecommande": "string (temps recommandé sur l'étiquette produit fini, ex: 2-3min) ou null",
   "gamme": "string (grande famille: Rares & Précieux, Grand Classiques, Les Militants...) ou null",
-  "gammeConditionnement": "string (gamme principale cochée) ou null",
   "conditionnementsOptions": { "gamme": "string", "format": "string", "grammage": "string" } ou null,
   "conditionnement": "string (ex: sachet 100g, tube métal...) ou null",
   "declinaisons": "string (déclinaisons prévues, ex: 'infusette cristal JDG courant 2026') ou null",

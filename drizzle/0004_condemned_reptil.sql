@@ -1,0 +1,1 @@
+ALTER TABLE "produits" DROP COLUMN "gamme_conditionnement";

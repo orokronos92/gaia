@@ -421,7 +421,7 @@ export default function EtiquetteClient({ labelData }: { labelData: any }) {
                                                 Grille Organoleptique & Dégustation
                                             </h3>
                                             <div className="flex items-center gap-2 text-[10px] font-bold text-stone-500 uppercase">
-                                                <span>{labelData.degustation.degustateur || "Comité"}</span> •
+                                                <span>{labelData.degustation.degustateur?.length ? labelData.degustation.degustateur.join(", ") : "Comité"}</span> •
                                                 <span>{labelData.degustation.dateDegustation || "Date non précisée"}</span>
                                             </div>
                                         </div>

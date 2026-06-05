@@ -22,6 +22,20 @@
       "when": 1773047493168,
       "tag": "0002_bouncy_stark_industries",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780658262591,
+      "tag": "0003_cooing_vanisher",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780661404253,
+      "tag": "0004_condemned_reptil",
+      "breakpoints": true
     }
   ]
 }
