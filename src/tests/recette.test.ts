@@ -75,6 +75,39 @@ describe("Largest-remainder method (Hamilton)", () => {
   });
 });
 
+// Regression guard for PRO-QHS-013 §2.2 (see recette.ts). The official sheet is
+// reproduced by distributing the leftover to the largest fractional remainders,
+// NOT by dumping the whole gap on the biggest-kg ingredient. A future refactor
+// that reintroduces "dump on biggest kg" must fail here, not silently ship.
+describe("Arrondi QUID — report par plus grand reste, jamais sur le plus gros kg", () => {
+  it("MT265 : le maté (plus gros kg) ne capte pas l'écart — il floore à 62", () => {
+    const r = computeRecette({ ingredients: MT265, precisionArrondi: 0.5 });
+    const mate = r.ingredients.find((i) => i.codeArticle === "MT100");
+    // "dump on biggest kg" would push Maté to 63; the sheet says 62.
+    expect(mate?.pourcentageEtiquette).toBe(62);
+    // The leftover went to the small high-remainder ingredients instead.
+    const as002 = r.ingredients.find((i) => i.codeArticle === "AS002");
+    expect(as002?.pourcentageEtiquette).toBe(4); // 3,73 monté, pas 3,5
+  });
+
+  it("cas construit : le point manquant va au plus grand reste, pas au plus gros kg", () => {
+    // total = 100 kg ⇒ brut% = kg. Biggest kg (A) has the smallest remainder.
+    const ingredients: IngredientRecetteInput[] = [
+      { codeArticle: "A", designation: "Gros", quantiteKg: 50.1, estDemeter: false, estEquitable: false },
+      { codeArticle: "B", designation: "Moyen", quantiteKg: 24.8, estDemeter: false, estEquitable: false },
+      { codeArticle: "C", designation: "Moyen", quantiteKg: 25.1, estDemeter: false, estEquitable: false },
+    ];
+    const r = computeRecette({ ingredients, precisionArrondi: 1 });
+    const get = (code: string) =>
+      r.ingredients.find((i) => i.codeArticle === code)?.pourcentageEtiquette;
+    // Floors: 50/24/25 = 99 ; the missing point goes to B (remainder 0.8).
+    expect(get("A")).toBe(50); // biggest kg — NOT bumped to 51
+    expect(get("B")).toBe(25); // highest remainder — gets the point
+    expect(get("C")).toBe(25);
+    expect(r.totalPourcentageEtiquette).toBe(100);
+  });
+});
+
 describe("Conformité Demeter", () => {
   const mix = (demeterKg: number, autreKg: number): IngredientRecetteInput[] => [
     { codeArticle: "D1", designation: "Demeter", quantiteKg: demeterKg, estDemeter: true, estEquitable: false },

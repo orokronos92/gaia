@@ -87,8 +87,23 @@ const TRANCHES_DEMETER: { min: number; tranche: string; consequence: string }[] 
 ];
 
 /**
- * Largest-remainder method (Hamilton). Naive per-value rounding breaks the 100 %
- * target (e.g. 99.5 / 100.5); this guarantees Σ === 100 by construction.
+ * QUID rounding — reproduces the official JDG sheet exactly.
+ *
+ * Business rule PRO-QHS-013 §2.2 "Déclaration quantitative QUID": the displayed
+ * percentages must sum to exactly 100 and match the "% pour liste d'ingrédient"
+ * column R&D fills in. Golden reference MT165_MATE_SPORTIF.xlsx →
+ * 62 / 15,5 / 6 / 6 / 4 / 4 / 2 / 0,5.
+ *
+ * The faithful mechanism is the largest-remainder (Hamilton) method at the given
+ * step: floor every value to the step, then hand the leftover step-increments to
+ * the largest fractional remainders. Because flooring keeps Σ ≤ 100, the method
+ * only ever ADDS — there is no ">100" overshoot to correct.
+ *
+ * WARNING — do NOT "optimise" this into "round each %, then report the whole gap
+ * onto the biggest-kg ingredient". That alternative was verified against the
+ * sheet and is WRONG: it pushes Maté to 63 (sheet says 62) and AS002/EF020 to
+ * 3,5 (sheet says 4). The leftover is distributed by remainder, by construction,
+ * not dumped on a single ingredient. See the regression guard in recette.test.ts.
  *
  * @param bruts full-precision raw percentages (must already sum to ~100)
  * @param precision rounding step (0.5 or 1)
