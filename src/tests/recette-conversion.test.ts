@@ -29,6 +29,7 @@ const ligne = (
   designation: o.designation,
   quantiteKg: o.quantiteKg ?? null,
   pourcentageSaisi: o.pourcentageSaisi ?? null,
+  overrideEtiquette: o.overrideEtiquette ?? null,
   estDemeter: o.estDemeter ?? false,
   estEquitable: o.estEquitable ?? false,
   provenance: o.provenance ?? "EXTRAIT",

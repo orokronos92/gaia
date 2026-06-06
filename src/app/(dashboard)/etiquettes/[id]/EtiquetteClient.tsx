@@ -646,7 +646,7 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
 
                 {/* RECETTE / QUID (SPEC-03) */}
                 <TabsContent value="recette" className="mt-0 focus-visible:outline-none">
-                    <RecettePanel ficheId={labelData.id} recette={recette} />
+                    <RecettePanel ficheId={labelData.id} produitId={labelData.produitId} recette={recette} />
                 </TabsContent>
 
                 {/* 2. AUDIT ZONE */}

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { BaseAgent } from "./BaseAgent";
 import { RAGService } from "./knowledge/RAGService";
 import { Mistral } from "@mistralai/mistralai";
@@ -84,6 +85,100 @@ CONSIGNES :
             response: responseText,
             sourcesUsed: sources,
         };
+    }
+
+    /**
+     * Proposes plausible kilogram quantities for ingredients missing one
+     * (SPEC-03b §6). NON-BINDING: the result is a suggestion Marie accepts or
+     * ignores — it never writes anything. The LLM proposes nothing about the
+     * regulatory %; that stays deterministic (computeRecette). Output is
+     * Zod-validated (CLAUDE.md §7); any failure degrades to "faible confiance".
+     */
+    async suggererQuantites(input: {
+        produitContexte: string;
+        connus: { designation: string; pourcentage: number | null; quantiteKg: number | null }[];
+        manquants: string[];
+        masseLotKg: number | null;
+    }): Promise<{
+        suggestions: { designation: string; quantiteKg: number; confiance: "FAIBLE" | "MOYENNE" | "FORTE" }[];
+        note: string;
+    }> {
+        const SuggestionSchema = z.object({
+            suggestions: z.array(
+                z.object({
+                    designation: z.string(),
+                    quantiteKg: z.number().nonnegative(),
+                    confiance: z.enum(["FAIBLE", "MOYENNE", "FORTE"]),
+                })
+            ),
+            note: z.string(),
+        });
+
+        const apiKey = process.env.MISTRAL_API_KEY ?? "";
+        if (!apiKey) {
+            return { suggestions: [], note: "Suggestion IA indisponible (clé Mistral absente)." };
+        }
+
+        // RAG over the knowledge base (regulatory + any indexed recipes); tolerant of empty.
+        const ctx = await RAGService.searchContext(
+            `recette ingrédients ${input.produitContexte}`,
+            3
+        ).catch(() => []);
+        const contexteRag = RAGService.formatContextForPrompt(ctx);
+        const faibleConfiance = ctx.length === 0;
+
+        const connusTxt = input.connus
+            .map(
+                (c) =>
+                    `- ${c.designation}: ${c.quantiteKg != null ? `${c.quantiteKg} kg` : c.pourcentage != null ? `${c.pourcentage} %` : "inconnu"}`
+            )
+            .join("\n");
+
+        const systemPrompt = `Tu assistes l'équipe Qualité (Marie) de GaïaLabel pour estimer des quantités d'ingrédients MANQUANTES dans une recette de thé/infusion.
+RÈGLES STRICTES :
+1. Tu PROPOSES seulement des quantités plausibles en kilogrammes, jamais des pourcentages.
+2. Base-toi sur les quantités connues, la masse de lot, et le contexte ci-dessous. N'invente pas de certitude.
+3. Si tu n'as pas d'élément fiable (pas de recette voisine), mets confiance "FAIBLE".
+4. Réponds UNIQUEMENT par un JSON: {"suggestions":[{"designation":string,"quantiteKg":number,"confiance":"FAIBLE"|"MOYENNE"|"FORTE"}],"note":string}.
+
+${contexteRag}`;
+
+        const userContent = `Masse de lot: ${input.masseLotKg != null ? `${input.masseLotKg} kg` : "inconnue"}
+Ingrédients connus:
+${connusTxt || "(aucun)"}
+
+Ingrédients à estimer (quantité manquante): ${input.manquants.join(", ")}
+
+Donne une quantité kg plausible pour CHAQUE ingrédient à estimer.`;
+
+        try {
+            const response = await this.mistralClient.chat.complete({
+                model: "mistral-large-latest",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userContent },
+                ],
+                responseFormat: { type: "json_object" },
+                maxTokens: 800,
+                temperature: 0.2,
+            });
+            const raw = response.choices?.[0]?.message?.content;
+            const parsed = SuggestionSchema.parse(
+                JSON.parse(typeof raw === "string" ? raw : "{}")
+            );
+            const note = faibleConfiance
+                ? `${parsed.note} (aucune recette voisine trouvée — fiabilité réduite)`
+                : parsed.note;
+            const suggestions = faibleConfiance
+                ? parsed.suggestions.map((s) => ({ ...s, confiance: "FAIBLE" as const }))
+                : parsed.suggestions;
+            return { suggestions, note };
+        } catch {
+            return {
+                suggestions: [],
+                note: "La suggestion IA n'a pas pu être produite (réponse non exploitable).",
+            };
+        }
     }
 
     /**

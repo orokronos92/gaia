@@ -13,6 +13,7 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ProvenanceBadge } from "@/components/provenance/ProvenanceBadge";
+import { Pastille, CodeArticleText, PctBrutText, PctEtiquetteText } from "@/components/recette/recette-cells";
 import { controleTotal } from "@/lib/business-rules/recette";
 import type { Provenance } from "@/lib/provenance";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
@@ -41,22 +42,6 @@ function ColHead({
       </span>
       {provenance && <ProvenanceBadge provenance={provenance} size="xs" />}
     </div>
-  );
-}
-
-function Pastille({ on, ton }: { on: boolean; ton: "emerald" | "indigo" }) {
-  if (!on) return <span className="text-stone-300 dark:text-stone-600">—</span>;
-  return (
-    <span
-      className={cn(
-        "inline-flex size-5 items-center justify-center rounded-full text-xs font-bold",
-        ton === "emerald"
-          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300"
-          : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
-      )}
-    >
-      ✱
-    </span>
   );
 }
 
@@ -105,21 +90,16 @@ export function RecetteTable({ data, editable = false }: RecetteTableProps) {
                 <span className="font-medium text-stone-800 dark:text-stone-100">
                   {ing.designation}
                 </span>
-                <span className="ml-2 text-[10px] text-stone-400">
-                  {ing.codeArticle}
-                </span>
+                <CodeArticleText code={ing.codeArticle} />
               </TableCell>
               <TableCell className="text-right tabular-nums text-stone-600 dark:text-stone-300">
                 {ing.quantiteKg}
               </TableCell>
-              <TableCell className="text-right tabular-nums text-xs text-stone-400">
-                {ing.pourcentageBrut.toFixed(3)}
+              <TableCell className="text-right">
+                <PctBrutText value={ing.pourcentageBrut} />
               </TableCell>
               <TableCell className="text-right">
-                <span className="text-base font-bold tabular-nums text-emerald-900 dark:text-emerald-100">
-                  {ing.pourcentageEtiquette}
-                </span>
-                <span className="text-xs text-stone-400">%</span>
+                <PctEtiquetteText value={ing.pourcentageEtiquette} />
               </TableCell>
               <TableCell className="text-center">
                 <Pastille on={ing.estDemeter} ton="emerald" />

@@ -24,11 +24,19 @@ export interface LigneIngredient {
   quantiteKg: number | null;
   /** Entered OR derived from `quantiteKg`. */
   pourcentageSaisi: number | null;
+  /** Manual override of the computed label % (Marie has the final say, SPEC-02). */
+  overrideEtiquette: number | null;
   estDemeter: boolean;
   estEquitable: boolean;
   provenance: ProvenanceLigne;
   /** true when no quantity is known (neither kg nor %). Blocks global compute. */
   incomplet: boolean;
+}
+
+/** Non-binding AI proposal for a missing quantity (SPEC-03b §6). */
+export interface SuggestionLigne {
+  quantiteKg: number;
+  confiance: "FAIBLE" | "MOYENNE" | "FORTE";
 }
 
 export interface EtatCalculatrice {
