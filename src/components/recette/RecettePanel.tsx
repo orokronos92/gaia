@@ -5,6 +5,7 @@ export interface RecettePanelProps {
   ficheId: string;
   produitId: string;
   recette: RecetteAgentOutput | null;
+  ingredientsExtraits?: string | null;
 }
 
 /**
@@ -13,9 +14,19 @@ export interface RecettePanelProps {
  * (SPEC-02), now driven live by Marie's kg/% input. `produitId`/`ficheId` feed
  * the validation/persistence step (SPEC-03b §7).
  */
-export function RecettePanel({ recette, produitId, ficheId }: RecettePanelProps) {
+export function RecettePanel({
+  recette,
+  produitId,
+  ficheId,
+  ingredientsExtraits,
+}: RecettePanelProps) {
   return (
-    <RecetteCalculator recette={recette} produitId={produitId} ficheId={ficheId} />
+    <RecetteCalculator
+      recette={recette}
+      ingredientsExtraits={ingredientsExtraits}
+      produitId={produitId}
+      ficheId={ficheId}
+    />
   );
 }
 

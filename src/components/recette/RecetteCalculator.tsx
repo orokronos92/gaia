@@ -21,7 +21,7 @@ import { RecetteCalculatorToolbar } from "@/components/recette/RecetteCalculator
 import { RecetteCalculatorRow } from "@/components/recette/RecetteCalculatorRow";
 import { RecetteValidation } from "@/components/recette/RecetteValidation";
 import { DemeterBanner } from "@/components/recette/DemeterBanner";
-import { useCalculatrice, etatDepuisRecette } from "@/hooks/useCalculatrice";
+import { useCalculatrice, etatInitial } from "@/hooks/useCalculatrice";
 import { useSuggestionsRecette } from "@/hooks/useSuggestionsRecette";
 import { kgVersPct, normaliserVersKg } from "@/lib/recette/conversion";
 import { validerRecetteAction } from "@/app/actions/recette";
@@ -29,20 +29,23 @@ import type { EtatCalculatrice } from "@/lib/recette/types";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 
 export interface RecetteCalculatorProps {
-  /** Pre-fill from a persisted recette (SPEC-02/03); empty when none yet. */
+  /** Pre-fill from a persisted recette (SPEC-02/03). */
   recette: RecetteAgentOutput | null;
+  /** Fallback pre-fill from extracted ingredient text when no recette exists. */
+  ingredientsExtraits?: string | null;
   produitId: string;
   ficheId: string;
 }
 
 export function RecetteCalculator({
   recette,
+  ingredientsExtraits,
   produitId,
   ficheId,
 }: RecetteCalculatorProps) {
   const initial: EtatCalculatrice = useMemo(
-    () => etatDepuisRecette(recette),
-    [recette]
+    () => etatInitial(recette, ingredientsExtraits),
+    [recette, ingredientsExtraits]
   );
   const c = useCalculatrice(initial);
   const sugg = useSuggestionsRecette(produitId);

@@ -12,6 +12,7 @@ import {
   pctVersKg,
   normaliserVersKg,
 } from "@/lib/recette/conversion";
+import { parseIngredientsTexte } from "@/lib/recette/parse-ingredients";
 import type {
   EtatCalculatrice,
   LigneIngredient,
@@ -61,6 +62,51 @@ export function etatDepuisRecette(
       incomplet: false,
     })),
   };
+}
+
+/**
+ * Build the initial state from extracted ingredient text (SPEC-03b §2). Lot mass
+ * is unknown (the dégustation sheet carries none) → starts in % mode; lines
+ * without a % are `incomplet` for Marie to complete. No quantity is ever guessed.
+ */
+export function etatDepuisExtraction(
+  texte: string | null | undefined
+): EtatCalculatrice {
+  const items = parseIngredientsTexte(texte);
+  if (items.length === 0) {
+    return { masseLotKg: null, unitMode: "pct", pas: 0.5, lignes: [] };
+  }
+  return {
+    masseLotKg: null,
+    unitMode: "pct",
+    pas: 0.5,
+    lignes: items.map((it) => ({
+      id: uid(),
+      codeArticle: null,
+      designation: it.designation,
+      quantiteKg: null,
+      pourcentageSaisi: it.pourcentage,
+      overrideEtiquette: null,
+      estDemeter: false,
+      estEquitable: false,
+      provenance: "EXTRAIT",
+      incomplet: it.pourcentage == null,
+    })),
+  };
+}
+
+/**
+ * Initial state resolution: a persisted recette wins; otherwise pre-fill from
+ * extracted text; otherwise empty.
+ */
+export function etatInitial(
+  recette: RecetteAgentOutput | null,
+  texteExtraction?: string | null
+): EtatCalculatrice {
+  if (recette && recette.ingredients.length > 0) {
+    return etatDepuisRecette(recette);
+  }
+  return etatDepuisExtraction(texteExtraction);
 }
 
 /** A line is incomplete when its source value (per active unit) is missing. */

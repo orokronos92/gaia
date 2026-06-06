@@ -113,6 +113,12 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
     // Fichiers BAT uploadés par Fabrice depuis Minio
     const pdfFiles: { url: string; name: string }[] = labelData.pdfFiles || [];
 
+    // Pré-remplissage calculatrice (SPEC-03b §2) : on privilégie la liste QUID si
+    // elle porte des %, sinon la liste extraite simplifiée (désignations seules).
+    const ingredientsExtraits = /\d\s*%/.test(labelData.ingredientsFr ?? "")
+        ? labelData.ingredientsFr
+        : labelData.ingredientsSuggestion;
+
     const runAudit = async (auditType: string = 'complet') => {
         setAuditingType(auditType)
 
@@ -646,7 +652,7 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
 
                 {/* RECETTE / QUID (SPEC-03) */}
                 <TabsContent value="recette" className="mt-0 focus-visible:outline-none">
-                    <RecettePanel ficheId={labelData.id} produitId={labelData.produitId} recette={recette} />
+                    <RecettePanel ficheId={labelData.id} produitId={labelData.produitId} recette={recette} ingredientsExtraits={ingredientsExtraits} />
                 </TabsContent>
 
                 {/* 2. AUDIT ZONE */}
