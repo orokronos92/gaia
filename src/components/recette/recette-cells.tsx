@@ -3,10 +3,9 @@ import { cn } from "@/lib/utils";
 /**
  * Shared visual vocabulary for a recette ingredient row (SPEC-03b).
  *
- * Both the read-only <RecetteTable> and the editable <RecetteCalculator> render
- * rows from THESE atoms, so the two views can never drift apart visually even
- * though their column sets differ (the calculator adds Saisie/Équivalent/delete).
- * Single source of truth for the row's look, per the SPEC directive.
+ * The editable <RecetteCalculator> rows render from THESE atoms, keeping a single
+ * source of truth for the row's look (designation/code, % brut, % étiquette,
+ * Demeter/fair-trade markers) — any future read-only view reuses the same atoms.
  */
 
 /** Demeter / fair-trade marker. */
