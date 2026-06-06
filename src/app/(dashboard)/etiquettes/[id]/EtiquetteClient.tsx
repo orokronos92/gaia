@@ -24,8 +24,10 @@ import {
     Eye,
     Wind,
     Utensils,
-    FlaskConical
+    FlaskConical,
+    ArrowLeft
 } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -33,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { RecettePanel } from "@/components/recette/RecettePanel"
 import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
+import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 
 // --- Helper pour vérifier si un champ "vide" Excel contient une vraie valeur
@@ -98,6 +101,14 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
     const hasAllegation = hasRealValue(labelData.allegationsSanteFr);
     const hasWfto = hasRealValue(labelData.phraseWftoFr);
     const hasTexteCom = hasRealValue(labelData.texteCommercialFr);
+    const hasAllegationsPossibles =
+        Array.isArray(labelData.allegationsPossibles) && labelData.allegationsPossibles.length > 0;
+    const hasVigilance = hasAllergen || hasAllegation || hasAllegationsPossibles;
+    const hasDegustation = !!labelData.degustation && (
+        labelData.degustation.feuillesSechesAspect ||
+        labelData.degustation.infusionParfum ||
+        labelData.degustation.saveurBouche
+    );
 
     // Fichiers BAT uploadés par Fabrice depuis Minio
     const pdfFiles: { url: string; name: string }[] = labelData.pdfFiles || [];
@@ -195,6 +206,13 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-white/60 backdrop-blur-xl p-6 rounded-3xl border border-stone-200/50 shadow-sm">
                 <div className="flex flex-col gap-2">
+                    <Link
+                        href="/etiquettes"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-500 hover:text-emerald-700 transition-colors w-fit -ml-1"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Retour au pipeline
+                    </Link>
                     <div className="flex items-center gap-2 text-sm text-stone-500 font-medium">
                         <Badge variant="outline" className="bg-stone-100 border-none text-stone-600 hover:bg-stone-200 cursor-pointer transition-colors">Étiquettes</Badge>
                         <ChevronRight className="h-3 w-3" />
@@ -355,9 +373,8 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                 </CardContent>
                             </Card>
 
-                            {/* Card: Alertes Qualité (Dynamic based on real values) */}
-                            {(hasAllergen || hasAllegation) && (
-                                <Card className="border border-orange-200/60 bg-gradient-to-br from-white to-orange-50/30 shadow-sm overflow-hidden rounded-3xl relative">
+                            {/* Card: Alertes Qualité — toujours visible, état vide explicite si rien à signaler */}
+                            <Card className="border border-orange-200/60 bg-gradient-to-br from-white to-orange-50/30 shadow-sm overflow-hidden rounded-3xl relative">
                                     <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
                                         <ShieldAlert className="w-32 h-32 text-orange-900" />
                                     </div>
@@ -368,6 +385,12 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="p-5 space-y-4 relative z-10">
+                                        {!hasVigilance && (
+                                            <EmptyState
+                                                icon={ShieldAlert}
+                                                label="Aucun allergène ni allégation renseigné pour ce produit."
+                                            />
+                                        )}
                                         {hasAllergen && (
                                             <div className="p-4 bg-white rounded-2xl border border-orange-200/60 shadow-[0_2px_10px_-4px_rgba(251,146,60,0.3)] flex items-start gap-3">
                                                 <div className="bg-orange-100 p-1.5 rounded-lg">
@@ -390,7 +413,7 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                                 </div>
                                             </div>
                                         )}
-                                        {labelData.allegationsPossibles && labelData.allegationsPossibles.length > 0 && (
+                                        {hasAllegationsPossibles && (
                                             <div className="p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100 flex flex-col gap-3">
                                                 <h4 className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Options d&apos;allégations extraites</h4>
                                                 <div className="grid gap-2">
@@ -408,7 +431,6 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                         )}
                                     </CardContent>
                                 </Card>
-                            )}
                         </div>
 
                         {/* RIGHT COLUMN: Texts & Translations */}
@@ -417,8 +439,8 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                             {/* Card: Déclarations Légales par Langue */}
                             <Card className="border border-blue-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl flex flex-col">
 
-                                {/* NOUVEAU: Grille Organoleptique (Notes de Dégustation) */}
-                                {labelData.degustation && (labelData.degustation.feuillesSechesAspect || labelData.degustation.infusionParfum || labelData.degustation.saveurBouche) && (
+                                {/* NOUVEAU: Grille Organoleptique (Notes de Dégustation) — toujours visible */}
+                                {hasDegustation ? (
                                     <div className="bg-stone-50/50 border-b border-stone-100 p-6 flex flex-col gap-5">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
@@ -483,6 +505,16 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                             </div>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="bg-stone-50/50 border-b border-stone-100 p-6 flex flex-col gap-4">
+                                        <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                                            <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-pink-100 border-none flex items-center justify-center">
+                                                <Eye className="h-4 w-4 text-pink-700" />
+                                            </Badge>
+                                            Grille Organoleptique & Dégustation
+                                        </h3>
+                                        <EmptyState icon={Eye} label="Grille organoleptique non renseignée pour cette fiche." />
+                                    </div>
                                 )}
 
                                 <CardHeader className="bg-blue-500/10 border-b border-blue-100 pb-4">
@@ -529,13 +561,18 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                             </div>
                                         )}
 
-                                        {labelData.declinaisons && (
+                                        {hasRealValue(labelData.declinaisons) ? (
                                             <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 flex items-start gap-3">
                                                 <Package className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
                                                 <div>
                                                     <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest mb-0.5">Déclinaisons Prévues</h4>
                                                     <p className="text-xs text-indigo-900 font-medium">{labelData.declinaisons}</p>
                                                 </div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest flex items-center gap-1.5"><Package className="w-3 h-3" /> Déclinaisons Prévues</h4>
+                                                <EmptyState label="Aucune déclinaison prévue renseignée." />
                                             </div>
                                         )}
                                     </div>

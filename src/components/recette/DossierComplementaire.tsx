@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ChampTrace } from "@/components/provenance/ChampTrace";
 import { ArbitrerBadge } from "@/components/provenance/ArbitrerBadge";
+import { EmptyState } from "@/components/atoms/empty-state";
 
 export interface DossierComplementaireProps {
   floId?: string | null;
@@ -29,13 +30,27 @@ export interface DossierComplementaireProps {
 const hasVal = (v: string | null | undefined) =>
   !!v && !["/", "n/a", "néant", "-"].includes(v.trim().toLowerCase());
 
-function Bloc({ titre, children }: { titre: string; children: React.ReactNode }) {
+function Bloc({
+  titre,
+  vide,
+  messageVide,
+  children,
+}: {
+  titre: string;
+  vide?: boolean;
+  messageVide?: string;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
       <h4 className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
         {titre}
       </h4>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
+      {vide ? (
+        <EmptyState label={messageVide ?? "Non renseigné."} />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
+      )}
     </div>
   );
 }
@@ -49,6 +64,16 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
   const labels = (props.labelsClient ?? []).filter(Boolean);
   const jardinsVsProducteur =
     hasVal(props.producteurJardin) && hasVal(props.infoProducteur);
+
+  const hasIdentite =
+    hasVal(props.floId) || hasVal(props.nomLatin) || hasVal(props.dateMiseMarche);
+  const hasSourcing =
+    hasVal(props.fournisseur) ||
+    hasVal(props.numeroDeLot) ||
+    hasVal(props.producteurJardin) ||
+    hasVal(props.infoProducteur);
+  const hasAllegations =
+    hasVal(props.allegationChoisie) || hasVal(props.nbTassesAllegation);
 
   return (
     <Card className="overflow-hidden rounded-3xl border border-stone-200/60 bg-white/80 shadow-sm backdrop-blur-xl">
@@ -65,7 +90,7 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
       </CardHeader>
 
       <CardContent className="space-y-6 p-5">
-        <Bloc titre="Identité">
+        <Bloc titre="Identité" vide={!hasIdentite} messageVide="Identité non renseignée.">
           {hasVal(props.floId) && (
             <ChampTrace label="FLO ID" provenance="EXTRAIT" source={props.floId!}>
               {props.floId}
@@ -102,7 +127,7 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
           </ChampTrace>
         </Bloc>
 
-        <Bloc titre="Sourcing">
+        <Bloc titre="Sourcing" vide={!hasSourcing} messageVide="Sourcing non renseigné.">
           {hasVal(props.fournisseur) && (
             <ChampTrace label="Fournisseur" provenance="EXTRAIT">
               {props.fournisseur}
@@ -141,20 +166,22 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
           )}
         </Bloc>
 
-        {(hasVal(props.allegationChoisie) || hasVal(props.nbTassesAllegation)) && (
-          <Bloc titre="Allégations">
-            {hasVal(props.allegationChoisie) && (
-              <ChampTrace label="Allégation choisie" provenance="EXTRAIT">
-                {props.allegationChoisie}
-              </ChampTrace>
-            )}
-            {hasVal(props.nbTassesAllegation) && (
-              <ChampTrace label="Nb tasses (allégation)" provenance="EXTRAIT">
-                {props.nbTassesAllegation}
-              </ChampTrace>
-            )}
-          </Bloc>
-        )}
+        <Bloc
+          titre="Allégations"
+          vide={!hasAllegations}
+          messageVide="Aucune allégation choisie pour ce produit."
+        >
+          {hasVal(props.allegationChoisie) && (
+            <ChampTrace label="Allégation choisie" provenance="EXTRAIT">
+              {props.allegationChoisie}
+            </ChampTrace>
+          )}
+          {hasVal(props.nbTassesAllegation) && (
+            <ChampTrace label="Nb tasses (allégation)" provenance="EXTRAIT">
+              {props.nbTassesAllegation}
+            </ChampTrace>
+          )}
+        </Bloc>
       </CardContent>
     </Card>
   );
