@@ -5,16 +5,14 @@ import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Pas, UnitMode } from "@/lib/recette/types";
+import type { Pas } from "@/lib/recette/types";
 
 export interface RecetteCalculatorToolbarProps {
-  unitMode: UnitMode;
   pas: Pas;
   massePrincipaleKg: number | null;
   /** Derived total lot mass (kg), shown read-only. */
   masseLot: number | null;
   masseRequise: boolean;
-  onUnitMode: (m: UnitMode) => void;
   onPas: (p: Pas) => void;
   onMassePrincipale: (v: number | null) => void;
   onAjouter: () => void;
@@ -57,33 +55,16 @@ function Segment<T extends string | number>({
 }
 
 export function RecetteCalculatorToolbar({
-  unitMode,
   pas,
   massePrincipaleKg,
   masseLot,
   masseRequise,
-  onUnitMode,
   onPas,
   onMassePrincipale,
   onAjouter,
 }: RecetteCalculatorToolbarProps) {
   return (
     <div className="flex flex-wrap items-end gap-4 rounded-2xl border border-stone-200/60 bg-white/70 p-4 shadow-sm dark:border-stone-800 dark:bg-stone-900/40">
-      <div className="space-y-1.5">
-        <span className="block text-[10px] font-bold uppercase tracking-widest text-stone-400">
-          Unité de saisie
-        </span>
-        <Segment
-          ariaLabel="Unité de saisie"
-          value={unitMode}
-          onChange={(v) => onUnitMode(v as UnitMode)}
-          options={[
-            { value: "kg", label: "kg" },
-            { value: "pct", label: "%" },
-          ]}
-        />
-      </div>
-
       <div
         className="space-y-1.5"
         title="Masse de l'ingrédient principal (le plus dominant, ex. le thé). Le lot total en découle."

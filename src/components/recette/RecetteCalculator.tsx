@@ -9,16 +9,15 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecetteCalculatorToolbar } from "@/components/recette/RecetteCalculatorToolbar";
 import { RecetteCalculatorRow } from "@/components/recette/RecetteCalculatorRow";
+import { RecetteTotaux } from "@/components/recette/RecetteTotaux";
 import { RecetteValidation } from "@/components/recette/RecetteValidation";
 import { DemeterBanner } from "@/components/recette/DemeterBanner";
 import { useCalculatrice, etatInitial } from "@/hooks/useCalculatrice";
@@ -27,6 +26,10 @@ import { kgVersPct, normaliserVersKg } from "@/lib/recette/conversion";
 import { validerRecetteAction } from "@/app/actions/recette";
 import type { EtatCalculatrice } from "@/lib/recette/types";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
+
+// Marie reasons in %; the calculator gives her the grammages. Entry is always %.
+const SAISIE_UNITE = "%";
+const EQUIV_UNITE = "kg";
 
 export interface RecetteCalculatorProps {
   /** Pre-fill from a persisted recette (SPEC-02/03). */
@@ -51,9 +54,6 @@ export function RecetteCalculator({
   const sugg = useSuggestionsRecette(produitId);
   const [validating, setValidating] = useState(false);
   const { etat, resultat } = c;
-
-  const saisieUnite = etat.unitMode === "kg" ? "kg" : "%";
-  const equivUnite = etat.unitMode === "kg" ? "%" : "kg";
   const masseLot = c.masseLot;
 
   const etiquettes = resultat
@@ -66,16 +66,13 @@ export function RecetteCalculator({
   const accepterSuggestion = (ligneId: string) => {
     const s = sugg.parLigne[ligneId];
     if (!s) return;
-    if (etat.unitMode === "pct") {
-      if (masseLot && masseLot > 0) {
-        c.setSaisie(ligneId, String(kgVersPct(s.quantiteKg, masseLot)));
-      } else {
-        toast.info("Renseignez la masse de lot pour appliquer la suggestion en %.");
-        return;
-      }
-    } else {
-      c.setSaisie(ligneId, String(s.quantiteKg));
+    if (!masseLot || masseLot <= 0) {
+      toast.info(
+        "Renseignez la masse de l'ingrédient principal pour appliquer la suggestion."
+      );
+      return;
     }
+    c.setSaisie(ligneId, String(kgVersPct(s.quantiteKg, masseLot)));
     sugg.retirer(ligneId);
   };
 
@@ -105,12 +102,10 @@ export function RecetteCalculator({
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 space-y-4 duration-500">
       <RecetteCalculatorToolbar
-        unitMode={etat.unitMode}
         pas={etat.pas}
         massePrincipaleKg={etat.massePrincipaleKg}
         masseLot={masseLot}
         masseRequise={c.masseRequise}
-        onUnitMode={c.setUnitMode}
         onPas={c.setPas}
         onMassePrincipale={c.setMassePrincipale}
         onAjouter={c.ajouterLigne}
@@ -152,10 +147,10 @@ export function RecetteCalculator({
                 <ColLabel label="Ingrédient" />
               </TableHead>
               <TableHead className="text-right">
-                <ColLabel label={`Saisie (${saisieUnite})`} accent />
+                <ColLabel label={`Saisie (${SAISIE_UNITE})`} accent />
               </TableHead>
               <TableHead className="text-right">
-                <ColLabel label={`Équiv. (${equivUnite})`} />
+                <ColLabel label={`Grammage (${EQUIV_UNITE})`} />
               </TableHead>
               <TableHead className="text-right">
                 <ColLabel label="% brut" />
@@ -190,8 +185,8 @@ export function RecetteCalculator({
                 key={ligne.id}
                 ligne={ligne}
                 sortie={resultat?.ingredients[idx] ?? null}
-                saisieUnite={saisieUnite}
-                equivUnite={equivUnite}
+                saisieUnite={SAISIE_UNITE}
+                equivUnite={EQUIV_UNITE}
                 c={c}
                 suggestion={sugg.parLigne[ligne.id] ?? null}
                 suggLoading={sugg.loadingIds.includes(ligne.id)}
@@ -201,28 +196,18 @@ export function RecetteCalculator({
               />
             ))}
           </TableBody>
-
-          <TableFooter className="sticky bottom-0 bg-stone-50/95 backdrop-blur-sm dark:bg-stone-900/95">
-            <TableRow className="hover:bg-transparent">
-              <TableCell />
-              <TableCell className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
-                Total
-              </TableCell>
-              <TableCell className="text-right font-semibold tabular-nums text-stone-700 dark:text-stone-200">
-                {masseLot != null && masseLot > 0
-                  ? `${Math.round(masseLot * 1000) / 1000} kg`
-                  : "—"}
-              </TableCell>
-              <TableCell />
-              <TableCell />
-              <TableCell className="text-right" colSpan={4}>
-                <TotalBadge nbIncomplets={c.nbIncomplets} total={c.totalControle} />
-              </TableCell>
-            </TableRow>
-          </TableFooter>
         </Table>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+
+      {etat.lignes.length > 0 && (
+        <RecetteTotaux
+          total={c.totalControle}
+          conforme={c.conforme}
+          nbIncomplets={c.nbIncomplets}
+          masseLot={masseLot}
+        />
+      )}
 
       {resultat && <DemeterBanner demeter={resultat.demeter} />}
 
@@ -251,41 +236,6 @@ function ColLabel({ label, accent }: { label: string; accent?: boolean }) {
     >
       {label}
     </span>
-  );
-}
-
-function TotalBadge({
-  nbIncomplets,
-  total,
-}: {
-  nbIncomplets: number;
-  total: number | null;
-}) {
-  if (nbIncomplets > 0) {
-    return (
-      <Badge
-        variant="outline"
-        className="gap-1 border-amber-200 bg-amber-50 text-[10px] font-bold text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
-      >
-        {nbIncomplets} ingrédient{nbIncomplets > 1 ? "s" : ""} à compléter
-      </Badge>
-    );
-  }
-  if (total == null) return <span className="text-xs text-stone-400">—</span>;
-  const conforme = Math.abs(total - 100) < 1e-6;
-  const ecart = Math.round((total - 100) * 100) / 100;
-  return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "gap-1 text-[10px] font-bold tabular-nums",
-        conforme
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-          : "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
-      )}
-    >
-      {conforme ? "100 % ✓" : `${total} % ⚠ (${ecart > 0 ? "+" : ""}${ecart})`}
-    </Badge>
   );
 }
 
