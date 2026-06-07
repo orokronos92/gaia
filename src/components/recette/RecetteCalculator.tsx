@@ -54,7 +54,7 @@ export function RecetteCalculator({
 
   const saisieUnite = etat.unitMode === "kg" ? "kg" : "%";
   const equivUnite = etat.unitMode === "kg" ? "%" : "kg";
-  const totalKg = etat.lignes.reduce((s, l) => s + (l.quantiteKg ?? 0), 0);
+  const masseLot = c.masseLot;
 
   const etiquettes = resultat
     ? etat.lignes.map(
@@ -67,8 +67,8 @@ export function RecetteCalculator({
     const s = sugg.parLigne[ligneId];
     if (!s) return;
     if (etat.unitMode === "pct") {
-      if (etat.masseLotKg && etat.masseLotKg > 0) {
-        c.setSaisie(ligneId, String(kgVersPct(s.quantiteKg, etat.masseLotKg)));
+      if (masseLot && masseLot > 0) {
+        c.setSaisie(ligneId, String(kgVersPct(s.quantiteKg, masseLot)));
       } else {
         toast.info("Renseignez la masse de lot pour appliquer la suggestion en %.");
         return;
@@ -107,18 +107,19 @@ export function RecetteCalculator({
       <RecetteCalculatorToolbar
         unitMode={etat.unitMode}
         pas={etat.pas}
-        masseLotKg={etat.masseLotKg}
+        massePrincipaleKg={etat.massePrincipaleKg}
+        masseLot={masseLot}
         masseRequise={c.masseRequise}
         onUnitMode={c.setUnitMode}
         onPas={c.setPas}
-        onMasse={c.setMasseLot}
+        onMassePrincipale={c.setMassePrincipale}
         onAjouter={c.ajouterLigne}
       />
 
       {c.masseRequise && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
           <Info className="size-4 shrink-0" />
-          Renseigner la masse de lot pour obtenir les grammages.
+          Renseigner la masse de l&apos;ingrédient principal (kg) pour obtenir les grammages.
         </div>
       )}
 
@@ -208,12 +209,14 @@ export function RecetteCalculator({
                 Total
               </TableCell>
               <TableCell className="text-right font-semibold tabular-nums text-stone-700 dark:text-stone-200">
-                {totalKg > 0 ? `${Math.round(totalKg * 1000) / 1000} kg` : "—"}
+                {masseLot != null && masseLot > 0
+                  ? `${Math.round(masseLot * 1000) / 1000} kg`
+                  : "—"}
               </TableCell>
               <TableCell />
               <TableCell />
               <TableCell className="text-right" colSpan={4}>
-                <TotalBadge nbIncomplets={c.nbIncomplets} total={c.totalEtiquette} />
+                <TotalBadge nbIncomplets={c.nbIncomplets} total={c.totalControle} />
               </TableCell>
             </TableRow>
           </TableFooter>

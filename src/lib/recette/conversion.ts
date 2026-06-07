@@ -32,12 +32,43 @@ export function kgVersPct(kg: number, masseLotKg: number): number {
   return (kg / masseLotKg) * POURCENTAGE;
 }
 
+/** Highest entered % across lines (the principal ingredient), or 0. */
+function maxPourcentage(etat: EtatCalculatrice): number {
+  return etat.lignes.reduce(
+    (m, l) => (l.pourcentageSaisi != null && l.pourcentageSaisi > m ? l.pourcentageSaisi : m),
+    0
+  );
+}
+
+/**
+ * Derive the TOTAL lot mass (kg) — never entered directly (SPEC-03b).
+ *  - kg mode: the lot is simply the sum of the entered quantities.
+ *  - % mode:  the lot follows from the principal ingredient: if the principal
+ *    weighs `massePrincipaleKg` and represents `maxPct` %, then
+ *    lot = massePrincipaleKg × 100 / maxPct. Every other grammage is `% × lot`.
+ * Returns null when not yet derivable.
+ */
+export function masseLotDe(etat: EtatCalculatrice): number | null {
+  if (etat.unitMode === "kg") {
+    const somme = etat.lignes.reduce((s, l) => s + (l.quantiteKg ?? 0), 0);
+    return somme > 0 ? somme : null;
+  }
+  const mp = etat.massePrincipaleKg;
+  const maxPct = maxPourcentage(etat);
+  if (mp == null || mp <= 0 || maxPct <= 0) return null;
+  return (mp * 100) / maxPct;
+}
+
 /**
  * Resolve a single line to kilograms according to the active input unit.
- * Throws on a line that cannot be resolved (incomplete, or % mode without mass)
- * — the caller must guarantee no `incomplet` line before computing (SPEC-03b §4).
+ * Throws on a line that cannot be resolved (incomplete, or % mode without a
+ * derivable lot) — the caller guarantees no `incomplet` line before computing.
  */
-function resoudreKg(ligne: LigneIngredient, etat: EtatCalculatrice): number {
+function resoudreKg(
+  ligne: LigneIngredient,
+  etat: EtatCalculatrice,
+  lot: number | null
+): number {
   if (etat.unitMode === "kg") {
     if (ligne.quantiteKg == null) {
       throw new Error(
@@ -53,12 +84,12 @@ function resoudreKg(ligne: LigneIngredient, etat: EtatCalculatrice): number {
       `normaliserVersKg: ligne « ${ligne.designation} » sans pourcentage`
     );
   }
-  if (etat.masseLotKg == null || etat.masseLotKg <= 0) {
+  if (lot == null || lot <= 0) {
     throw new Error(
-      "normaliserVersKg: masse de lot requise pour convertir les % en kg"
+      "normaliserVersKg: masse de l'ingrédient principal requise pour convertir les % en kg"
     );
   }
-  return pctVersKg(ligne.pourcentageSaisi, etat.masseLotKg);
+  return pctVersKg(ligne.pourcentageSaisi, lot);
 }
 
 /**
@@ -70,10 +101,11 @@ function resoudreKg(ligne: LigneIngredient, etat: EtatCalculatrice): number {
 export function normaliserVersKg(
   etat: EtatCalculatrice
 ): IngredientRecetteInput[] {
+  const lot = masseLotDe(etat);
   return etat.lignes.map((ligne) => ({
     codeArticle: ligne.codeArticle ?? "",
     designation: ligne.designation,
-    quantiteKg: resoudreKg(ligne, etat),
+    quantiteKg: resoudreKg(ligne, etat, lot),
     estDemeter: ligne.estDemeter,
     estEquitable: ligne.estEquitable,
   }));

@@ -10,11 +10,13 @@ import type { Pas, UnitMode } from "@/lib/recette/types";
 export interface RecetteCalculatorToolbarProps {
   unitMode: UnitMode;
   pas: Pas;
-  masseLotKg: number | null;
+  massePrincipaleKg: number | null;
+  /** Derived total lot mass (kg), shown read-only. */
+  masseLot: number | null;
   masseRequise: boolean;
   onUnitMode: (m: UnitMode) => void;
   onPas: (p: Pas) => void;
-  onMasse: (v: number | null) => void;
+  onMassePrincipale: (v: number | null) => void;
   onAjouter: () => void;
 }
 
@@ -57,11 +59,12 @@ function Segment<T extends string | number>({
 export function RecetteCalculatorToolbar({
   unitMode,
   pas,
-  masseLotKg,
+  massePrincipaleKg,
+  masseLot,
   masseRequise,
   onUnitMode,
   onPas,
-  onMasse,
+  onMassePrincipale,
   onAjouter,
 }: RecetteCalculatorToolbarProps) {
   return (
@@ -81,20 +84,23 @@ export function RecetteCalculatorToolbar({
         />
       </div>
 
-      <div className="space-y-1.5">
+      <div
+        className="space-y-1.5"
+        title="Masse de l'ingrédient principal (le plus dominant, ex. le thé). Le lot total en découle."
+      >
         <span className="block text-[10px] font-bold uppercase tracking-widest text-stone-400">
-          Masse du lot
+          Masse ingr. principal
         </span>
         <div className="relative">
           <Input
             type="text"
             inputMode="decimal"
-            value={masseLotKg ?? ""}
+            value={massePrincipaleKg ?? ""}
             onChange={(e) => {
               const clean = e.target.value.trim().replace(",", ".");
-              onMasse(clean === "" ? null : Number(clean));
+              onMassePrincipale(clean === "" ? null : Number(clean));
             }}
-            placeholder="16.08"
+            placeholder="10"
             className={cn(
               "w-32 pr-9 tabular-nums",
               masseRequise &&
@@ -104,6 +110,17 @@ export function RecetteCalculatorToolbar({
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-stone-400">
             kg
           </span>
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <span className="block text-[10px] font-bold uppercase tracking-widest text-stone-400">
+          Lot total (calculé)
+        </span>
+        <div className="flex h-9 items-center rounded-xl border border-stone-200 bg-stone-50/80 px-3 text-sm font-semibold tabular-nums text-emerald-800 dark:border-stone-700 dark:bg-stone-800/60 dark:text-emerald-200">
+          {masseLot != null && masseLot > 0
+            ? `${Math.round(masseLot * 1000) / 1000} kg`
+            : "—"}
         </div>
       </div>
 

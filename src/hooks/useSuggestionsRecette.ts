@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { suggererQuantitesAction } from "@/app/actions/recette";
+import { masseLotDe } from "@/lib/recette/conversion";
 import type { EtatCalculatrice, SuggestionLigne } from "@/lib/recette/types";
 
 /** Is a line missing its quantity in the active unit? */
@@ -56,7 +57,7 @@ export function useSuggestionsRecette(produitId: string): UseSuggestionsResult {
             .map((l) => l.designation)
             .filter(Boolean)
             .join(", "),
-          masseLotKg: etat.masseLotKg,
+          masseLotKg: masseLotDe(etat),
           connus: etat.lignes
             .filter((l) => l.designation.trim() !== "")
             .map((l) => ({

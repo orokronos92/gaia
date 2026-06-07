@@ -11,6 +11,7 @@ import {
   kgVersPct,
   pctVersKg,
   normaliserVersKg,
+  masseLotDe,
 } from "@/lib/recette/conversion";
 import { parseIngredientsTexte } from "@/lib/recette/parse-ingredients";
 import type {
@@ -28,6 +29,9 @@ const uid = (): string =>
     ? crypto.randomUUID()
     : `loc-${Math.round(Math.random() * 1e9)}`;
 
+const arrondi2 = (v: number) => Math.round(v * 100) / 100;
+const estCent = (v: number | null) => v != null && arrondi2(v) === 100;
+
 /** Parse a free-typed number (accepts comma) → number | null. */
 export function parseNombre(raw: string): number | null {
   const clean = raw.trim().replace(",", ".");
@@ -41,11 +45,16 @@ export function etatDepuisRecette(
   recette: RecetteAgentOutput | null
 ): EtatCalculatrice {
   if (!recette || recette.ingredients.length === 0) {
-    return { masseLotKg: null, unitMode: "pct", pas: 0.5, lignes: [] };
+    return { massePrincipaleKg: null, unitMode: "pct", pas: 0.5, lignes: [] };
   }
-  const masseLotKg = recette.totalKg;
+  const totalKg = recette.totalKg;
+  // Principal = heaviest ingredient; its mass anchors the derived lot.
+  const massePrincipaleKg = recette.ingredients.reduce(
+    (m, i) => (i.quantiteKg > m ? i.quantiteKg : m),
+    0
+  );
   return {
-    masseLotKg,
+    massePrincipaleKg: massePrincipaleKg > 0 ? massePrincipaleKg : null,
     unitMode: "pct",
     pas: 0.5,
     lignes: recette.ingredients.map((i) => ({
@@ -53,8 +62,7 @@ export function etatDepuisRecette(
       codeArticle: i.codeArticle || null,
       designation: i.designation,
       quantiteKg: i.quantiteKg,
-      pourcentageSaisi:
-        masseLotKg > 0 ? kgVersPct(i.quantiteKg, masseLotKg) : null,
+      pourcentageSaisi: totalKg > 0 ? kgVersPct(i.quantiteKg, totalKg) : null,
       overrideEtiquette: null,
       estDemeter: i.estDemeter,
       estEquitable: i.estEquitable,
@@ -65,19 +73,19 @@ export function etatDepuisRecette(
 }
 
 /**
- * Build the initial state from extracted ingredient text (SPEC-03b §2). Lot mass
- * is unknown (the dégustation sheet carries none) → starts in % mode; lines
- * without a % are `incomplet` for Marie to complete. No quantity is ever guessed.
+ * Build the initial state from extracted ingredient text (SPEC-03b §2). The
+ * principal mass is unknown (the dégustation sheet carries none) → starts in %
+ * mode; lines without a % are `incomplet` for Marie. No quantity is ever guessed.
  */
 export function etatDepuisExtraction(
   texte: string | null | undefined
 ): EtatCalculatrice {
   const items = parseIngredientsTexte(texte);
   if (items.length === 0) {
-    return { masseLotKg: null, unitMode: "pct", pas: 0.5, lignes: [] };
+    return { massePrincipaleKg: null, unitMode: "pct", pas: 0.5, lignes: [] };
   }
   return {
-    masseLotKg: null,
+    massePrincipaleKg: null,
     unitMode: "pct",
     pas: 0.5,
     lignes: items.map((it) => ({
@@ -123,12 +131,16 @@ export interface UseCalculatriceResult {
   peutCalculer: boolean;
   peutValider: boolean;
   conforme: boolean;
+  /** Derived total lot mass (kg) — computed, never entered. */
+  masseLot: number | null;
+  /** The control total shown bottom-right: Σ% saisis (% mode) or Σ% étiquette (kg mode). */
+  totalControle: number | null;
   totalEtiquette: number | null;
   nbIncomplets: number;
   masseRequise: boolean;
   /** Effective label % (override ?? computed) for the line at `idx`. */
   etiquetteEffective: (idx: number) => number | null;
-  setMasseLot: (v: number | null) => void;
+  setMassePrincipale: (v: number | null) => void;
   setUnitMode: (m: UnitMode) => void;
   setPas: (p: Pas) => void;
   setSaisie: (id: string, raw: string) => void;
@@ -153,18 +165,24 @@ export function useCalculatrice(
   const majLignes = (fn: (l: LigneIngredient[]) => LigneIngredient[]) =>
     setEtat((e) => ({ ...e, lignes: fn(e.lignes) }));
 
+  const masseLot = useMemo(() => masseLotDe(etat), [etat]);
+
   const nbIncomplets = useMemo(
     () => etat.lignes.filter((l) => estIncomplete(l, etat.unitMode)).length,
     [etat.lignes, etat.unitMode]
   );
 
   const masseRequise =
-    etat.unitMode === "pct" && (etat.masseLotKg == null || etat.masseLotKg <= 0);
+    etat.unitMode === "pct" &&
+    (etat.massePrincipaleKg == null || etat.massePrincipaleKg <= 0);
 
   const peutCalculer =
-    etat.lignes.length > 0 && nbIncomplets === 0 && !masseRequise;
+    etat.lignes.length > 0 &&
+    nbIncomplets === 0 &&
+    !masseRequise &&
+    masseLot != null &&
+    masseLot > 0;
 
-  /** Effective label % for a line: Marie's override wins over the computed value. */
   const etiquetteEffective = (idx: number): number | null => {
     const ov = etat.lignes[idx]?.overrideEtiquette;
     if (ov != null) return ov;
@@ -179,11 +197,25 @@ export function useCalculatrice(
     );
     return controleTotal(vals).total;
   }, [resultat, etat.lignes]);
-  const conforme = totalEtiquette != null && Math.abs(totalEtiquette - 100) < 1e-6;
+
+  // Sum of the % Marie typed (% mode) — the figure that must hit 100 (SPEC-03b
+  // verrou). The engine always normalises kg→100, so this is the only place an
+  // input error (Σ ≠ 100) is visible. In kg mode the kg define the composition,
+  // so the control falls back to the computed label total.
+  const totalSaisiPct = useMemo(() => {
+    if (etat.unitMode !== "pct") return null;
+    return arrondi2(
+      etat.lignes.reduce((s, l) => s + (l.pourcentageSaisi ?? 0), 0)
+    );
+  }, [etat.lignes, etat.unitMode]);
+
+  const totalControle = etat.unitMode === "pct" ? totalSaisiPct : totalEtiquette;
+  const conforme =
+    (etat.unitMode === "pct" ? estCent(totalSaisiPct) : true) &&
+    estCent(totalEtiquette);
   const peutValider = peutCalculer && conforme;
 
-  // Debounced deterministic compute — computeRecette is the single source of
-  // truth (SPEC-02); we never recompute figures by hand.
+  // Debounced deterministic compute — computeRecette is the single source of truth.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -210,22 +242,44 @@ export function useCalculatrice(
     };
   }, [etat, peutCalculer]);
 
-  const setMasseLot = (v: number | null) =>
-    setEtat((e) => ({
-      ...e,
-      masseLotKg: v,
-      // In % mode the mass drives the grammages — refresh derived kg.
-      lignes:
-        e.unitMode === "pct" && v && v > 0
-          ? e.lignes.map((l) =>
-              l.pourcentageSaisi != null
-                ? { ...l, quantiteKg: pctVersKg(l.pourcentageSaisi, v) }
-                : l
-            )
-          : e.lignes,
-    }));
+  const setMassePrincipale = (v: number | null) =>
+    setEtat((e) => ({ ...e, massePrincipaleKg: v }));
 
-  const setUnitMode = (m: UnitMode) => setEtat((e) => ({ ...e, unitMode: m }));
+  // Switch unit without losing values: mirror the source field into the target
+  // unit using the current derived lot.
+  const setUnitMode = (m: UnitMode) =>
+    setEtat((e) => {
+      if (m === e.unitMode) return e;
+      const lot = masseLotDe(e);
+      if (m === "kg") {
+        return {
+          ...e,
+          unitMode: "kg",
+          lignes: e.lignes.map((l) =>
+            l.pourcentageSaisi != null && lot
+              ? { ...l, quantiteKg: pctVersKg(l.pourcentageSaisi, lot), incomplet: false }
+              : l
+          ),
+        };
+      }
+      // → pct : anchor the principal mass (heaviest line) if not set yet.
+      const principalKg = e.lignes.reduce(
+        (mx, l) => (l.quantiteKg != null && l.quantiteKg > mx ? l.quantiteKg : mx),
+        0
+      );
+      return {
+        ...e,
+        unitMode: "pct",
+        massePrincipaleKg:
+          e.massePrincipaleKg ?? (principalKg > 0 ? principalKg : null),
+        lignes: e.lignes.map((l) =>
+          l.quantiteKg != null && lot
+            ? { ...l, pourcentageSaisi: kgVersPct(l.quantiteKg, lot), incomplet: false }
+            : l
+        ),
+      };
+    });
+
   const setPas = (p: Pas) => setEtat((e) => ({ ...e, pas: p }));
 
   const setSaisie = (id: string, raw: string) => {
@@ -233,23 +287,9 @@ export function useCalculatrice(
     majLignes((lignes) =>
       lignes.map((l) => {
         if (l.id !== id) return l;
-        const masse = etat.masseLotKg;
-        if (etat.unitMode === "kg") {
-          return {
-            ...l,
-            quantiteKg: val,
-            pourcentageSaisi:
-              val != null && masse && masse > 0 ? kgVersPct(val, masse) : l.pourcentageSaisi,
-            incomplet: val == null,
-          };
-        }
-        return {
-          ...l,
-          pourcentageSaisi: val,
-          quantiteKg:
-            val != null && masse && masse > 0 ? pctVersKg(val, masse) : l.quantiteKg,
-          incomplet: val == null,
-        };
+        return etat.unitMode === "kg"
+          ? { ...l, quantiteKg: val, incomplet: val == null }
+          : { ...l, pourcentageSaisi: val, incomplet: val == null };
       })
     );
   };
@@ -296,14 +336,12 @@ export function useCalculatrice(
     majLignes((l) => l.filter((x) => x.id !== id));
 
   const equivalent = (ligne: LigneIngredient): number | null => {
-    const masse = etat.masseLotKg;
+    if (masseLot == null || masseLot <= 0) return null;
     if (etat.unitMode === "kg") {
-      return ligne.quantiteKg != null && masse && masse > 0
-        ? kgVersPct(ligne.quantiteKg, masse)
-        : null;
+      return ligne.quantiteKg != null ? kgVersPct(ligne.quantiteKg, masseLot) : null;
     }
-    return ligne.pourcentageSaisi != null && masse && masse > 0
-      ? pctVersKg(ligne.pourcentageSaisi, masse)
+    return ligne.pourcentageSaisi != null
+      ? pctVersKg(ligne.pourcentageSaisi, masseLot)
       : null;
   };
 
@@ -314,11 +352,13 @@ export function useCalculatrice(
     peutCalculer,
     peutValider,
     conforme,
+    masseLot,
+    totalControle,
     totalEtiquette,
     nbIncomplets,
     masseRequise,
     etiquetteEffective,
-    setMasseLot,
+    setMassePrincipale,
     setUnitMode,
     setPas,
     setSaisie,

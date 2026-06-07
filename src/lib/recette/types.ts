@@ -40,8 +40,12 @@ export interface SuggestionLigne {
 }
 
 export interface EtatCalculatrice {
-  /** Pivot for the % <-> kg conversion (e.g. 16.08). null = % pur. */
-  masseLotKg: number | null;
+  /**
+   * Mass (kg) of the PRINCIPAL ingredient — the one with the highest %, usually
+   * the tea (SPEC-03b, decision 2026-06). Marie knows this (e.g. 10 kg); the
+   * total lot mass is DERIVED from it + the percentages, never entered directly.
+   */
+  massePrincipaleKg: number | null;
   /** Default 'pct' — the dégustation sheet speaks in percentages. */
   unitMode: UnitMode;
   /** Default 0.5. */
