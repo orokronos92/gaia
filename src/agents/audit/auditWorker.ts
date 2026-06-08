@@ -1,19 +1,36 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { Mistral } from "@mistralai/mistralai";
+import { z } from "zod";
 import { db } from "@/db";
 import { fichesEtiquettes, controlesConformite, produits } from "@/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { RAGService } from "../knowledge/RAGService";
-import crypto from "crypto";
+import { writeAuditLog } from "@/db/queries/audit-logs";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const AUDIT_MODEL = "mistral-large-latest";
+
+// Validates the LLM output before it reaches the DB (CLAUDE.md §7). typeControle
+// is restricted to the 5 checks the prompt asks for — all valid TypeControle enum
+// values, so the rows insert safely.
+const ControleSchema = z.object({
+    typeControle: z.enum(["QUID", "ROUNDING", "ALLEGATION", "ALLERGEN", "REGLISSE"]),
+    statut: z.enum(["PASS", "WARNING", "FAIL"]),
+    justification: z.string().optional(),
+    suggestionIa: z.string().optional(),
+});
+const AuditResponseSchema = z.object({
+    overallStatus: z.enum(["PASS", "WARNING", "FAIL"]).optional(),
+    controls: z.array(ControleSchema).min(1),
+});
+
+type Controle = z.infer<typeof ControleSchema>;
 
 export interface AuditReport {
     ficheId: string;
     overallStatus: "PASS" | "WARNING" | "FAIL";
     controls: Array<{
-        typeControle: any;
+        typeControle: string;
         statut: "PASS" | "WARNING" | "FAIL" | "SKIPPED";
-        details?: any;
+        details?: unknown;
         suggestionIa?: string;
         justification?: string;
     }>;
@@ -21,18 +38,16 @@ export interface AuditReport {
 
 export class AuditWorker {
     /**
-     * Builds the prompt for the Audit Agent by injecting RAG context based on product details.
+     * Builds the audit prompt, injecting RAG context (real regulations) for this
+     * product's ingredients and claims.
      */
     private static async buildAuditPrompt(fiche: any, product: any): Promise<string> {
-        // Query RAG for regulations specific to this product's ingredients and claims
         const searchQuery = `Réglementation étiquetage, QUID, arrondi pour ${product.typeTheFr}. Allégations: ${fiche.allegationsSanteFr || "aucune"}. Allergènes: ${fiche.allergenes || "aucun"}.`;
         const ragContextRaw = await RAGService.searchContext(searchQuery, 3);
         const ragContext = RAGService.formatContextForPrompt(ragContextRaw);
 
-        return `
-SYSTEM:
-Tu es l'Agent Qualité IA de GaïaLabel. Ton rôle est d'auditer la conformité d'une étiquette produit.
-Tu dois vérifier strictement les règles INCO et les règles internes de l'entreprise PRO-QHS-013.
+        return `Tu es l'Agent Qualité IA de GaïaLabel. Tu audites la conformité d'une étiquette produit.
+Tu vérifies strictement les règles INCO et les règles internes PRO-QHS-013.
 
 RÈGLES EN VIGUEUR (Extraites de la Base de Connaissances RAG) :
 ---
@@ -46,72 +61,73 @@ CONTENU DE L'ÉTIQUETTE À VÉRIFIER :
 - Allégations : ${fiche.allegationsSanteFr || "Aucune"}
 - Allergènes : ${fiche.allergenes || "Aucun"}
 
-TACHE :
-Génère un rapport JSON strict d'audit. Ton JSON doit avoir cette forme :
+TÂCHE :
+Renvoie UNIQUEMENT un objet JSON strict, sans markdown :
 {
     "overallStatus": "PASS" | "WARNING" | "FAIL",
     "controls": [
         {
             "typeControle": "QUID" | "ROUNDING" | "ALLEGATION" | "ALLERGEN" | "REGLISSE",
             "statut": "PASS" | "WARNING" | "FAIL",
-            "justification": "Explication de 1 phrase max.",
+            "justification": "Explication d'une phrase max.",
             "suggestionIa": "Correction proposée (si FAIL ou WARNING)"
         }
     ]
 }
-Tu dois exécuter tous ces 5 types de contrôles. 
-`;
+Exécute les 5 types de contrôles.`;
     }
 
     /**
-     * Executes the LLM to get the audit report.
+     * Runs the audit LLM on Mistral (Mistral only — CLAUDE.md §7). Validates the
+     * JSON with Zod. Throws on a missing key or a malformed response — the caller
+     * degrades honestly instead of fabricating a result.
      */
-    private static async runLlmAudit(prompt: string): Promise<AuditReport["controls"]> {
-        if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === "sk-ant-dummy-key") {
-            console.log("[AuditWorker] Skipping LLM call, returning dummy data for local MVP.");
-            return [
-                { typeControle: "QUID", statut: "PASS", justification: "Les pourcentages sont bien indiqués." },
-                { typeControle: "ROUNDING", statut: "FAIL", justification: "La somme des pourcentages fait 100.1%.", suggestionIa: "Réduire la menthe poivrée de 0.1%." },
-                { typeControle: "ALLEGATION", statut: "WARNING", justification: "Allégation 'détox' détectée sans phrase obligatoire.", suggestionIa: "Ajouter la phrase: 'A consommer dans le cadre d'un mode de vie sain'." }
-            ] as any[];
+    private static async runLlmAudit(
+        prompt: string
+    ): Promise<{ controls: Controle[]; usage: unknown }> {
+        const apiKey = process.env.MISTRAL_API_KEY;
+        if (!apiKey) {
+            throw new Error("MISTRAL_API_KEY manquante — audit IA indisponible.");
         }
 
-        try {
-            const response = await client.messages.create({
-                model: "claude-3-5-sonnet-20241022",
-                max_tokens: 1500,
-                system: "Tu renvoies uniquement du JSON parfaitement formaté.",
-                messages: [{ role: "user", content: prompt }]
-            });
-            const textOutput = (response.content[0] as any).text;
-            const parsed = JSON.parse(textOutput);
-            return parsed.controls;
-        } catch (err) {
-            console.error("LLM Audit failed:", err);
-            return [{ typeControle: "SYSTEM", statut: "FAIL", justification: "Erreur IA." }] as any[];
-        }
+        const client = new Mistral({ apiKey });
+        const response = await client.chat.complete({
+            model: AUDIT_MODEL,
+            messages: [
+                {
+                    role: "system",
+                    content:
+                        "Tu es un moteur d'audit réglementaire. Tu renvoies UNIQUEMENT un objet JSON valide, sans markdown ni commentaire.",
+                },
+                { role: "user", content: prompt },
+            ],
+            responseFormat: { type: "json_object" },
+            maxTokens: 1500,
+            temperature: 0.1,
+        });
+
+        const raw = response.choices?.[0]?.message?.content;
+        const parsed = AuditResponseSchema.parse(
+            JSON.parse(typeof raw === "string" ? raw : "{}")
+        );
+        return { controls: parsed.controls, usage: response.usage };
     }
 
     /**
-     * Re-audits a batch of products perfectly meant for Mass Audits.
-     * Use case: Regulation changed, re-run audit on 1000 labels.
+     * Re-audits a batch of labels (e.g. a regulation changed). Each fiche failure
+     * is isolated so one bad label doesn't sink the batch.
      */
     public static async runMassAudit(ficheIds: string[], userId: string = "AI_AUDIT"): Promise<AuditReport[]> {
-        console.log(`[AuditWorker] Starting Mass Audit for ${ficheIds.length} labels...`);
         const reports: AuditReport[] = [];
-
-        // In a real world scenario with 10k items, this would use a message queue (BullMQ/Kafka)
-        // For standard batches we iterate.
         for (const ficheId of ficheIds) {
             try {
-                const report = await this.runSingleAudit(ficheId, userId);
-                reports.push(report);
+                reports.push(await this.runSingleAudit(ficheId, userId));
             } catch (err) {
                 console.error(`Audit failed for fiche: ${ficheId}`, err);
                 reports.push({
                     ficheId,
                     overallStatus: "FAIL",
-                    controls: [{ typeControle: "SYSTEM", statut: "FAIL", justification: "Erreur système critique." }] as any[]
+                    controls: [{ typeControle: "SYSTEM", statut: "SKIPPED", justification: "Erreur système critique." }],
                 });
             }
         }
@@ -119,7 +135,9 @@ Tu dois exécuter tous ces 5 types de contrôles.
     }
 
     /**
-     * Core function to audit a single product label
+     * Audits a single label. On a successful LLM run, persists the controls and
+     * updates the label status. On an IA failure, leaves the previous audit
+     * untouched and returns an honest SKIPPED report (no fabricated result).
      */
     public static async runSingleAudit(ficheId: string, userId: string = "AI_AUDIT"): Promise<AuditReport> {
         const [ficheDetails] = await db
@@ -134,16 +152,26 @@ Tu dois exécuter tous ces 5 types de contrôles.
         }
 
         const prompt = await this.buildAuditPrompt(ficheDetails.fiche, ficheDetails.produit);
-        const controls = await this.runLlmAudit(prompt);
 
-        const hasFail = controls.some(c => c.statut === "FAIL");
-        const hasWarning = controls.some(c => c.statut === "WARNING");
-        const overallStatus = hasFail ? "FAIL" : (hasWarning ? "WARNING" : "PASS");
+        let controls: Controle[];
+        let usage: unknown;
+        try {
+            ({ controls, usage } = await this.runLlmAudit(prompt));
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Audit IA indisponible.";
+            return {
+                ficheId,
+                overallStatus: "WARNING",
+                controls: [{ typeControle: "SYSTEM", statut: "SKIPPED", justification: message }],
+            };
+        }
 
-        // Supprimer les anciens contrôles (Nettoyage de l'historique de cette version/fiche)
+        const hasFail = controls.some((c) => c.statut === "FAIL");
+        const hasWarning = controls.some((c) => c.statut === "WARNING");
+        const overallStatus = hasFail ? "FAIL" : hasWarning ? "WARNING" : "PASS";
+
+        // Replace this fiche's previous controls with the fresh ones.
         await db.delete(controlesConformite).where(eq(controlesConformite.ficheEtiquetteId, ficheId));
-
-        // Enregistrer les nouveaux contrôles
         for (const ctrl of controls) {
             await db.insert(controlesConformite).values({
                 ficheEtiquetteId: ficheId,
@@ -151,20 +179,25 @@ Tu dois exécuter tous ces 5 types de contrôles.
                 statut: ctrl.statut,
                 justification: ctrl.justification,
                 suggestionIa: ctrl.suggestionIa,
-                controlePar: userId
+                controlePar: userId,
             });
         }
 
-        // Mettre à jour le statut global de l'étiquette (Règle Métier)
         const finalEtiquetteStatus = overallStatus === "FAIL" ? "DESIGN_REVIEW" : "QUALITY_VALIDATED";
-        await db.update(fichesEtiquettes)
+        await db
+            .update(fichesEtiquettes)
             .set({ statut: finalEtiquetteStatus as any, misAJourLe: new Date() })
             .where(eq(fichesEtiquettes.id, ficheId));
 
-        return {
-            ficheId,
-            overallStatus,
-            controls
-        };
+        // Token-usage trail (CLAUDE.md §7); best-effort, never blocks the audit.
+        await writeAuditLog({
+            typeEntite: "audit",
+            entiteId: ficheId,
+            action: "AUDIT_IA_TOKENS",
+            utilisateurId: userId,
+            changements: { model: AUDIT_MODEL, usage },
+        });
+
+        return { ficheId, overallStatus, controls };
     }
 }

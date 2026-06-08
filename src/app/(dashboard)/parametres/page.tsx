@@ -66,7 +66,7 @@ export default function SettingsPage() {
 
                             <div className="grid gap-2 pt-4">
                                 <h3 className="text-base font-medium text-stone-900">Variables Globales</h3>
-                                <p className="text-sm text-stone-500 mb-2">Ces variables sont utilisées par le moteur de validation Qualité et les Agents Anthropic.</p>
+                                <p className="text-sm text-stone-500 mb-2">Ces variables sont utilisées par le moteur de validation Qualité et les Agents IA (Mistral).</p>
 
                                 <div className="flex items-center justify-between p-4 rounded-xl border border-stone-200/50 bg-white/40">
                                     <div>
