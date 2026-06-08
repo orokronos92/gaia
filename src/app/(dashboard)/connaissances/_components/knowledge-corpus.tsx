@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -10,7 +12,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, CheckCircle2, Layers, Inbox } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  FileText,
+  Search,
+  CheckCircle2,
+  Layers,
+  Inbox,
+  Trash2,
+  Loader2,
+} from "lucide-react";
+import { supprimerDocumentAction } from "@/app/actions/knowledge";
 import type { KnowledgeDocumentSummary } from "@/db/queries/knowledge";
 
 interface KnowledgeCorpusProps {
@@ -29,12 +41,39 @@ const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
  */
 export default function KnowledgeCorpus({ documents }: KnowledgeCorpusProps) {
   const [query, setQuery] = useState("");
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return documents;
     return documents.filter((d) => d.documentName.toLowerCase().includes(q));
   }, [documents, query]);
+
+  const supprimer = (documentName: string) => {
+    if (
+      !window.confirm(
+        `Supprimer « ${documentName} » de la base de connaissances ? Cette action est irréversible.`
+      )
+    ) {
+      return;
+    }
+    setDeleting(documentName);
+    startTransition(async () => {
+      try {
+        await supprimerDocumentAction({ documentName });
+        toast.success("Document supprimé du RAG.");
+        router.refresh();
+      } catch (e) {
+        toast.error("Échec de la suppression.", {
+          description: e instanceof Error ? e.message : undefined,
+        });
+      } finally {
+        setDeleting(null);
+      }
+    });
+  };
 
   return (
     <Card className="h-full border-slate-200 shadow-sm flex flex-col">
@@ -101,6 +140,20 @@ export default function KnowledgeCorpus({ documents }: KnowledgeCorpusProps) {
                       </div>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Supprimer ${doc.documentName}`}
+                    onClick={() => supprimer(doc.documentName)}
+                    disabled={deleting === doc.documentName}
+                    className="text-slate-400 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all shrink-0"
+                  >
+                    {deleting === doc.documentName ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
               ))}
             </div>

@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { knowledgeDocuments } from "@/db/schema";
 
@@ -27,3 +27,14 @@ export const listKnowledgeDocuments = cache(
       .orderBy(sql`min(${knowledgeDocuments.creeLe}) desc`);
   }
 );
+
+/** Removes every chunk of a document from the RAG store. Returns the count deleted. */
+export async function deleteKnowledgeDocument(
+  documentName: string
+): Promise<number> {
+  const deleted = await db
+    .delete(knowledgeDocuments)
+    .where(eq(knowledgeDocuments.documentName, documentName))
+    .returning({ id: knowledgeDocuments.id });
+  return deleted.length;
+}
