@@ -269,7 +269,7 @@ export const knowledgeDocuments = pgTable("knowledge_documents", {
     id: uuid("id").primaryKey().defaultRandom(),
     documentName: varchar("document_name", { length: 255 }).notNull(),
     contentChunk: text("content_chunk").notNull(),
-    embedding: vector("embedding", { dimensions: 1536 }),
+    embedding: vector("embedding", { dimensions: 1024 }),
     metadata: json("metadata"),
     creeLe: timestamp("cree_le").defaultNow().notNull(),
 });

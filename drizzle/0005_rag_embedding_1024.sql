@@ -1,0 +1,1 @@
+ALTER TABLE "knowledge_documents" ALTER COLUMN "embedding" SET DATA TYPE vector(1024);

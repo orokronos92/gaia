@@ -1,6 +1,8 @@
 import { db } from "@/db";
 import { knowledgeDocuments } from "@/db/schema";
 import { cosineDistance, desc, sql } from "drizzle-orm";
+import { Mistral } from "@mistralai/mistralai";
+import { z } from "zod";
 
 export interface SearchResult {
     content: string;
@@ -8,22 +10,38 @@ export interface SearchResult {
     similarity: number;
 }
 
+/** Mistral text-embedding model and its fixed output dimension (matches the
+ *  `vector(1024)` column on `knowledge_documents`). Mistral only (CLAUDE.md §7). */
+const EMBEDDING_MODEL = "mistral-embed";
+const EMBEDDING_DIM = 1024;
+
+const EmbeddingSchema = z.array(z.number()).length(EMBEDDING_DIM);
+
 export class RAGService {
 
+    private static mistral: InstanceType<typeof Mistral> | null = null;
+
+    private static client(): InstanceType<typeof Mistral> {
+        const apiKey = process.env.MISTRAL_API_KEY;
+        if (!apiKey) {
+            throw new Error("MISTRAL_API_KEY manquante — embeddings indisponibles");
+        }
+        if (!this.mistral) this.mistral = new Mistral({ apiKey });
+        return this.mistral;
+    }
+
     /**
-     * Helper to generate embeddings. 
-     * In a production environment, this should call an Embedding API (like OpenAI's text-embedding-ada-002, or a local transformers.js model).
-     * Since Anthropic does not provide an embedding API and we don't have an OpenAI key configured,
-     * this MVP returns a simulated 1536-dimensional vector.
+     * Real semantic embedding via Mistral (`mistral-embed`, 1024 dims). Replaces
+     * the former char-code placeholder. The output is Zod-validated before use
+     * (CLAUDE.md §7); throws on a missing key or a malformed response — callers
+     * (ingest/search) degrade gracefully on throw.
      */
     private static async generateEmbedding(text: string): Promise<number[]> {
-        // [MVP Placeholder] Simulating a vector based on content length and basic char codes
-        // to have *some* variance, but it's not a real semantic embedding.
-        const vector = new Array(1536).fill(0);
-        for (let i = 0; i < Math.min(text.length, 1536); i++) {
-            vector[i] = (text.charCodeAt(i) / 255) * 2 - 1; // Normalize roughly to [-1, 1]
-        }
-        return vector;
+        const res = await this.client().embeddings.create({
+            model: EMBEDDING_MODEL,
+            inputs: text,
+        });
+        return EmbeddingSchema.parse(res.data?.[0]?.embedding);
     }
 
     /**
