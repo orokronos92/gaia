@@ -32,7 +32,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { choisirAllegationAction, dupliquerFicheAction } from "@/app/actions/etiquettes"
-import { useEditableSection, EditButtons, EditableText } from "@/components/etiquettes/editable-section"
+import { useEditableSection, EditButtons, EditableText, type EditableSection } from "@/components/etiquettes/editable-section"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -48,6 +48,28 @@ const hasRealValue = (val: string | null | undefined) => {
     if (!val) return false;
     const clean = val.trim().toLowerCase();
     return !['/', 'aucun', 'néant', 'non', 'n/a', 'na', '', '-'].includes(clean);
+}
+
+function DataPointEdit({ icon: Icon, label, field, value, suffix, section }: { icon: any, label: string, field: string, value: any, suffix?: string, section: EditableSection }) {
+    if (!section.editing) {
+        return <DataPoint icon={Icon} label={label} value={value} suffix={suffix} />
+    }
+    return (
+        <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-emerald-200">
+            <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                <Icon className="h-4 w-4 text-emerald-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">{label}</div>
+                <input
+                    type="text"
+                    value={section.draft[field] ?? ""}
+                    onChange={(e) => section.setField(field, e.target.value)}
+                    className="w-full text-sm font-medium text-stone-800 bg-transparent border-b border-emerald-300 focus:outline-none focus:border-emerald-500"
+                />
+            </div>
+        </div>
+    )
 }
 
 function DataPoint({ icon: Icon, label, value, suffix = "" }: { icon: any, label: string, value: any, suffix?: string }) {
@@ -122,6 +144,30 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
         champs: { denominationFr: labelData.title },
     })
 
+    // Editable commercial texts (fiche fields).
+    const textesSection = useEditableSection({
+        table: "fiche",
+        entityId: labelData.id,
+        ficheId: labelData.id,
+        champs: {
+            texteCommercialFr: labelData.texteCommercialFr,
+            phraseWftoFr: labelData.phraseWftoFr,
+        },
+    })
+
+    // Editable identity (produit fields).
+    const identiteSection = useEditableSection({
+        table: "produit",
+        entityId: labelData.produitId,
+        ficheId: labelData.id,
+        champs: {
+            typeTheFr: labelData.typeTheFr,
+            origine: labelData.origine,
+            conditionnement: labelData.conditionnement,
+            poidsNet: labelData.poidsNet,
+        },
+    })
+
     // Duplicate this fiche into a brand-new product + fiche + recette.
     const [duplicating, setDuplicating] = useState(false)
     const dupliquer = async () => {
@@ -164,8 +210,6 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
     // Derived States
     const hasAllergen = hasRealValue(labelData.allergenes);
     const hasAllegation = hasRealValue(labelData.allegationsSanteFr);
-    const hasWfto = hasRealValue(labelData.phraseWftoFr);
-    const hasTexteCom = hasRealValue(labelData.texteCommercialFr);
     const hasAllegationsPossibles =
         Array.isArray(labelData.allegationsPossibles) && labelData.allegationsPossibles.length > 0;
     const hasVigilance = hasAllergen || hasAllegation || hasAllegationsPossibles;
@@ -385,19 +429,22 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                             {/* Card: Identité & Origine */}
                             <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-emerald-500/10 border-b border-emerald-100 pb-4">
-                                    <CardTitle className="text-lg font-bold text-emerald-950 flex items-center gap-2">
-                                        <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-emerald-100 border-none flex items-center justify-center">
-                                            <Globe2 className="h-4 w-4 text-emerald-700" />
-                                        </Badge>
-                                        Identité & Sourcing
+                                    <CardTitle className="text-lg font-bold text-emerald-950 flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-emerald-100 border-none flex items-center justify-center">
+                                                <Globe2 className="h-4 w-4 text-emerald-700" />
+                                            </Badge>
+                                            Identité & Sourcing
+                                        </div>
+                                        <EditButtons section={identiteSection} />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-5">
                                     <div className="grid grid-cols-2 gap-3">
-                                        <DataPoint icon={Leaf} label="Type de Thé" value={labelData.typeTheFr} />
-                                        <DataPoint icon={Globe2} label="Origine" value={labelData.origine || "Non spécifiée"} />
-                                        <DataPoint icon={Package} label="Conditionnement" value={labelData.conditionnement} />
-                                        <DataPoint icon={AlignLeft} label="Poids Net" value={labelData.poidsNet} suffix="g" />
+                                        <DataPointEdit section={identiteSection} icon={Leaf} label="Type de Thé" field="typeTheFr" value={labelData.typeTheFr} />
+                                        <DataPointEdit section={identiteSection} icon={Globe2} label="Origine" field="origine" value={labelData.origine || "Non spécifiée"} />
+                                        <DataPointEdit section={identiteSection} icon={Package} label="Conditionnement" field="conditionnement" value={labelData.conditionnement} />
+                                        <DataPointEdit section={identiteSection} icon={AlignLeft} label="Poids Net" field="poidsNet" value={labelData.poidsNet} suffix="g" />
                                     </div>
 
                                     {labelData.mentionEcocert && (
@@ -667,24 +714,33 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                     <div className="space-y-4">
                                         <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800 flex justify-between items-center">
                                             Textes Commerciaux
+                                            <EditButtons section={textesSection} />
                                         </h3>
                                         <div className="grid gap-4">
-                                            {hasTexteCom ? (
-                                                <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
-                                                    <Badge variant="outline" className="mb-2 bg-white text-[10px] text-stone-500 font-bold uppercase tracking-widest">Pitch Commercial FR</Badge>
-                                                    <p className="text-sm text-stone-700 leading-relaxed">{labelData.texteCommercialFr}</p>
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm text-stone-400 italic">Aucun texte commercial renseigné.</p>
-                                            )}
+                                            <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                                                <Badge variant="outline" className="mb-2 bg-white text-[10px] text-stone-500 font-bold uppercase tracking-widest">Pitch Commercial FR</Badge>
+                                                <EditableText
+                                                    section={textesSection}
+                                                    field="texteCommercialFr"
+                                                    value={labelData.texteCommercialFr}
+                                                    placeholder="Aucun texte commercial renseigné."
+                                                    multiline
+                                                    className="text-sm text-stone-700 leading-relaxed"
+                                                />
+                                            </div>
                                         </div>
 
-                                        {hasWfto && (
-                                            <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
-                                                <Badge variant="outline" className="mb-2 bg-white text-[10px] text-emerald-700 font-bold uppercase tracking-widest border-emerald-200">Mention WFTO</Badge>
-                                                <p className="text-sm text-emerald-900 font-medium">{labelData.phraseWftoFr}</p>
-                                            </div>
-                                        )}
+                                        <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
+                                            <Badge variant="outline" className="mb-2 bg-white text-[10px] text-emerald-700 font-bold uppercase tracking-widest border-emerald-200">Mention WFTO</Badge>
+                                            <EditableText
+                                                section={textesSection}
+                                                field="phraseWftoFr"
+                                                value={labelData.phraseWftoFr}
+                                                placeholder="Aucune mention WFTO renseignée."
+                                                multiline
+                                                className="text-sm text-emerald-900 font-medium"
+                                            />
+                                        </div>
 
                                         {labelData.ingredientsSuggestion && (
                                             <div className="bg-amber-50/40 p-5 rounded-2xl border border-amber-200/50 shadow-[0_2px_15px_-3px_rgba(245,158,11,0.1)] relative">

@@ -6,7 +6,13 @@ import { produits } from "@/db/schema";
  * Whitelist of produit fields Marie may edit (editable-fiche pattern). Grows as
  * cards get wired (Identité…). The title (`denominationFr`) is the first.
  */
-export const CHAMPS_PRODUIT_EDITABLES = ["denominationFr"] as const;
+export const CHAMPS_PRODUIT_EDITABLES = [
+  "denominationFr",
+  "typeTheFr",
+  "origine",
+  "conditionnement",
+  "poidsNet",
+] as const;
 
 export type ChampProduitEditable = (typeof CHAMPS_PRODUIT_EDITABLES)[number];
 
