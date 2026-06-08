@@ -31,6 +31,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { choisirAllegationAction } from "@/app/actions/etiquettes"
+import { useEditableSection, EditButtons, EditableText } from "@/components/etiquettes/editable-section"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -100,6 +101,15 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
     const [auditResult, setAuditResult] = useState<any>(null)
     const [allegChoisie, setAllegChoisie] = useState<string | null>(labelData.allegationChoisie ?? null)
     const [allegSaving, setAllegSaving] = useState<string | null>(null)
+
+    // Editable-fiche phase 2 — Mentions Légales (reference instance of the pattern).
+    const mentionsSection = useEditableSection({
+        ficheId: labelData.id,
+        champs: {
+            mentionConservation: labelData.mentionConservation,
+            mentionFabricant: labelData.mentionFabricant,
+        },
+    })
 
     const choisirAllegation = async (opt: { libelle: string; nbTasses?: string }) => {
         setAllegSaving(opt.libelle)
@@ -681,16 +691,31 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                             </Badge>
                                             Mentions Légales Obligatoires
                                         </div>
+                                        <EditButtons section={mentionsSection} />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/50">
                                     <div className="p-4 bg-indigo-50/80 rounded-2xl border border-indigo-100/80 shadow-sm">
                                         <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Thermometer className="w-3.5 h-3.5" /> Conservation</div>
-                                        <p className="text-sm font-semibold text-indigo-950 leading-snug">{hasRealValue(labelData.mentionConservation) ? labelData.mentionConservation : "A conserver dans un endroit sec, à l'abri de la lumière et de l'humidité."}</p>
+                                        <EditableText
+                                            section={mentionsSection}
+                                            field="mentionConservation"
+                                            value={labelData.mentionConservation}
+                                            placeholder="A conserver dans un endroit sec, à l'abri de la lumière et de l'humidité."
+                                            multiline
+                                            className="text-sm font-semibold text-indigo-950 leading-snug"
+                                        />
                                     </div>
                                     <div className="p-4 bg-indigo-50/80 rounded-2xl border border-indigo-100/80 shadow-sm">
                                         <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5" /> Fabricant</div>
-                                        <p className="text-sm font-semibold text-indigo-950 leading-snug">{hasRealValue(labelData.mentionFabricant) ? labelData.mentionFabricant : "LES JARDINS DE GAÏA - Z.A. 67600 Wittisheim - France"}</p>
+                                        <EditableText
+                                            section={mentionsSection}
+                                            field="mentionFabricant"
+                                            value={labelData.mentionFabricant}
+                                            placeholder="LES JARDINS DE GAÏA - Z.A. 67600 Wittisheim - France"
+                                            multiline
+                                            className="text-sm font-semibold text-indigo-950 leading-snug"
+                                        />
                                     </div>
                                 </CardContent>
                             </Card>
