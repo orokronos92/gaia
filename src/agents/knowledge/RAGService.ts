@@ -15,6 +15,10 @@ export interface SearchResult {
 const EMBEDDING_MODEL = "mistral-embed";
 const EMBEDDING_DIM = 1024;
 
+/** Minimum cosine similarity for a chunk to count as relevant (RAG lot C).
+ *  Conservative default; tune empirically once a real corpus is ingested. */
+const RELEVANCE_THRESHOLD = 0.4;
+
 const EmbeddingSchema = z.array(z.number()).length(EMBEDDING_DIM);
 
 export class RAGService {
@@ -93,23 +97,31 @@ export class RAGService {
     }
 
     /**
-     * Searches the Vector Database for the most relevant context chunks given a query.
+     * Semantic search over the vector store (RAG lot C). Returns only chunks
+     * whose cosine similarity to the query exceeds `minSimilarity` — so an
+     * irrelevant query yields an EMPTY set rather than the 3 closest-but-useless
+     * chunks. That empty signal is what lets callers (CopilotAgent) report
+     * "aucun voisin pertinent / faible confiance". Tune the threshold once a real
+     * corpus is ingested.
      */
-    public static async searchContext(query: string, limit: number = 3): Promise<SearchResult[]> {
+    public static async searchContext(
+        query: string,
+        limit: number = 3,
+        minSimilarity: number = RELEVANCE_THRESHOLD
+    ): Promise<SearchResult[]> {
         try {
-            // Generates the embedding for the search query
             const queryEmbedding = await this.generateEmbedding(query);
 
-            // Computes the cosine distance between the query embedding and the stored document chunks
-            const similarity = sql<number>`1 - (${cosineDistance(knowledgeDocuments.embedding, queryEmbedding)})`;
+            const distance = cosineDistance(knowledgeDocuments.embedding, queryEmbedding);
+            const similarity = sql<number>`1 - (${distance})`;
 
-            // Gets the most similar results
             const results = await db.select({
                 content: knowledgeDocuments.contentChunk,
                 documentName: knowledgeDocuments.documentName,
-                similarity
+                similarity,
             })
                 .from(knowledgeDocuments)
+                .where(sql`1 - (${distance}) > ${minSimilarity}`)
                 .orderBy(desc(similarity))
                 .limit(limit);
 
