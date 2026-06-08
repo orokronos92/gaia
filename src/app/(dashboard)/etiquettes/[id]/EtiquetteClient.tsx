@@ -28,6 +28,7 @@ import {
     ArrowLeft
 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -92,8 +93,8 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
 
 export default function EtiquetteClient({ labelData, recette }: { labelData: any; recette: RecetteAgentOutput | null }) {
     // State
+    const router = useRouter()
     const [auditingType, setAuditingType] = useState<string | null>(null)
-    const [extractedData] = useState<any>(null)
     const [auditResult, setAuditResult] = useState<any>(null)
 
     // Derived States
@@ -119,37 +120,54 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
         ? labelData.ingredientsFr
         : labelData.ingredientsSuggestion;
 
-    const runAudit = async (auditType: string = 'complet') => {
-        setAuditingType(auditType)
+    const runAudit = async () => {
+        setAuditingType('complet')
+
+        const erreur = (description: string) =>
+            setAuditResult({
+                status: "WARNING",
+                issues: [{ type: "API_ERROR", description, severity: "HIGH" }],
+                summary: "Erreur technique lors de l'audit.",
+            })
 
         try {
-            const payload = {
-                productData: extractedData || { denominationFr: labelData.title, ingredients: [] },
-                labelData: { text: labelData.ingredientsFr || "Ceci est le texte de l'étiquette..." },
-                auditType
-            }
-
+            // Single-fiche, synchronous audit — the route reloads the fiche, runs
+            // Mistral + RAG, persists the controls and returns the report.
             const response = await fetch('/api/agents/audit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({ ficheIds: [labelData.id] }),
             })
 
             const data = await response.json()
+            const report = data?.data?.[0]
 
-            if (response.ok) {
-                setAuditResult(data.data)
-            } else {
+            if (response.ok && report) {
+                const controls = report.controls || []
+                const issues = controls
+                    .filter((c: any) => c.statut !== 'PASS' && c.statut !== 'SKIPPED')
+                    .map((c: any) => ({
+                        type: c.typeControle,
+                        description:
+                            (c.justification || '') +
+                            (c.suggestionIa ? ` → Suggestion : ${c.suggestionIa}` : ''),
+                        severity: c.statut === 'FAIL' ? 'HIGH' : 'MEDIUM',
+                    }))
                 setAuditResult({
-                    status: "WARNING",
-                    issues: [
-                        { type: "API_ERROR", description: "Impossible de joindre l'agent d'audit.", severity: "HIGH" }
-                    ],
-                    summary: "Erreur technique lors de l'audit."
+                    status: report.overallStatus,
+                    issues,
+                    summary:
+                        report.overallStatus === 'PASS'
+                            ? `Conforme — ${controls.length} contrôle(s) vérifié(s), aucune anomalie.`
+                            : `${issues.length} non-conformité(s) sur ${controls.length} contrôle(s).`,
                 })
+                router.refresh()
+            } else {
+                erreur(data?.error || "Impossible de joindre l'agent d'audit.")
             }
         } catch (err) {
             console.error(err)
+            erreur("Erreur réseau lors de l'audit.")
         } finally {
             setAuditingType(null)
         }
@@ -672,36 +690,12 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                             </div>
                             <div className="flex flex-wrap gap-2 justify-end mt-4 sm:mt-0">
                                 <Button
-                                    onClick={() => runAudit('ingredients')}
-                                    disabled={!!auditingType}
-                                    className="bg-stone-100 hover:bg-stone-200 text-stone-700 shadow-sm rounded-xl font-medium px-4"
-                                >
-                                    {auditingType === 'ingredients' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldAlert className="mr-2 h-4 w-4" />}
-                                    Tester Ingrédients
-                                </Button>
-                                <Button
-                                    onClick={() => runAudit('allegations')}
-                                    disabled={!!auditingType}
-                                    className="bg-stone-100 hover:bg-stone-200 text-stone-700 shadow-sm rounded-xl font-medium px-4"
-                                >
-                                    {auditingType === 'allegations' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Info className="mr-2 h-4 w-4" />}
-                                    Tester Allégations
-                                </Button>
-                                <Button
-                                    onClick={() => runAudit('graphique')}
-                                    disabled={!!auditingType}
-                                    className="bg-stone-100 hover:bg-stone-200 text-stone-700 shadow-sm rounded-xl font-medium px-4"
-                                >
-                                    {auditingType === 'graphique' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                                    Cohérence Graphique
-                                </Button>
-                                <Button
-                                    onClick={() => runAudit('complet')}
+                                    onClick={() => runAudit()}
                                     disabled={!!auditingType}
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 rounded-xl font-bold px-6"
                                 >
-                                    {auditingType === 'complet' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                    Audit Complet
+                                    {auditingType ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                                    Lancer l&apos;audit
                                 </Button>
                             </div>
                         </CardHeader>
