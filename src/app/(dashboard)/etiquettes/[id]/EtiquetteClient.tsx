@@ -25,12 +25,13 @@ import {
     Wind,
     Utensils,
     FlaskConical,
-    ArrowLeft
+    ArrowLeft,
+    Copy
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { choisirAllegationAction } from "@/app/actions/etiquettes"
+import { choisirAllegationAction, dupliquerFicheAction } from "@/app/actions/etiquettes"
 import { useEditableSection, EditButtons, EditableText } from "@/components/etiquettes/editable-section"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -120,6 +121,25 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
         ficheId: labelData.id,
         champs: { denominationFr: labelData.title },
     })
+
+    // Duplicate this fiche into a brand-new product + fiche + recette.
+    const [duplicating, setDuplicating] = useState(false)
+    const dupliquer = async () => {
+        const nouveauTitre = window.prompt("Titre de la nouvelle fiche :", labelData.title)
+        if (!nouveauTitre || !nouveauTitre.trim()) return
+        setDuplicating(true)
+        try {
+            const res = await dupliquerFicheAction({ ficheId: labelData.id, nouveauTitre: nouveauTitre.trim() })
+            toast.success("Nouvelle fiche créée", { description: nouveauTitre.trim() })
+            router.push(`/etiquettes/${res.nouvelleFicheId}`)
+        } catch (e) {
+            toast.error("Échec de la duplication", {
+                description: e instanceof Error ? e.message : undefined,
+            })
+        } finally {
+            setDuplicating(false)
+        }
+    }
 
     const choisirAllegation = async (opt: { libelle: string; nbTasses?: string }) => {
         setAllegSaving(opt.libelle)
@@ -323,8 +343,15 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                    <Button variant="outline" className="bg-white hover:bg-stone-50 border-stone-200 shadow-sm rounded-xl font-medium">
-                        Sauvegarder
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={dupliquer}
+                        disabled={duplicating}
+                        className="bg-white hover:bg-stone-50 border-stone-200 shadow-sm rounded-xl font-medium"
+                    >
+                        {duplicating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />}
+                        Dupliquer
                     </Button>
                     <Button className="bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-700/20 text-white rounded-xl font-medium">
                         Soumettre au Graphiste

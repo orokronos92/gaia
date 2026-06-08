@@ -1,6 +1,11 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { fichesEtiquettes } from "@/db/schema";
+import {
+  fichesEtiquettes,
+  produits,
+  recettes,
+  ingredientsRecette,
+} from "@/db/schema";
 
 /**
  * Whitelist of fiche fields Marie may edit (editable-fiche phase 2). Anything
@@ -75,4 +80,90 @@ export async function setAllegationChoisie({
     .where(eq(fichesEtiquettes.id, ficheId));
 
   return { avant: before };
+}
+
+/**
+ * Duplicates a fiche into a BRAND-NEW product + fiche (editable-fiche). Clones
+ * the produit (new codePf, new title), the fiche, and the latest recette QUID
+ * with its ingredients — as a starting point for Marie. The source is untouched.
+ * Dégustation, audits and version history are NOT copied. Multi-table → one
+ * transaction (CLAUDE.md §6).
+ */
+export async function dupliquerFiche(params: {
+  ficheId: string;
+  nouveauTitre: string;
+}): Promise<{ nouvelleFicheId: string; nouveauProduitId: string }> {
+  return db.transaction(async (tx) => {
+    const fiche = await tx.query.fichesEtiquettes.findFirst({
+      where: eq(fichesEtiquettes.id, params.ficheId),
+    });
+    if (!fiche) throw new Error("Fiche introuvable");
+
+    const produit = await tx.query.produits.findFirst({
+      where: eq(produits.id, fiche.produitId),
+    });
+    if (!produit) throw new Error("Produit introuvable");
+
+    // 1. New product (unique codePf, new title).
+    const { id: _pid, creeLe: _pc, misAJourLe: _pm, ...produitRest } = produit;
+    const suffixe = `${Date.now().toString(36)}${Math.floor(Math.random() * 1296)
+      .toString(36)
+      .padStart(2, "0")}`;
+    const nouveauCodePf = `${produit.codePf}-C${suffixe}`.slice(0, 50);
+    const [nouveauProduit] = await tx
+      .insert(produits)
+      .values({ ...produitRest, codePf: nouveauCodePf, denominationFr: params.nouveauTitre })
+      .returning({ id: produits.id });
+
+    // 2. New fiche (fresh: no unique code, DRAFT, no version pointer).
+    const {
+      id: _fid,
+      produitId: _fp,
+      codeEtiquette: _fc,
+      versionCouranteId: _fv,
+      creeLe: _fcr,
+      misAJourLe: _fmu,
+      ...ficheRest
+    } = fiche;
+    const [nouvelleFiche] = await tx
+      .insert(fichesEtiquettes)
+      .values({
+        ...ficheRest,
+        produitId: nouveauProduit.id,
+        codeEtiquette: null,
+        versionCouranteId: null,
+        statut: "DRAFT",
+      })
+      .returning({ id: fichesEtiquettes.id });
+
+    // 3. Latest recette QUID + its ingredients.
+    const recette = await tx.query.recettes.findFirst({
+      where: eq(recettes.produitId, produit.id),
+      orderBy: [desc(recettes.creeLe)],
+    });
+    if (recette) {
+      const { id: _rid, produitId: _rp, creeLe: _rc, misAJourLe: _rm, ...recetteRest } = recette;
+      const [nouvelleRecette] = await tx
+        .insert(recettes)
+        .values({ ...recetteRest, produitId: nouveauProduit.id, statut: "DRAFT" })
+        .returning({ id: recettes.id });
+
+      const ings = await tx.query.ingredientsRecette.findMany({
+        where: eq(ingredientsRecette.recetteId, recette.id),
+      });
+      if (ings.length > 0) {
+        await tx.insert(ingredientsRecette).values(
+          ings.map(({ id: _iid, recetteId: _irid, ...ingRest }) => ({
+            ...ingRest,
+            recetteId: nouvelleRecette.id,
+          }))
+        );
+      }
+    }
+
+    return {
+      nouvelleFicheId: nouvelleFiche.id,
+      nouveauProduitId: nouveauProduit.id,
+    };
+  });
 }

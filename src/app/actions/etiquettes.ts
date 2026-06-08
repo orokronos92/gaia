@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/db"
 import { fichesEtiquettes } from "@/db/schema"
 import { auth } from "@/auth"
-import { setAllegationChoisie } from "@/db/queries/fiches"
+import { setAllegationChoisie, dupliquerFiche } from "@/db/queries/fiches"
 import { writeAuditLog } from "@/db/queries/audit-logs"
 
 const ChoisirAllegationSchema = z.object({
@@ -48,6 +48,43 @@ export async function choisirAllegationAction(input: unknown) {
 
     revalidatePath(`/etiquettes/${data.ficheId}`)
     return { ok: true as const }
+}
+
+const DupliquerSchema = z.object({
+    ficheId: z.string().uuid(),
+    nouveauTitre: z.string().min(1, "Le titre est requis").max(255),
+})
+
+/**
+ * Duplicates a fiche into a brand-new product + fiche + recette (editable-fiche).
+ * Marie starts from an existing fiche to build a new product with a new title;
+ * the source stays intact. Auth + Zod, delegates the clone to the queries layer,
+ * logs it, and returns the new fiche id (the client navigates to it).
+ */
+export async function dupliquerFicheAction(input: unknown) {
+    const data = DupliquerSchema.parse(input)
+
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const { nouvelleFicheId, nouveauProduitId } = await dupliquerFiche({
+        ficheId: data.ficheId,
+        nouveauTitre: data.nouveauTitre.trim(),
+    })
+
+    await writeAuditLog({
+        typeEntite: "fiche_etiquette",
+        entiteId: nouvelleFicheId,
+        action: "FICHE_DUPLIQUEE",
+        utilisateurId: session.user.id,
+        changements: {
+            sourceFicheId: data.ficheId,
+            nouveauProduitId,
+            nouveauTitre: data.nouveauTitre.trim(),
+        },
+    })
+
+    return { ok: true as const, nouvelleFicheId }
 }
 
 export async function createFicheEtiquette(formData: FormData) {

@@ -38,11 +38,17 @@ par la calculatrice recette.
 4. **Re-extraction** d'un produit existant (relancer l'import sur un nouveau document).
 
 ## Déroulé (incrémental)
-- **Phase 1 (référence)** : sélection de l'**allégation santé** dans Points de
-  Vigilance → persiste `allegationChoisie`/`nbTassesAllegation` → remonte dans
-  « Données complémentaires ». Petit, teed-up, établit le patron edit→persist→audit.
-- **Phase 2** : généraliser `EditableCard` aux cartes texte (Mentions légales,
-  Identité, Textes commerciaux…).
+- **Phase 1 (référence)** ✅ — sélection de l'**allégation santé** (radios) →
+  `choisirAllegationAction` → `allegationChoisie`/`nbTassesAllegation` → remonte
+  dans « Données complémentaires ». Commit `656409e`.
+- **Phase 2 (primitives génériques)** ✅ — `useEditableSection` + `<EditButtons>`
+  + `<EditableText>` (`src/components/etiquettes/editable-section.tsx`) ; Server
+  Action `updateFicheChampsAction` (whitelist `CHAMPS_FICHE_EDITABLES`, Zod, audit
+  diff). Branché sur **Mentions Légales** (instance de référence). Commit `076131d`.
+  Chemin table `produits` **ouvert** (commit `fa914ca`) : `updateChampsAction`
+  dispatche fiche|produit (whitelist par table), **titre éditable inline**
+  (`denominationFr`, renomme le produit). Reste à répliquer : Textes commerciaux,
+  Identité (champs produits). **Dupliquer** (clone vers nouvelle fiche) = à faire.
 - **Phase 3** : versioning + re-audit (cas législation) + re-extraction des anciens.
 
 ## Garde-fous (CLAUDE.md)
