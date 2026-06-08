@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/db"
 import { fichesEtiquettes } from "@/db/schema"
 import { auth } from "@/auth"
-import { setAllegationChoisie, dupliquerFiche } from "@/db/queries/fiches"
+import { setAllegationChoisie, dupliquerFiche, creerVersionFiche } from "@/db/queries/fiches"
 import { writeAuditLog } from "@/db/queries/audit-logs"
 
 const ChoisirAllegationSchema = z.object({
@@ -85,6 +85,37 @@ export async function dupliquerFicheAction(input: unknown) {
     })
 
     return { ok: true as const, nouvelleFicheId }
+}
+
+const SauvegarderVersionSchema = z.object({ ficheId: z.string().uuid() })
+
+/**
+ * Saves the fiche's current state as a new version snapshot (editable-fiche, the
+ * "Sauvegarder" action). Per-card edits already persist; this records a point in
+ * time for history / legislation changes. Auth + Zod, delegates to the queries
+ * layer, logs it, returns the new version number.
+ */
+export async function sauvegarderVersionAction(input: unknown) {
+    const { ficheId } = SauvegarderVersionSchema.parse(input)
+
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const { versionId, numeroVersion } = await creerVersionFiche({
+        ficheId,
+        utilisateurId: session.user.id,
+    })
+
+    await writeAuditLog({
+        typeEntite: "fiche_etiquette",
+        entiteId: ficheId,
+        action: "VERSION_CREEE",
+        utilisateurId: session.user.id,
+        changements: { versionId, numeroVersion },
+    })
+
+    revalidatePath(`/etiquettes/${ficheId}`)
+    return { ok: true as const, numeroVersion }
 }
 
 export async function createFicheEtiquette(formData: FormData) {

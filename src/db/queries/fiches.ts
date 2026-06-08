@@ -1,10 +1,11 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   fichesEtiquettes,
   produits,
   recettes,
   ingredientsRecette,
+  versionsEtiquettes,
 } from "@/db/schema";
 
 /**
@@ -165,5 +166,54 @@ export async function dupliquerFiche(params: {
       nouvelleFicheId: nouvelleFiche.id,
       nouveauProduitId: nouveauProduit.id,
     };
+  });
+}
+
+/**
+ * Saves the current state of a fiche as a new version snapshot (Phase 3 start).
+ * Per-card edits already persist; this is the "Sauvegarder" that records a point
+ * in time (history / legislation changes), incrementing the version number and
+ * snapshotting the fiche + produit. Multi-table read + write → one transaction.
+ */
+export async function creerVersionFiche(params: {
+  ficheId: string;
+  utilisateurId: string;
+  resume?: string | null;
+}): Promise<{ versionId: string; numeroVersion: number }> {
+  return db.transaction(async (tx) => {
+    const fiche = await tx.query.fichesEtiquettes.findFirst({
+      where: eq(fichesEtiquettes.id, params.ficheId),
+    });
+    if (!fiche) throw new Error("Fiche introuvable");
+    const produit = await tx.query.produits.findFirst({
+      where: eq(produits.id, fiche.produitId),
+    });
+
+    const [agg] = await tx
+      .select({
+        max: sql<number>`coalesce(max(${versionsEtiquettes.numeroVersion}), 0)`,
+      })
+      .from(versionsEtiquettes)
+      .where(eq(versionsEtiquettes.ficheEtiquetteId, params.ficheId));
+    const numeroVersion = (agg?.max ?? 0) + 1;
+
+    const [version] = await tx
+      .insert(versionsEtiquettes)
+      .values({
+        ficheEtiquetteId: params.ficheId,
+        numeroVersion,
+        donneesSnapshot: { fiche, produit },
+        statut: fiche.statut,
+        creePar: params.utilisateurId,
+        resumeChangements: params.resume ?? null,
+      })
+      .returning({ id: versionsEtiquettes.id });
+
+    await tx
+      .update(fichesEtiquettes)
+      .set({ versionCouranteId: version.id, misAJourLe: new Date() })
+      .where(eq(fichesEtiquettes.id, params.ficheId));
+
+    return { versionId: version.id, numeroVersion };
   });
 }

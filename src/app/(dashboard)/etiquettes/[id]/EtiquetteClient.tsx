@@ -26,12 +26,13 @@ import {
     Utensils,
     FlaskConical,
     ArrowLeft,
-    Copy
+    Copy,
+    Save
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { choisirAllegationAction, dupliquerFicheAction } from "@/app/actions/etiquettes"
+import { choisirAllegationAction, dupliquerFicheAction, sauvegarderVersionAction } from "@/app/actions/etiquettes"
 import { useEditableSection, EditButtons, EditableText, type EditableSection } from "@/components/etiquettes/editable-section"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -198,6 +199,25 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
         ficheId: labelData.id,
         champs: { ingredientsFr: labelData.ingredientsFr },
     })
+
+    // Save the fiche's current state as a new version snapshot.
+    const [savingVersion, setSavingVersion] = useState(false)
+    const sauvegarder = async () => {
+        setSavingVersion(true)
+        try {
+            const res = await sauvegarderVersionAction({ ficheId: labelData.id })
+            toast.success(`Version ${res.numeroVersion} enregistrée`, {
+                description: "L'état complet de la fiche est archivé.",
+            })
+            router.refresh()
+        } catch (e) {
+            toast.error("Échec de l'enregistrement de la version", {
+                description: e instanceof Error ? e.message : undefined,
+            })
+        } finally {
+            setSavingVersion(false)
+        }
+    }
 
     // Duplicate this fiche into a brand-new product + fiche + recette.
     const [duplicating, setDuplicating] = useState(false)
@@ -418,6 +438,17 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={sauvegarder}
+                        disabled={savingVersion}
+                        title="Archive l'état complet de la fiche comme une version (historique)"
+                        className="bg-white hover:bg-stone-50 border-stone-200 shadow-sm rounded-xl font-medium"
+                    >
+                        {savingVersion ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Sauvegarder
+                    </Button>
                     <Button
                         type="button"
                         variant="outline"
