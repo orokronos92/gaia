@@ -12,6 +12,10 @@ export const CHAMPS_PRODUIT_EDITABLES = [
   "origine",
   "conditionnement",
   "poidsNet",
+  "tempsInfusion",
+  "tempInfusion",
+  "nbTasses",
+  "sousDesignationFr",
 ] as const;
 
 export type ChampProduitEditable = (typeof CHAMPS_PRODUIT_EDITABLES)[number];

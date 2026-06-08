@@ -168,6 +168,37 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
         },
     })
 
+    // Editable preparation (produit fields).
+    const prepSection = useEditableSection({
+        table: "produit",
+        entityId: labelData.produitId,
+        ficheId: labelData.id,
+        champs: {
+            tempsInfusion: labelData.tempsInfusion,
+            tempInfusion: labelData.tempInfusion,
+            nbTasses: labelData.nbTasses,
+        },
+    })
+
+    // Editable quality vigilance (fiche fields).
+    const vigilanceSection = useEditableSection({
+        table: "fiche",
+        entityId: labelData.id,
+        ficheId: labelData.id,
+        champs: {
+            allergenes: labelData.allergenes,
+            allegationsSanteFr: labelData.allegationsSanteFr,
+        },
+    })
+
+    // Editable ingredient list FR (fiche field).
+    const denomSection = useEditableSection({
+        table: "fiche",
+        entityId: labelData.id,
+        ficheId: labelData.id,
+        champs: { ingredientsFr: labelData.ingredientsFr },
+    })
+
     // Duplicate this fiche into a brand-new product + fiche + recette.
     const [duplicating, setDuplicating] = useState(false)
     const dupliquer = async () => {
@@ -511,18 +542,21 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                             {/* Card: Préparation */}
                             <Card className="border border-amber-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-amber-500/10 border-b border-amber-100 pb-4">
-                                    <CardTitle className="text-lg font-bold text-emerald-950 flex items-center gap-2">
-                                        <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-orange-100 border-none flex items-center justify-center">
-                                            <Coffee className="h-4 w-4 text-orange-700" />
-                                        </Badge>
-                                        Conseils de Préparation
+                                    <CardTitle className="text-lg font-bold text-emerald-950 flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-orange-100 border-none flex items-center justify-center">
+                                                <Coffee className="h-4 w-4 text-orange-700" />
+                                            </Badge>
+                                            Conseils de Préparation
+                                        </div>
+                                        <EditButtons section={prepSection} />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-5">
                                     <div className="grid grid-cols-2 gap-3">
-                                        <DataPoint icon={Clock} label="Infusion" value={labelData.tempsInfusion} suffix="min" />
-                                        <DataPoint icon={Thermometer} label="Température" value={labelData.tempInfusion} suffix="°C" />
-                                        <DataPoint icon={Coffee} label="Tasses / Cuillères" value={labelData.nbTasses} />
+                                        <DataPointEdit section={prepSection} icon={Clock} label="Infusion" field="tempsInfusion" value={labelData.tempsInfusion} suffix="min" />
+                                        <DataPointEdit section={prepSection} icon={Thermometer} label="Température" field="tempInfusion" value={labelData.tempInfusion} suffix="°C" />
+                                        <DataPointEdit section={prepSection} icon={Coffee} label="Tasses / Cuillères" field="nbTasses" value={labelData.nbTasses} />
                                         <DataPoint icon={Info} label="Plusieurs Infusions" value={labelData.plusieursInfusions ? "Oui" : "Non"} />
                                     </div>
                                 </CardContent>
@@ -534,37 +568,40 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                         <ShieldAlert className="w-32 h-32 text-orange-900" />
                                     </div>
                                     <CardHeader className="bg-orange-50/50 border-b border-orange-100/50 pb-4 relative z-10">
-                                        <CardTitle className="text-lg font-bold text-orange-950 flex items-center gap-2">
-                                            <ShieldAlert className="h-5 w-5 text-orange-600" />
-                                            Points de Vigilance Qualité
+                                        <CardTitle className="text-lg font-bold text-orange-950 flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <ShieldAlert className="h-5 w-5 text-orange-600" />
+                                                Points de Vigilance Qualité
+                                            </div>
+                                            <EditButtons section={vigilanceSection} />
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="p-5 space-y-4 relative z-10">
-                                        {!hasVigilance && (
+                                        {!vigilanceSection.editing && !hasVigilance && (
                                             <EmptyState
                                                 icon={ShieldAlert}
                                                 label="Aucun allergène ni allégation renseigné pour ce produit."
                                             />
                                         )}
-                                        {hasAllergen && (
+                                        {(vigilanceSection.editing || hasAllergen) && (
                                             <div className="p-4 bg-white rounded-2xl border border-orange-200/60 shadow-[0_2px_10px_-4px_rgba(251,146,60,0.3)] flex items-start gap-3">
                                                 <div className="bg-orange-100 p-1.5 rounded-lg">
                                                     <AlertTriangle className="h-4 w-4 text-orange-600" />
                                                 </div>
-                                                <div>
+                                                <div className="flex-1 min-w-0">
                                                     <h4 className="text-[11px] font-bold text-orange-800 uppercase tracking-widest mb-1">Allergènes Déclarés</h4>
-                                                    <p className="text-sm font-semibold text-orange-950">{labelData.allergenes}</p>
+                                                    <EditableText section={vigilanceSection} field="allergenes" value={labelData.allergenes} placeholder="Aucun allergène déclaré." multiline className="text-sm font-semibold text-orange-950" />
                                                 </div>
                                             </div>
                                         )}
-                                        {hasAllegation && (
+                                        {(vigilanceSection.editing || hasAllegation) && (
                                             <div className="p-4 bg-white rounded-2xl border border-stone-200 shadow-sm flex items-start gap-3">
                                                 <div className="bg-stone-100 p-1.5 rounded-lg">
                                                     <Info className="h-4 w-4 text-stone-600" />
                                                 </div>
-                                                <div>
+                                                <div className="flex-1 min-w-0">
                                                     <h4 className="text-[11px] font-bold text-stone-500 uppercase tracking-widest mb-1">Allégations de Santé</h4>
-                                                    <p className="text-sm font-medium text-stone-800 italic">"{labelData.allegationsSanteFr}"</p>
+                                                    <EditableText section={vigilanceSection} field="allegationsSanteFr" value={labelData.allegationsSanteFr} placeholder="Aucune allégation santé renseignée." multiline className="text-sm font-medium text-stone-800 italic" />
                                                 </div>
                                             </div>
                                         )}
@@ -769,17 +806,25 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
 
                                     {/* Traductions */}
                                     <div className="space-y-4">
-                                        <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800">
+                                        <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800 flex justify-between items-center">
                                             Dénominations & Listes d'ingrédients
+                                            <EditButtons section={denomSection} />
                                         </h3>
                                         <div className="grid gap-3">
-                                            <LanguageRow lang="FR" sousDes={labelData.sousDesignationFr} ingredients={labelData.ingredientsFr} />
-                                            {/* Les autres langues sont masquées pour le moment selon la demande */}
-
-                                            {(!hasRealValue(labelData.ingredientsFr) && !hasRealValue(labelData.sousDesignationFr)) && (
-                                                <div className="text-stone-400 font-medium text-sm text-center py-10 bg-stone-50/80 rounded-2xl border border-stone-200 border-dashed">
-                                                    Aucune donnée d'ingrédient ou de sous-dénomination disponible en Français.
+                                            {denomSection.editing ? (
+                                                <div className="p-4 bg-white rounded-xl border border-stone-200">
+                                                    <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Ingrédients (QUID) — FR</div>
+                                                    <EditableText section={denomSection} field="ingredientsFr" value={labelData.ingredientsFr} placeholder="Liste d'ingrédients en français…" multiline className="text-sm text-stone-600 leading-relaxed font-medium" />
                                                 </div>
+                                            ) : (
+                                                <>
+                                                    <LanguageRow lang="FR" sousDes={labelData.sousDesignationFr} ingredients={labelData.ingredientsFr} />
+                                                    {(!hasRealValue(labelData.ingredientsFr) && !hasRealValue(labelData.sousDesignationFr)) && (
+                                                        <div className="text-stone-400 font-medium text-sm text-center py-10 bg-stone-50/80 rounded-2xl border border-stone-200 border-dashed">
+                                                            Aucune donnée d'ingrédient ou de sous-dénomination disponible en Français.
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     </div>
