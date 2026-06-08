@@ -4,12 +4,13 @@ import mammoth from "mammoth";
 import { auth } from "@/auth";
 import { RAGService } from "@/agents/knowledge/RAGService";
 import { extractPdfText } from "@/lib/utils/pdf-text";
+import { writeAuditLog } from "@/db/queries/audit-logs";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB (matches the UI hint)
 
 export async function POST(req: NextRequest) {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
         return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
     }
 
@@ -63,6 +64,14 @@ export async function POST(req: NextRequest) {
                 { status: 502 }
             );
         }
+
+        await writeAuditLog({
+            typeEntite: "knowledge_document",
+            entiteId: file.name,
+            action: "RAG_INGESTION",
+            utilisateurId: session.user.id,
+            changements: { chunks: chunksIngested, tailleOctets: file.size },
+        });
 
         return NextResponse.json({
             status: "SUCCESS",
