@@ -104,11 +104,21 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
 
     // Editable-fiche phase 2 — Mentions Légales (reference instance of the pattern).
     const mentionsSection = useEditableSection({
+        table: "fiche",
+        entityId: labelData.id,
         ficheId: labelData.id,
         champs: {
             mentionConservation: labelData.mentionConservation,
             mentionFabricant: labelData.mentionFabricant,
         },
+    })
+
+    // Editable title — produit field (denominationFr). Renames the product in place.
+    const titreSection = useEditableSection({
+        table: "produit",
+        entityId: labelData.produitId,
+        ficheId: labelData.id,
+        champs: { denominationFr: labelData.title },
     })
 
     const choisirAllegation = async (opt: { libelle: string; nbTasses?: string }) => {
@@ -277,12 +287,25 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                         <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Dossier #{labelData.code || labelData.codePf}</span>
                         {labelData.codePf && <span className="text-stone-400">| Modele: {labelData.codePf}</span>}
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-emerald-950 flex items-center gap-3">
-                        {labelData.title}
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {titreSection.editing ? (
+                            <input
+                                type="text"
+                                value={titreSection.draft.denominationFr ?? ""}
+                                onChange={(e) => titreSection.setField("denominationFr", e.target.value)}
+                                placeholder="Titre du produit"
+                                className="text-3xl font-bold tracking-tight text-emerald-950 bg-white rounded-xl border border-emerald-300 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-300 min-w-[20rem]"
+                            />
+                        ) : (
+                            <h1 className="text-3xl font-bold tracking-tight text-emerald-950">
+                                {labelData.title}
+                            </h1>
+                        )}
                         <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm">
                             {labelData.status}
                         </Badge>
-                    </h1>
+                        <EditButtons section={titreSection} />
+                    </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
                             Gamme: <span className="text-stone-900 ml-1">{labelData.gamme}</span>

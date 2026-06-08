@@ -7,7 +7,7 @@ import { Pencil, Check, X, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { updateFicheChampsAction } from "@/app/actions/fiche-champs";
+import { updateChampsAction } from "@/app/actions/fiche-champs";
 
 /**
  * Per-card edit primitives (editable-fiche phase 2). A card keeps its own layout
@@ -27,6 +27,11 @@ export interface EditableSection {
 }
 
 export function useEditableSection(opts: {
+  /** Which table the fields belong to. */
+  table: "fiche" | "produit";
+  /** Row to update — ficheId for "fiche", produitId for "produit". */
+  entityId: string;
+  /** Fiche whose page to revalidate after save. */
   ficheId: string;
   champs: Record<string, string | null>;
 }): EditableSection {
@@ -49,7 +54,12 @@ export function useEditableSection(opts: {
   const save = async () => {
     setSaving(true);
     try {
-      await updateFicheChampsAction({ ficheId: opts.ficheId, champs: draft });
+      await updateChampsAction({
+        table: opts.table,
+        id: opts.entityId,
+        ficheId: opts.ficheId,
+        champs: draft,
+      });
       toast.success("Modifications enregistrées.");
       setEditing(false);
       router.refresh();
