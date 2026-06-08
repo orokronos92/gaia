@@ -19,16 +19,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null
                 }
 
-                // --- MOCK USER D'ESSAI (Puisque Docker Postgres n'a pas pu être lancé) ---
-                if (credentials.email === "marie@jardinsdegaia.com" && credentials.password === "gaia2026") {
-                    return {
-                        id: "00000000-0000-0000-0000-000000001234",
-                        name: "Marie Qualité",
-                        email: "marie@jardinsdegaia.com",
-                        role: "QUALITE"
-                    }
-                }
-
                 try {
                     const user = await db.query.utilisateurs.findFirst({
                         where: eq(utilisateurs.email, credentials.email as string),

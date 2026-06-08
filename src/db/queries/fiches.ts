@@ -6,6 +6,7 @@ import {
   recettes,
   ingredientsRecette,
   versionsEtiquettes,
+  fichesDegustation,
 } from "@/db/schema";
 
 /**
@@ -160,6 +161,18 @@ export async function dupliquerFiche(params: {
           }))
         );
       }
+    }
+
+    // 4. Latest dégustation (organoleptic grid), copied to the new product.
+    const degustation = await tx.query.fichesDegustation.findFirst({
+      where: eq(fichesDegustation.produitId, produit.id),
+      orderBy: [desc(fichesDegustation.creeLe)],
+    });
+    if (degustation) {
+      const { id: _did, produitId: _dp, creeLe: _dc, ...degRest } = degustation;
+      await tx
+        .insert(fichesDegustation)
+        .values({ ...degRest, produitId: nouveauProduit.id });
     }
 
     return {
