@@ -1,8 +1,54 @@
 "use server"
 
+import { z } from "zod"
+import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
+
 import { db } from "@/db"
 import { fichesEtiquettes } from "@/db/schema"
-import { redirect } from "next/navigation"
+import { auth } from "@/auth"
+import { setAllegationChoisie } from "@/db/queries/fiches"
+import { writeAuditLog } from "@/db/queries/audit-logs"
+
+const ChoisirAllegationSchema = z.object({
+    ficheId: z.string().uuid(),
+    libelle: z.string().min(1),
+    nbTasses: z.string().nullable(),
+})
+
+/**
+ * Marie selects a health claim for a fiche (editable-fiche pattern, phase 1).
+ * Auth + Zod, delegates the write to the queries layer, logs the change to the
+ * audit trail, and revalidates so « Données complémentaires » reflects the choice.
+ */
+export async function choisirAllegationAction(input: unknown) {
+    const data = ChoisirAllegationSchema.parse(input)
+
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const { avant } = await setAllegationChoisie({
+        ficheId: data.ficheId,
+        allegationChoisie: data.libelle,
+        nbTassesAllegation: data.nbTasses,
+    })
+
+    await writeAuditLog({
+        typeEntite: "fiche_etiquette",
+        entiteId: data.ficheId,
+        action: "ALLEGATION_CHOISIE",
+        utilisateurId: session.user.id,
+        changements: {
+            champ: "allegationChoisie",
+            avant: avant.allegationChoisie,
+            apres: data.libelle,
+            nbTasses: data.nbTasses,
+        },
+    })
+
+    revalidatePath(`/etiquettes/${data.ficheId}`)
+    return { ok: true as const }
+}
 
 export async function createFicheEtiquette(formData: FormData) {
     const produitId = formData.get("produitId") as string;

@@ -29,6 +29,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { choisirAllegationAction } from "@/app/actions/etiquettes"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -96,6 +98,28 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
     const router = useRouter()
     const [auditingType, setAuditingType] = useState<string | null>(null)
     const [auditResult, setAuditResult] = useState<any>(null)
+    const [allegChoisie, setAllegChoisie] = useState<string | null>(labelData.allegationChoisie ?? null)
+    const [allegSaving, setAllegSaving] = useState<string | null>(null)
+
+    const choisirAllegation = async (opt: { libelle: string; nbTasses?: string }) => {
+        setAllegSaving(opt.libelle)
+        try {
+            await choisirAllegationAction({
+                ficheId: labelData.id,
+                libelle: opt.libelle,
+                nbTasses: opt.nbTasses ?? null,
+            })
+            setAllegChoisie(opt.libelle)
+            toast.success("Allégation validée", { description: opt.libelle })
+            router.refresh()
+        } catch (e) {
+            toast.error("Échec de l'enregistrement", {
+                description: e instanceof Error ? e.message : undefined,
+            })
+        } finally {
+            setAllegSaving(null)
+        }
+    }
 
     // Derived States
     const hasAllergen = hasRealValue(labelData.allergenes);
@@ -440,16 +464,42 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                                         {hasAllegationsPossibles && (
                                             <div className="p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100 flex flex-col gap-3">
                                                 <h4 className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Options d&apos;allégations extraites</h4>
-                                                <div className="grid gap-2">
-                                                    {labelData.allegationsPossibles.map((opt: any, i: number) => (
-                                                        <div key={i} className="bg-white p-3 rounded-xl border border-emerald-100 shadow-sm flex items-center justify-between group hover:border-emerald-300 transition-colors cursor-pointer">
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-bold text-emerald-950 uppercase tracking-tight">{opt.libelle}</p>
-                                                                <p className="text-xs text-emerald-600 font-medium">{opt.nbTasses}</p>
-                                                            </div>
-                                                            <div className="h-5 w-5 rounded-full border-2 border-emerald-200 group-hover:border-emerald-500 transition-colors shrink-0" />
-                                                        </div>
-                                                    ))}
+                                                <div className="grid gap-2" role="radiogroup" aria-label="Allégation santé">
+                                                    {labelData.allegationsPossibles.map((opt: any, i: number) => {
+                                                        const selected = allegChoisie === opt.libelle;
+                                                        const saving = allegSaving === opt.libelle;
+                                                        return (
+                                                            <button
+                                                                key={i}
+                                                                type="button"
+                                                                role="radio"
+                                                                aria-checked={selected}
+                                                                disabled={!!allegSaving}
+                                                                onClick={() => choisirAllegation(opt)}
+                                                                className={cn(
+                                                                    "w-full text-left p-3 rounded-xl border shadow-sm flex items-center justify-between transition-colors disabled:opacity-60",
+                                                                    selected
+                                                                        ? "bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300"
+                                                                        : "bg-white border-emerald-100 hover:border-emerald-300"
+                                                                )}
+                                                            >
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-bold text-emerald-950 uppercase tracking-tight">{opt.libelle}</p>
+                                                                    <p className="text-xs text-emerald-600 font-medium">{opt.nbTasses}</p>
+                                                                </div>
+                                                                {saving ? (
+                                                                    <Loader2 className="h-5 w-5 text-emerald-500 animate-spin shrink-0" />
+                                                                ) : (
+                                                                    <span className={cn(
+                                                                        "h-5 w-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors",
+                                                                        selected ? "border-emerald-500 bg-emerald-500" : "border-emerald-200"
+                                                                    )}>
+                                                                        {selected && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         )}
