@@ -87,7 +87,10 @@ export async function dupliquerFicheAction(input: unknown) {
     return { ok: true as const, nouvelleFicheId }
 }
 
-const SauvegarderVersionSchema = z.object({ ficheId: z.string().uuid() })
+const SauvegarderVersionSchema = z.object({
+    ficheId: z.string().uuid(),
+    resume: z.string().max(255).optional(),
+})
 
 /**
  * Saves the fiche's current state as a new version snapshot (editable-fiche, the
@@ -96,7 +99,7 @@ const SauvegarderVersionSchema = z.object({ ficheId: z.string().uuid() })
  * layer, logs it, returns the new version number.
  */
 export async function sauvegarderVersionAction(input: unknown) {
-    const { ficheId } = SauvegarderVersionSchema.parse(input)
+    const { ficheId, resume } = SauvegarderVersionSchema.parse(input)
 
     const session = await auth()
     if (!session?.user?.id) throw new Error("Unauthorized")
@@ -104,6 +107,7 @@ export async function sauvegarderVersionAction(input: unknown) {
     const { versionId, numeroVersion } = await creerVersionFiche({
         ficheId,
         utilisateurId: session.user.id,
+        resume: resume && resume.trim() !== "" ? resume.trim() : null,
     })
 
     await writeAuditLog({

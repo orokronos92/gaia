@@ -205,9 +205,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
     // Save the fiche's current state as a new version snapshot.
     const [savingVersion, setSavingVersion] = useState(false)
     const sauvegarder = async () => {
+        const resume = window.prompt(
+            "Nom / note de cette version (optionnel) — ex. « avant changement règle additifs 2026 ». Annuler = ne pas sauvegarder.",
+            ""
+        )
+        if (resume === null) return // annulé
         setSavingVersion(true)
         try {
-            const res = await sauvegarderVersionAction({ ficheId: labelData.id })
+            const res = await sauvegarderVersionAction({ ficheId: labelData.id, resume })
             toast.success(`Version ${res.numeroVersion} enregistrée`, {
                 description: "L'état complet de la fiche est archivé.",
             })

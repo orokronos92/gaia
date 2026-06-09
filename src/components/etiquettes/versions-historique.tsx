@@ -11,12 +11,14 @@ import {
   Loader2,
   User,
   Clock,
+  GitCompare,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { restaurerVersionAction } from "@/app/actions/etiquettes";
+import { VersionDiff } from "@/components/etiquettes/version-diff";
 
 interface VersionItem {
   id: string;
@@ -52,6 +54,17 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
   const router = useRouter();
   const [open, setOpen] = useState<string | null>(null);
   const [restoring, setRestoring] = useState<string | null>(null);
+  const [compare, setCompare] = useState<string[]>([]);
+
+  // Toggle a version into the comparison (keep the last 2 picked).
+  const toggleCompare = (id: string) =>
+    setCompare((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].slice(-2)
+    );
+
+  const [vgId, vdId] = compare;
+  const vg = versions.find((v) => v.id === vgId);
+  const vd = versions.find((v) => v.id === vdId);
 
   const restaurer = async (versionId: string, num: number) => {
     if (
@@ -96,6 +109,13 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
 
   return (
     <div className="space-y-3">
+      {compare.length === 1 && (
+        <p className="rounded-xl border border-dashed border-emerald-200 bg-emerald-50/40 px-4 py-2 text-sm text-emerald-700">
+          Sélectionne une 2ᵉ version (« Comparer ») pour voir les différences.
+        </p>
+      )}
+      {vg && vd && <VersionDiff a={vg} b={vd} />}
+
       {versions.map((v, i) => {
         const snap = (v.donneesSnapshot ?? {}) as {
           fiche?: Record<string, unknown>;
@@ -137,9 +157,29 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
                     </span>
                     <span>statut : {v.statut}</span>
                   </div>
+                  {v.resumeChangements && (
+                    <div className="mt-1 text-xs italic text-stone-500">
+                      « {v.resumeChangements} »
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant={compare.includes(v.id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleCompare(v.id)}
+                  className={cn(
+                    "gap-1.5",
+                    compare.includes(v.id)
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "border-stone-200 text-stone-600"
+                  )}
+                >
+                  <GitCompare className="size-4" />
+                  Comparer
+                </Button>
                 <Button
                   type="button"
                   variant="ghost"
