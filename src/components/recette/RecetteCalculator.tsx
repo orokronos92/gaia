@@ -24,6 +24,8 @@ import { useCalculatrice, etatInitial } from "@/hooks/useCalculatrice";
 import { useSuggestionsRecette } from "@/hooks/useSuggestionsRecette";
 import { kgVersPct, normaliserVersKg } from "@/lib/recette/conversion";
 import { validerRecetteAction } from "@/app/actions/recette";
+import { differentielDepuisTexte } from "@/lib/recette/differentiel";
+import { DifferentielBanner } from "@/components/recette/DifferentielBanner";
 import type { EtatCalculatrice } from "@/lib/recette/types";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 
@@ -66,6 +68,21 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
           l.overrideEtiquette ?? resultat.ingredients[i]?.pourcentageEtiquette ?? 0
       )
     : [];
+
+  // Composition differential vs the fiche produit (dégustation) — Marie always
+  // sees the gap; she resolves it on the recette and validates (Lot 4).
+  const ecarts = useMemo(
+    () =>
+      differentielDepuisTexte(
+        ingredientsExtraits,
+        etat.lignes.map((l, i) => ({
+          designation: l.designation,
+          pourcentage:
+            l.overrideEtiquette ?? resultat?.ingredients[i]?.pourcentageEtiquette ?? l.pourcentageSaisi,
+        }))
+      ),
+    [ingredientsExtraits, etat.lignes, resultat]
+  );
 
   const accepterSuggestion = (ligneId: string) => {
     const s = sugg.parLigne[ligneId];
@@ -133,6 +150,8 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
         onMassePrincipale={c.setMassePrincipale}
         onAjouter={c.ajouterLigne}
       />
+
+      <DifferentielBanner ecarts={ecarts} />
 
       {c.masseRequise && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
