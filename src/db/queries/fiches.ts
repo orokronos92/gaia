@@ -16,6 +16,7 @@ import {
  * not listed here is rejected by the Server Action — no mass assignment.
  */
 export const CHAMPS_FICHE_EDITABLES = [
+  "codeEtiquette", // "Dossier #" reference — Marie renames the auto-assigned IMP-… code
   "texteCommercialFr",
   "ingredientsFr",
   "allergenes",
@@ -63,10 +64,18 @@ export async function updateFicheEtiquetteChamps(
     throw new Error("Fiche introuvable");
   }
 
-  await db
-    .update(fichesEtiquettes)
-    .set({ ...champs, misAJourLe: new Date() })
-    .where(eq(fichesEtiquettes.id, ficheId));
+  try {
+    await db
+      .update(fichesEtiquettes)
+      .set({ ...champs, misAJourLe: new Date() })
+      .where(eq(fichesEtiquettes.id, ficheId));
+  } catch (e) {
+    // codeEtiquette is UNIQUE — surface a readable message instead of the raw PG error.
+    if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505") {
+      throw new Error("Ce numéro de dossier est déjà utilisé par une autre fiche.");
+    }
+    throw e;
+  }
 
   const avant = Object.fromEntries(
     Object.keys(champs).map((k) => [k, (before as Record<string, unknown>)[k] as string | null ?? null])

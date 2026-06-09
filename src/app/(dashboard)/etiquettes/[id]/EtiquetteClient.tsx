@@ -159,6 +159,15 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
         champs: { denominationFr: labelData.title },
     })
 
+    // Editable "Dossier #" reference — fiche field (codeEtiquette). Lets Marie replace
+    // the app-assigned IMP-… code with a chosen one (e.g. MT2806).
+    const dossierSection = useEditableSection({
+        table: "fiche",
+        entityId: labelData.id,
+        ficheId: labelData.id,
+        champs: { codeEtiquette: labelData.code },
+    })
+
     // Editable commercial texts (fiche fields).
     const textesSection = useEditableSection({
         table: "fiche",
@@ -458,7 +467,21 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                     <div className="flex items-center gap-2 text-sm text-stone-500 font-medium">
                         <Badge variant="outline" className="bg-stone-100 border-none text-stone-600 hover:bg-stone-200 cursor-pointer transition-colors">Étiquettes</Badge>
                         <ChevronRight className="h-3 w-3" />
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Dossier #{labelData.code || labelData.codePf}</span>
+                        {dossierSection.editing ? (
+                            <span className="inline-flex items-center gap-1.5">
+                                <span className="text-emerald-700">Dossier #</span>
+                                <input
+                                    type="text"
+                                    value={dossierSection.draft.codeEtiquette ?? ""}
+                                    onChange={(e) => dossierSection.setField("codeEtiquette", e.target.value)}
+                                    placeholder={labelData.codePf ?? "Réf. dossier"}
+                                    className="bg-white rounded-md border border-emerald-300 px-2 py-0.5 text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-300 w-40"
+                                />
+                            </span>
+                        ) : (
+                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Dossier #{labelData.code || labelData.codePf}</span>
+                        )}
+                        <EditButtons section={dossierSection} />
                         {labelData.codePf && <span className="text-stone-400">| Modele: {labelData.codePf}</span>}
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
