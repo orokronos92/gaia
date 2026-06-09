@@ -44,14 +44,14 @@ const INGREDIENTS_TEXTE =
   "maté vert* 62%, gingembre* 15,5%, guarana* 6%, hibiscus* 6%, menthe poivrée*, huile essentielle d'orange sanguine* 4%, ginseng* 2%, stevia*";
 
 describe("Voie A déterministe — golden MT265", () => {
-  it("couvre les 15 points déterministes et valide chaque verdict (Zod)", () => {
+  it("couvre les 14 points déterministes et valide chaque verdict (Zod)", () => {
     const input: AuditInput = {
       fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
       produit: { typeTheFr: "Mélange de plantes", estAromatise: true },
       ingredients: buildIngredients(),
     };
     const r = auditDeterministic(input);
-    expect(r).toHaveLength(15);
+    expect(r).toHaveLength(14);
     // Every verdict carries a justification and a valid status.
     for (const c of r) {
       expect(c.mode).toBe("deterministic");
@@ -86,7 +86,6 @@ describe("Voie A déterministe — golden MT265", () => {
     expect(byId(r, "5.3").statut).toBe("NA"); // pas de réglisse
 
     // Donnée absente → WARNING (jamais un PASS silencieux).
-    expect(byId(r, "2.1").statut).toBe("WARNING"); // pas de mention "ingrédients" dans le texte
     expect(byId(r, "6.1").statut).toBe("WARNING"); // poids net absent
     expect(byId(r, "7.2").statut).toBe("WARNING"); // mention conservation absente
     expect(byId(r, "9.1").statut).toBe("WARNING"); // adresse absente
@@ -114,7 +113,6 @@ describe("Voie A déterministe — golden MT265", () => {
       ingredients: buildIngredients(),
     };
     const r = auditDeterministic(input);
-    expect(byId(r, "2.1").statut).toBe("PASS");
     expect(byId(r, "6.1").statut).toBe("PASS");
     expect(byId(r, "7.2").statut).toBe("PASS");
     expect(byId(r, "9.1").statut).toBe("PASS");

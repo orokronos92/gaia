@@ -1,27 +1,11 @@
 /**
  * Deterministic ingredient-list controls (PRO-QHS-013 §2.1). Order and
- * mono-ingredient checks read the recette; the mention check reads the label
- * text. Absent data → WARNING (never a silent PASS).
+ * mono-ingredient checks read the recette. The "Ingrédients :" prefix check
+ * (2.1) is NOT here: it's a manual BAT control, since the prefix is label
+ * decoration and not a stored field. Absent data → WARNING (never a silent PASS).
  */
 
-import { normalize } from "../canonical";
 import type { AuditInput, DeterministicVerdict } from "../types";
-
-/** 2.1 — INGR_MENTION: the word "ingrédients" precedes the list. */
-export function checkIngrMention(input: AuditInput): DeterministicVerdict {
-  const texte = input.fiche.ingredientsFr;
-  if (!texte || texte.trim() === "") {
-    return { statut: "WARNING", justification: "Liste d'ingrédients absente de la fiche." };
-  }
-  if (normalize(texte).includes("ingredient")) {
-    return { statut: "PASS", justification: "Mention « ingrédients » présente." };
-  }
-  return {
-    statut: "WARNING",
-    justification: "Mention « ingrédients » non détectée dans le texte enregistré — à confirmer sur le BAT.",
-    suggestionIa: "Préfixer la liste par « Ingrédients : ».",
-  };
-}
 
 /** 2.2 — INGR_ORDRE_DECROISSANT: descending weight order along ordreTri. */
 export function checkIngrOrdreDecroissant(input: AuditInput): DeterministicVerdict {

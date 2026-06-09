@@ -59,7 +59,7 @@ Legend — **Backing**: `engine` = computeRecette · `match` = string/regex on e
 | 1.2 | DENOMINATION | DENOM_AROMATISE | llm | text | "aromatisé/goût/saveur" per §1.2. Applic: estAromatise. |
 | 1.3 | DENOMINATION | DENOM_PARFUME | llm | text | "parfumé" only for enfleurage. Applic: estParfumeEnfleurage. |
 | 1.4 | DENOMINATION | DENOM_CHAMP_VISUEL | manual | visual | Same visual field as net weight, upright legible. |
-| 2.1 | INGREDIENTS | INGR_MENTION | deterministic | match | Word "ingrédients" precedes the list. |
+| 2.1 | INGREDIENTS | INGR_MENTION | manual | visual | Word "ingrédients" precedes the list. Reclassed deterministic→manual (2026-06-09): the prefix is BAT decoration, not a stored field — `ingredientsFr` holds the list alone, so a match would WARNING forever. |
 | 2.2 | INGREDIENTS | INGR_ORDRE_DECROISSANT | deterministic | engine | Descending weight order via `ordreTri`. |
 | 2.3 | INGREDIENTS | INGR_MONO | deterministic | engine | Mono-ingredient: list correctly omitted. |
 | 2.4 | INGREDIENTS | INGR_ETOILES_BIO | manual | visual | * bio / ** demeter + certification mention, demeter bold italic. |

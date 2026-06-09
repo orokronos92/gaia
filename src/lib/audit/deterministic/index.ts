@@ -15,7 +15,7 @@ import {
   type ControlResult,
   type DeterministicVerdict,
 } from "../types";
-import { checkIngrMention, checkIngrMono, checkIngrOrdreDecroissant } from "./ingredients";
+import { checkIngrMono, checkIngrOrdreDecroissant } from "./ingredients";
 import {
   checkCodeEtiquette,
   checkCodeOc,
@@ -32,7 +32,8 @@ type CheckFn = (input: AuditInput) => DeterministicVerdict;
 /** Registry id → deterministic check. Keys must stay in sync with the checklist. */
 const CHECKS: Record<string, CheckFn> = {
   "1.1": checkDenomThe51,
-  "2.1": checkIngrMention,
+  // 2.1 (INGR_MENTION) is manual now — the "Ingrédients :" prefix is BAT-only,
+  // not stored data. See control-checklist.ts.
   "2.2": checkIngrOrdreDecroissant,
   "2.3": checkIngrMono,
   "3.1": checkQuid,

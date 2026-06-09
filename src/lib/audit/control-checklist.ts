@@ -48,7 +48,11 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   // 2. LISTE DES INGRÉDIENTS
   {
-    id: "2.1", ordre: 6, section: "INGREDIENTS", typeControle: "INGR_MENTION", mode: "deterministic",
+    // Manual (BAT), not deterministic: the "Ingrédients :" prefix is UI
+    // decoration on the label, not a stored field — `ingredientsFr` holds the
+    // list alone, so a string match would WARNING forever. Marie ticks it on the
+    // BAT until the prefix becomes real, QUID-surfaced data.
+    id: "2.1", ordre: 6, section: "INGREDIENTS", typeControle: "INGR_MENTION", mode: "manual",
     libelle: "Le mot « ingrédients » précède-t-il la liste ?",
     reference: "PRO-QHS-013 §2.1",
   },

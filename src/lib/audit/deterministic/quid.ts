@@ -47,7 +47,14 @@ export function checkDenomThe51(input: AuditInput): DeterministicVerdict {
   };
 }
 
-/** 3.1 — QUID: a percentage is declared for every listed ingredient. */
+/**
+ * 3.1 — QUID: a percentage is declared for every listed ingredient.
+ *
+ * DECISION (Ouro, 2026-06-09): JDG declares a % for ALL ingredients, so we
+ * require one for each — stricter than INCO art. 22, which only mandates QUID
+ * for ingredients in the denomination / graphically highlighted / source of
+ * confusion. Do NOT "fix" this to the INCO minimum: it's the validated JDG rule.
+ */
 export function checkQuid(input: AuditInput): DeterministicVerdict {
   if (input.ingredients.length === 0) {
     return { statut: "WARNING", justification: "Aucune recette : QUID non vérifiable." };
