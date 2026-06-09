@@ -99,6 +99,34 @@ Dans **tous** les cas : validation **sur l'onglet recette**, alignement **vers l
 
 Chaque lot = un changement logique, testé, sur `gaia_zeta`.
 
+## Verrou « codePf déjà existant » à l'import (à construire)
+
+**Constat.** L'import écrit le produit en **upsert sur le `codePf`** (unique en base). Quand
+l'IA lit dans le document un code déjà connu (ex. MT265), le système **rouvre/met à jour le
+produit existant** au lieu d'en créer un — donc sa recette précédente réapparaît. C'est
+silencieux : si Marie enchaîne les imports et se trompe de fichier, la validation **écrase**
+une fiche existante sans qu'elle s'en rende compte.
+
+**Décision (validée Ouro 2026-06-09).** À l'import, si le `codePf` extrait existe déjà →
+**avertissement bloquant** avec **quatre** choix explicites :
+1. **Ouvrir sa fiche** — aller sur la fiche existante, **aucun écrasement**.
+2. **Écraser** — mettre à jour la fiche existante avec le nouvel import (overwrite-non-null).
+3. **Ouvrir une nouvelle fiche** — créer une fiche **distincte**, mais **titre et code laissés
+   VIDES** (le `codePf` est déjà pris) + avertissement que **le titre restera vide et devra
+   être rempli par Marie** (sécurité : évite un doublon non identifié qui se ferait passer pour
+   MT265).
+4. **Annuler** — ne rien faire.
+
+**Pourquoi.** Le verrou est le vrai filet anti-écrasement accidentel (scénario : Marie fait
+plusieurs imports d'affilée). La 3ᵉ option permet le « vrai nouveau produit » sans violer
+l'unicité du `codePf`, en forçant une identification consciente.
+
+**Implémentation pressentie.** Avant le `upsert`, requêter l'existence du `codePf` ; si présent,
+renvoyer au client un statut « conflit » + l'id de la fiche existante ; le client affiche le
+dialogue 4 choix ; selon le choix → ouvrir / écraser (update by id) / créer avec `codePf` nul +
+titre vide / annuler. Le flux « nouveau produit » gagnerait aussi à séparer *créer* de
+*ré-intégrer* (cf. ci-dessus).
+
 ## Hors périmètre (différé — le « boomerang »)
 
 - Différentiel au-delà de la composition (labels, origine…).

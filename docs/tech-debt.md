@@ -165,6 +165,40 @@ politique de bucket privée.
 
 ---
 
+## 11. 🟠 Import — fusion silencieuse sur `codePf` existant (pas de verrou)
+
+**Constat.** `processImport` fait un **upsert sur `codePf`**. Si l'IA lit un code déjà existant
+(ex. MT265), il **met à jour le produit existant** sans prévenir → sa recette précédente
+réapparaît, et un mauvais import peut **écraser** une fiche par accident.
+
+**Impact.** Risque d'écrasement silencieux quand Marie enchaîne les imports ; le flux « nouveau
+produit » rouvre en fait l'existant.
+
+**Solution.** Verrou avec avertissement 4 choix (Ouvrir sa fiche / Écraser / Nouvelle fiche à
+titre vide / Annuler). Détail validé dans
+`docs/decisions/2026-06-09-reconciliation-sources.md` (section « Verrou codePf déjà existant »).
+
+**Fichiers.** `src/agents/imports/importWorker.ts`, route import, `ImportDossierArea.tsx`.
+
+---
+
+## 12. 🟡 Calculatrice — saisie % affichée en float brut (round-trip)
+
+**Constat.** Au rechargement d'une recette dont les kg ont été dérivés (% + masse principale),
+`etatDepuisRecette` recalcule `pourcentageSaisi = kgVersPct(kg, lot)` → bruit flottant
+(`62.000012400024799`). La cellule l'affiche en `String(value)`, sans arrondi (le `% étiquette`,
+lui, reste propre via l'arrondi moteur).
+
+**Impact.** Affichage moche dans la colonne « Saisie (%) » ; cosmétique, valeur exacte préservée.
+
+**Solution.** Arrondir la **saisie dérivée** pour l'affichage (ex. `pourcentageSaisi` arrondi à
+1–2 décimales dans `etatDepuisRecette`, ou `toFixed` côté cellule). Faible risque.
+
+**Fichiers.** `src/hooks/useCalculatrice.ts` (`etatDepuisRecette`),
+`src/components/recette/RecetteCalculatorRow.tsx`.
+
+---
+
 ## 10. 🟡 Route d'import — historique sans `auth()` (résorbé)
 
 **Constat / résolu.** `POST /api/agents/import` était **sans authentification**. Corrigé au
