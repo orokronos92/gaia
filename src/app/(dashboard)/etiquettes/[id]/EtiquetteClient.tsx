@@ -27,13 +27,15 @@ import {
     FlaskConical,
     ArrowLeft,
     Copy,
-    Save
+    Save,
+    History
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { choisirAllegationAction, dupliquerFicheAction, sauvegarderVersionAction } from "@/app/actions/etiquettes"
 import { useEditableSection, EditButtons, EditableText, type EditableSection } from "@/components/etiquettes/editable-section"
+import { VersionsHistorique } from "@/components/etiquettes/versions-historique"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -118,7 +120,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette }: { labelData: any; recette: RecetteAgentOutput | null }) {
+export default function EtiquetteClient({ labelData, recette, versions = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[] }) {
     // State
     const router = useRouter()
     const [auditingType, setAuditingType] = useState<string | null>(null)
@@ -478,6 +480,10 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                     </TabsTrigger>
                     <TabsTrigger value="pdf" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
                         <FileCheck2 className="w-4 h-4 mr-2" /> BAT & Fichiers
+                    </TabsTrigger>
+                    <TabsTrigger value="historique" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
+                        <History className="w-4 h-4 mr-2" /> Historique
+                        {versions.length > 0 && <span className="ml-2 text-[10px] bg-stone-200 text-stone-600 rounded-full px-1.5 py-0.5">{versions.length}</span>}
                     </TabsTrigger>
                 </TabsList>
 
@@ -1217,6 +1223,11 @@ export default function EtiquetteClient({ labelData, recette }: { labelData: any
                             </div>
                         </div>
                     )}
+                </TabsContent>
+
+                {/* HISTORIQUE DES VERSIONS */}
+                <TabsContent value="historique" className="mt-0 focus-visible:outline-none">
+                    <VersionsHistorique versions={versions} />
                 </TabsContent>
 
             </Tabs>

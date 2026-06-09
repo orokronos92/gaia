@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -7,6 +8,7 @@ import {
   ingredientsRecette,
   versionsEtiquettes,
   fichesDegustation,
+  utilisateurs,
 } from "@/db/schema";
 
 /**
@@ -228,5 +230,76 @@ export async function creerVersionFiche(params: {
       .where(eq(fichesEtiquettes.id, params.ficheId));
 
     return { versionId: version.id, numeroVersion };
+  });
+}
+
+export interface VersionResume {
+  id: string;
+  numeroVersion: number;
+  creeLe: Date;
+  statut: string;
+  resumeChangements: string | null;
+  auteur: string | null;
+  donneesSnapshot: unknown;
+}
+
+/** Lists a fiche's version snapshots (newest first), with the author name. */
+export const getVersionsFiche = cache(
+  async (ficheId: string): Promise<VersionResume[]> => {
+    return db
+      .select({
+        id: versionsEtiquettes.id,
+        numeroVersion: versionsEtiquettes.numeroVersion,
+        creeLe: versionsEtiquettes.creeLe,
+        statut: versionsEtiquettes.statut,
+        resumeChangements: versionsEtiquettes.resumeChangements,
+        auteur: utilisateurs.nom,
+        donneesSnapshot: versionsEtiquettes.donneesSnapshot,
+      })
+      .from(versionsEtiquettes)
+      .leftJoin(utilisateurs, eq(versionsEtiquettes.creePar, utilisateurs.id))
+      .where(eq(versionsEtiquettes.ficheEtiquetteId, ficheId))
+      .orderBy(desc(versionsEtiquettes.numeroVersion));
+  }
+);
+
+/**
+ * Restores a version's snapshot into the LIVE fiche (label content fields only —
+ * the produit is shared across fiches, so it is not overwritten). Returns the
+ * fiche id + restored version number. The current state should have been saved
+ * as a version first if Marie wants to keep it.
+ */
+export async function restaurerVersionFiche(
+  versionId: string
+): Promise<{ ficheId: string; numeroVersion: number }> {
+  return db.transaction(async (tx) => {
+    const version = await tx.query.versionsEtiquettes.findFirst({
+      where: eq(versionsEtiquettes.id, versionId),
+    });
+    if (!version) throw new Error("Version introuvable");
+
+    const snap = version.donneesSnapshot as { fiche?: Record<string, unknown> };
+    const fiche = snap?.fiche ?? {};
+    // Drop structural/identity/timestamp keys; restore the label content.
+    const {
+      id: _id,
+      produitId: _pid,
+      codeEtiquette: _ce,
+      versionCouranteId: _vc,
+      creePar: _cp,
+      creeLe: _cl,
+      misAJourLe: _mu,
+      ...contenu
+    } = fiche;
+
+    await tx
+      .update(fichesEtiquettes)
+      .set({ ...(contenu as Record<string, unknown>), misAJourLe: new Date() })
+      .where(eq(fichesEtiquettes.id, version.ficheEtiquetteId));
+
+    return {
+      ficheId: version.ficheEtiquetteId,
+      numeroVersion: version.numeroVersion,
+    };
   });
 }

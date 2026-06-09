@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/db"
 import { fichesEtiquettes } from "@/db/schema"
 import { auth } from "@/auth"
-import { setAllegationChoisie, dupliquerFiche, creerVersionFiche } from "@/db/queries/fiches"
+import { setAllegationChoisie, dupliquerFiche, creerVersionFiche, restaurerVersionFiche } from "@/db/queries/fiches"
 import { writeAuditLog } from "@/db/queries/audit-logs"
 
 const ChoisirAllegationSchema = z.object({
@@ -110,6 +110,33 @@ export async function sauvegarderVersionAction(input: unknown) {
         typeEntite: "fiche_etiquette",
         entiteId: ficheId,
         action: "VERSION_CREEE",
+        utilisateurId: session.user.id,
+        changements: { versionId, numeroVersion },
+    })
+
+    revalidatePath(`/etiquettes/${ficheId}`)
+    return { ok: true as const, numeroVersion }
+}
+
+const RestaurerSchema = z.object({ versionId: z.string().uuid() })
+
+/**
+ * Restores a version snapshot into the live fiche (label content). Auth + Zod,
+ * delegates to the queries layer, logs it, revalidates. Marie should save the
+ * current state as a version first if she wants to keep it.
+ */
+export async function restaurerVersionAction(input: unknown) {
+    const { versionId } = RestaurerSchema.parse(input)
+
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const { ficheId, numeroVersion } = await restaurerVersionFiche(versionId)
+
+    await writeAuditLog({
+        typeEntite: "fiche_etiquette",
+        entiteId: ficheId,
+        action: "VERSION_RESTAUREE",
         utilisateurId: session.user.id,
         changements: { versionId, numeroVersion },
     })

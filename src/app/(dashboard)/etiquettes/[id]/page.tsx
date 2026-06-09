@@ -5,6 +5,7 @@ import EtiquetteClient from "./EtiquetteClient"
 import { notFound } from "next/navigation"
 import { getPublicUrl, findFileKeysByPrefix } from "@/lib/utils/s3-client"
 import { getRecetteOutputForProduit } from "@/db/queries/recettes"
+import { getVersionsFiche } from "@/db/queries/fiches"
 
 export default async function EtiquetteDetailPage(
     props: {
@@ -96,6 +97,9 @@ export default async function EtiquetteDetailPage(
     // Recette QUID (SPEC-03) — lue côté serveur, mappée en RecetteAgentOutput.
     const recette = await getRecetteOutputForProduit(data[0].produitId);
 
+    // Historique des versions (editable-fiche / versioning).
+    const versions = await getVersionsFiche(id);
+
     const codePfLower = data[0]?.codePf?.toLowerCase() || "";
 
     // We search the Minio bucket dynamically for ALL files matching the codePf.
@@ -112,5 +116,5 @@ export default async function EtiquetteDetailPage(
         date: data[0].date ? new Date(data[0].date).toLocaleDateString("fr-FR") : "Récent"
     };
 
-    return <EtiquetteClient labelData={labelData} recette={recette} />
+    return <EtiquetteClient labelData={labelData} recette={recette} versions={versions} />
 }
