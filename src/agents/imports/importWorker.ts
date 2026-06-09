@@ -1,6 +1,7 @@
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 import mammoth from "mammoth";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
@@ -515,5 +516,166 @@ ${combinedText.substring(0, 22000)}`;
             message: `Extraction IA terminée. ${textParts.length} document(s) analysé(s).${ficheDegustationId ? " Fiche dégustation créée." : ""}`,
             parsedFields: p,
         };
+    }
+
+    // ─── Ré-import dans une fiche existante (Lot 3b) ─────────────────────────
+    // Additif : ne touche pas processImport (chemin CREATE non testé). L'extraction
+    // est volontairement dupliquée ici, à dédupliquer lors du futur refactor.
+
+    private static ensureStringValue(val: unknown): string | null {
+        if (val === null || val === undefined) return null;
+        if (typeof val === "boolean") return null;
+        return String(val);
+    }
+
+    /** Produit/dégustation extraction (Word + PDF) → validated fields. Throws on failure. */
+    private static async extraireProduitDegustation(
+        docs: { docxBuffer?: ArrayBuffer; pdfBuffer?: ArrayBuffer }
+    ): Promise<MistralExtraction> {
+        const textParts: string[] = [];
+        if (docs.docxBuffer && docs.docxBuffer.byteLength > 0) {
+            textParts.push(await this.extractDocxText(docs.docxBuffer));
+        }
+        if (docs.pdfBuffer && docs.pdfBuffer.byteLength > 0) {
+            textParts.push(await this.extractPdfText(docs.pdfBuffer));
+        }
+        const combinedText = textParts.join("\n\n" + "─".repeat(60) + "\n\n");
+
+        const ragResults = await RAGService.searchContext(
+            "Règles dénomination légale liste des ingrédients QUID allergènes",
+            3
+        );
+        const prompt = this.buildExtractionPrompt(combinedText, RAGService.formatContextForPrompt(ragResults));
+
+        const response = await getMistralClient().chat.complete({
+            model: "mistral-large-latest",
+            messages: [
+                { role: "system", content: "Tu es un extracteur JSON strict. Retourne UNIQUEMENT du JSON valide correspondant au schéma demandé. Jamais de markdown, jamais de texte hors JSON." },
+                { role: "user", content: prompt },
+            ],
+            maxTokens: 3000,
+            temperature: 0.05,
+        });
+        const rawOutput = (response.choices?.[0]?.message?.content as string) ?? "{}";
+
+        let parsedJson: unknown;
+        try {
+            let clean = rawOutput.trim();
+            if (clean.startsWith("```json")) clean = clean.substring(7);
+            if (clean.startsWith("```")) clean = clean.substring(3);
+            if (clean.endsWith("```")) clean = clean.substring(0, clean.length - 3);
+            parsedJson = JSON.parse(clean.trim());
+        } catch {
+            throw new Error(`Mistral a retourné un JSON invalide. Réponse brute: ${rawOutput.substring(0, 200)}`);
+        }
+        const validation = MistralExtractionSchema.safeParse(parsedJson);
+        if (!validation.success) {
+            const issues = validation.error.issues.map((i) => `${i.path.join(".") || "(racine)"}: ${i.message}`).join(" ; ");
+            throw new Error(`La réponse de Mistral ne respecte pas le format attendu — ${issues}`);
+        }
+        return validation.data;
+    }
+
+    /** Dégustation row values from an extraction, or null when there is no degt data. */
+    private static buildDegustationValues(p: MistralExtraction, produitId: string, fichierNom?: string) {
+        const hasDegtData = p.dateDegustation
+            || (Array.isArray(p.degustateur) && p.degustateur.length > 0)
+            || p.feuillesSechesAspect || p.saveurBouche || p.infusionParfum || p.infusionAspectCouleur;
+        if (!hasDegtData) return null;
+        return {
+            produitId,
+            dateDegustation: p.dateDegustation || null,
+            degustateur: Array.isArray(p.degustateur) && p.degustateur.length > 0 ? p.degustateur : null,
+            numeroDeLot: p.numeroDeLot || null,
+            momentDegustation: p.momentDegustation || null,
+            poidsInfuse: p.parametresInfusion?.poids || null,
+            temperatureDegustation: p.parametresInfusion?.temperature || null,
+            tempsDegustation: p.parametresInfusion?.duree || null,
+            feuillesSechesAspect: p.feuillesSechesAspect || null,
+            feuillesSechesCouleur: p.feuillesSechesCouleur || null,
+            feuillesSechesSenteur: p.feuillesSechesSenteur || null,
+            feuillesInfuseesAspect: p.feuillesInfuseesAspect || null,
+            feuillesInfuseesCouleur: p.feuillesInfuseesCouleur || null,
+            feuillesInfuseesSenteur: p.feuillesInfuseesSenteur || null,
+            infusionAspectCouleur: p.infusionAspectCouleur || null,
+            infusionParfum: p.infusionParfum || null,
+            saveurBouche: p.saveurBouche || null,
+            fichierSourceNom: fichierNom || null,
+        };
+    }
+
+    /**
+     * Re-imports the dégustation (Word + optional PDF) into an EXISTING fiche.
+     * Overwrite-non-null: only fields the new extraction actually found are
+     * written — a missing field never clobbers an existing value, and codePf
+     * identity is preserved. The dégustation row is replaced. Returns the number
+     * of produit fields overwritten.
+     */
+    public static async reintegrerDegustation(
+        params: { ficheId: string; produitId: string; docxBuffer?: ArrayBuffer; pdfBuffer?: ArrayBuffer; fichierNom?: string }
+    ): Promise<{ champsProduit: number }> {
+        const { ficheId, produitId, docxBuffer, pdfBuffer, fichierNom } = params;
+        const p = await this.extraireProduitDegustation({ docxBuffer, pdfBuffer });
+        const s = (v: unknown) => this.ensureStringValue(v);
+
+        const candidat: Record<string, unknown> = {
+            codePf: s(p.codeArticle),
+            gamme: s(p.gamme),
+            denominationFr: s(p.designation),
+            typeTheFr: s(p.typePlante),
+            estAromatise: typeof p.aromatise === "boolean" ? p.aromatise : null,
+            origine: s(p.origine),
+            producteurJardin: s(p.producteur),
+            conditionnement: s(p.conditionnement),
+            sousDesignationFr: s(p.sousDesignation),
+            poidsNet: s(p.poidsNet),
+            tempsInfusion: s(p.tempsRecommande || p.tempsInfusion),
+            tempInfusion: s(p.temperatureRecommandee || p.tempInfusion),
+            plusieursInfusions: typeof p.plusieursInfusions === "boolean" ? p.plusieursInfusions : null,
+            fournisseur: s(p.fournisseur),
+            codeArticleFournisseur: s(p.codeArticleFournisseur),
+            designationFournisseur: s(p.designationFournisseur),
+            floId: s(p.floId),
+            epoqueRecolte: s(p.epoqueRecolte),
+            techniqueRecolte: s(p.techniqueRecolte),
+            organismeCertificateur: s(p.organismeCertificateur),
+            grade: s(p.grade),
+            volumineux: typeof p.volumineux === "boolean" ? p.volumineux : null,
+            nomLatin: s(p.nomLatin),
+            infoProducteur: s(p.infoProducteur),
+            typeProducteur: s(p.typeProducteur),
+            origineMpa: s(p.origineMpa),
+            allergenesMp: s(p.allergenesMp),
+            allegationsMp: s(p.allegationsMp),
+            labelsMP: Array.isArray(p.labelsMP) && p.labelsMP.length > 0 ? p.labelsMP : null,
+            labelsClient: Array.isArray(p.labelsClient) && p.labelsClient.length > 0 ? p.labelsClient : null,
+            declinaisons: s(p.declinaisons),
+            ingredientsSuggestion: s(p.ingredientsSuggestion),
+            dateMiseMarche: s(p.dateMiseMarche),
+            commentaires: s(p.commentaires),
+        };
+        const set: Record<string, unknown> = { misAJourLe: new Date() };
+        for (const [k, v] of Object.entries(candidat)) {
+            if (v !== null && v !== undefined) set[k] = v;
+        }
+        const champsProduit = Object.keys(set).length - 1;
+        await db.update(produits).set(set as Partial<typeof produits.$inferInsert>).where(eq(produits.id, produitId));
+
+        // Fiche : champs texte (overwrite-non-null).
+        const ficheSet: Record<string, unknown> = { misAJourLe: new Date() };
+        if (p.ingredientsTexte) ficheSet.ingredientsFr = p.ingredientsTexte;
+        if (p.allergenes) ficheSet.allergenes = p.allergenes;
+        const alleg = Array.isArray(p.allegationsPossibles) && p.allegationsPossibles.length > 0
+            ? p.allegationsPossibles.map((a) => `${a.libelle} (${a.nbTasses})`).join(" | ")
+            : (p.allegations || null);
+        if (alleg) ficheSet.allegationsSanteFr = alleg;
+        await db.update(fichesEtiquettes).set(ficheSet as Partial<typeof fichesEtiquettes.$inferInsert>).where(eq(fichesEtiquettes.id, ficheId));
+
+        // Dégustation : remplacement (overwrite).
+        const degt = this.buildDegustationValues(p, produitId, fichierNom);
+        await db.delete(fichesDegustation).where(eq(fichesDegustation.produitId, produitId));
+        if (degt) await db.insert(fichesDegustation).values({ id: crypto.randomUUID(), ...degt });
+
+        return { champsProduit };
     }
 }
