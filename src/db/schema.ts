@@ -57,6 +57,7 @@ export const produits = pgTable("produits", {
     nbTasses: varchar("nb_tasses", { length: 50 }),
     plusieursInfusions: boolean("plusieurs_infusions").default(false).notNull(),
     mentionEcocert: varchar("mention_ecocert", { length: 255 }),
+    codeOc: varchar("code_oc", { length: 50 }),                         // Code organisme de contrôle, ex: FR-BIO-01 (audit 13.2). Nullable → "à compléter".
     nomenclaturePmi: varchar("nomenclature_pmi", { length: 255 }),
     // ─── Fournisseur ──────────────────────────────────────────────────────────
     fournisseur: varchar("fournisseur", { length: 255 }),               // ex: Création Maison
@@ -76,6 +77,7 @@ export const produits = pgTable("produits", {
     // ─── Allergènes & Allégations MP ──────────────────────────────────────────
     allergenesMp: varchar("allergenes_mp", { length: 50 }),             // "oui" / "non" / null
     allegationsMp: varchar("allegations_mp", { length: 50 }),           // "oui" / "non" / null (sur le mélange final ?)
+    contientReglisse: boolean("contient_reglisse").default(false).notNull(), // Audit 5.3 — déclenche la mention hypertension JDG. Repli : scan des désignations.
     // ─── Labels ───────────────────────────────────────────────────────────────
     labelsMP: json("labels_mp").$type<string[]>(),                      // ["AB", "FLO", "MH"...]
     labelsClient: json("labels_client").$type<string[]>(),              // ["AB", "WFTO"...]
@@ -147,6 +149,7 @@ export const ingredientsRecette = pgTable("ingredients_recette", {
     designation: varchar("designation", { length: 255 }).notNull(),
     estDemeter: boolean("est_demeter").default(false).notNull(),
     estEquitable: boolean("est_equitable").default(false).notNull(),
+    estCamellia: boolean("est_camellia").default(false).notNull(),       // Audit 1.1 — Camellia sinensis (thé). Sert l'applicabilité contientThe + le calcul ≥51%.
     quantiteKg: real("quantite_kg").notNull(),
     pourcentageBrut: real("pourcentage_brut").notNull(),
     pourcentageEtiquette: real("pourcentage_etiquette").notNull(),

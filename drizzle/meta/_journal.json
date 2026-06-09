@@ -43,6 +43,13 @@
       "when": 1780909583224,
       "tag": "0005_rag_embedding_1024",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780992856316,
+      "tag": "0006_audit_data_backing",
+      "breakpoints": true
     }
   ]
 }
