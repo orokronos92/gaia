@@ -5,6 +5,8 @@ import * as xlsx from "xlsx";
 import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
+import { saveRecette } from "@/db/queries/recettes";
+import { extraireRecetteDepuisXlsx } from "./recetteExtractor";
 import crypto from "crypto";
 
 // Schéma de validation de la sortie Mistral — calqué EXACTEMENT sur le schéma JSON
@@ -505,6 +507,20 @@ ${combinedText.substring(0, 22000)}`;
                 fichierSourceNom: docs.fichierNom || null,
             });
             console.log(`[ImportWorker] Fiche dégustation créée → id: ${ficheDegustationId}`);
+        }
+
+        // 8. Recette structurée — appel IA dédié à l'Excel (best-effort). kg par
+        // l'IA, % par computeRecette ; persistée en DRAFT, Marie validera.
+        if (docs.xlsxBuffer && docs.xlsxBuffer.byteLength > 0) {
+            try {
+                const calc = await extraireRecetteDepuisXlsx(docs.xlsxBuffer);
+                if (calc) {
+                    await saveRecette({ produitId, version: "1.0", developpeur: "Import IA", calc });
+                    console.log(`[ImportWorker] Recette structurée extraite (${calc.ingredients.length} ingrédients)`);
+                }
+            } catch (e) {
+                console.error("[ImportWorker] Extraction recette structurée échouée:", e instanceof Error ? e.message : e);
+            }
         }
 
         console.log(`[ImportWorker] Import réussi → produitId: ${produitId}`);
