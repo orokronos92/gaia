@@ -99,7 +99,7 @@ Dans **tous** les cas : validation **sur l'onglet recette**, alignement **vers l
 
 Chaque lot = un changement logique, testé, sur `gaia_zeta`.
 
-## Verrou « codePf déjà existant » à l'import (à construire)
+## Verrou « codePf déjà existant » à l'import (CONSTRUIT + déployé 2026-06-09)
 
 **Constat.** L'import écrit le produit en **upsert sur le `codePf`** (unique en base). Quand
 l'IA lit dans le document un code déjà connu (ex. MT265), le système **rouvre/met à jour le

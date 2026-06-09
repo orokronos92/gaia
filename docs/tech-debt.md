@@ -165,20 +165,17 @@ politique de bucket privée.
 
 ---
 
-## 11. 🟠 Import — fusion silencieuse sur `codePf` existant (pas de verrou)
+## 11. ✅ Import — fusion silencieuse sur `codePf` existant (RÉSORBÉ 2026-06-09)
 
-**Constat.** `processImport` fait un **upsert sur `codePf`**. Si l'IA lit un code déjà existant
-(ex. MT265), il **met à jour le produit existant** sans prévenir → sa recette précédente
-réapparaît, et un mauvais import peut **écraser** une fiche par accident.
+**Constat (résolu).** `processImport` faisait un upsert silencieux sur `codePf`. Désormais :
+verrou avec avertissement 4 choix (Ouvrir sa fiche / Écraser / Créer une nouvelle fiche à titre
+vide / Annuler). Détail : `docs/decisions/2026-06-09-reconciliation-sources.md`.
 
-**Impact.** Risque d'écrasement silencieux quand Marie enchaîne les imports ; le flux « nouveau
-produit » rouvre en fait l'existant.
+**Reste.** Le flux « nouveau produit » lance encore l'IA dès le 1er document (pas de staging) —
+voir le point ingestion deux-temps de la décision (optionnel).
 
-**Solution.** Verrou avec avertissement 4 choix (Ouvrir sa fiche / Écraser / Nouvelle fiche à
-titre vide / Annuler). Détail validé dans
-`docs/decisions/2026-06-09-reconciliation-sources.md` (section « Verrou codePf déjà existant »).
-
-**Fichiers.** `src/agents/imports/importWorker.ts`, route import, `ImportDossierArea.tsx`.
+**Fichiers.** `src/agents/imports/importWorker.ts`, `src/db/queries/produits.ts`,
+`src/app/api/agents/import/route.ts`, `src/components/features/ImportDossierArea.tsx`.
 
 ---
 
