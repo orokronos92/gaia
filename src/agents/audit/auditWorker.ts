@@ -114,6 +114,20 @@ Exécute les 5 types de contrôles.`;
     }
 
     /**
+     * Re-audits an arbitrary snapshot (a saved version) WITHOUT persisting —
+     * "does this old state still pass today's rules?" (versioning / legislation).
+     * Reuses the RAG-built prompt and the Mistral call.
+     */
+    public static async auditerSnapshot(
+        fiche: Record<string, unknown>,
+        produit: Record<string, unknown>
+    ): Promise<Controle[]> {
+        const prompt = await this.buildAuditPrompt(fiche, produit);
+        const { controls } = await this.runLlmAudit(prompt);
+        return controls;
+    }
+
+    /**
      * Re-audits a batch of labels (e.g. a regulation changed). Each fiche failure
      * is isolated so one bad label doesn't sink the batch.
      */

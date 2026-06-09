@@ -303,3 +303,18 @@ export async function restaurerVersionFiche(
     };
   });
 }
+
+/** Reads a single version's snapshot (server-side, for re-auditing it). */
+export const getVersionSnapshot = cache(
+  async (
+    versionId: string
+  ): Promise<{ fiche?: Record<string, unknown>; produit?: Record<string, unknown> } | null> => {
+    const v = await db.query.versionsEtiquettes.findFirst({
+      where: eq(versionsEtiquettes.id, versionId),
+      columns: { donneesSnapshot: true },
+    });
+    return (v?.donneesSnapshot ?? null) as
+      | { fiche?: Record<string, unknown>; produit?: Record<string, unknown> }
+      | null;
+  }
+);

@@ -12,13 +12,18 @@ import {
   User,
   Clock,
   GitCompare,
+  Bot,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { restaurerVersionAction } from "@/app/actions/etiquettes";
+import { restaurerVersionAction, auditerVersionAction } from "@/app/actions/etiquettes";
 import { VersionDiff } from "@/components/etiquettes/version-diff";
+import {
+  VersionAuditResult,
+  type AuditResultat,
+} from "@/components/etiquettes/version-audit-result";
 
 interface VersionItem {
   id: string;
@@ -55,6 +60,27 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
   const [open, setOpen] = useState<string | null>(null);
   const [restoring, setRestoring] = useState<string | null>(null);
   const [compare, setCompare] = useState<string[]>([]);
+  const [auditing, setAuditing] = useState<string | null>(null);
+  const [audits, setAudits] = useState<Record<string, AuditResultat>>({});
+
+  const auditer = async (versionId: string, num: number) => {
+    setAuditing(versionId);
+    try {
+      const res = (await auditerVersionAction({ versionId })) as AuditResultat;
+      setAudits((a) => ({ ...a, [versionId]: res }));
+      if (res.ok) {
+        toast.success(`Audit V${num} : ${res.overallStatus}`);
+      } else {
+        toast.error("Audit indisponible", { description: res.error });
+      }
+    } catch (e) {
+      toast.error("Échec de l'audit", {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setAuditing(null);
+    }
+  };
 
   // Toggle a version into the comparison (keep the last 2 picked).
   const toggleCompare = (id: string) =>
@@ -194,6 +220,22 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
                   type="button"
                   variant="outline"
                   size="sm"
+                  onClick={() => auditer(v.id, v.numeroVersion)}
+                  disabled={!!auditing}
+                  title="Ré-auditer cette version avec les règles actuelles"
+                  className="gap-1.5 border-stone-200 text-stone-700 hover:text-emerald-700"
+                >
+                  {auditing === v.id ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Bot className="size-4" />
+                  )}
+                  Auditer
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => restaurer(v.id, v.numeroVersion)}
                   disabled={!!restoring}
                   className="gap-1.5 border-stone-200 text-stone-700 hover:text-emerald-700"
@@ -220,6 +262,8 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
                 <Champ label="Fabricant" value={fiche.mentionFabricant} />
               </div>
             )}
+
+            {audits[v.id] && <VersionAuditResult resultat={audits[v.id]} />}
           </div>
         );
       })}

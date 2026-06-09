@@ -7,8 +7,9 @@ import { revalidatePath } from "next/cache"
 import { db } from "@/db"
 import { fichesEtiquettes } from "@/db/schema"
 import { auth } from "@/auth"
-import { setAllegationChoisie, dupliquerFiche, creerVersionFiche, restaurerVersionFiche } from "@/db/queries/fiches"
+import { setAllegationChoisie, dupliquerFiche, creerVersionFiche, restaurerVersionFiche, getVersionSnapshot } from "@/db/queries/fiches"
 import { writeAuditLog } from "@/db/queries/audit-logs"
+import { AuditWorker } from "@/agents/audit/auditWorker"
 
 const ChoisirAllegationSchema = z.object({
     ficheId: z.string().uuid(),
@@ -147,6 +148,45 @@ export async function restaurerVersionAction(input: unknown) {
 
     revalidatePath(`/etiquettes/${ficheId}`)
     return { ok: true as const, numeroVersion }
+}
+
+const AuditerVersionSchema = z.object({ versionId: z.string().uuid() })
+
+/**
+ * Re-audits a saved version against today's rules (versioning / legislation).
+ * Reads the snapshot server-side, runs the audit on its data WITHOUT persisting,
+ * and returns the report. Auth + Zod.
+ */
+export async function auditerVersionAction(input: unknown) {
+    const { versionId } = AuditerVersionSchema.parse(input)
+
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const snap = await getVersionSnapshot(versionId)
+    if (!snap?.fiche) throw new Error("Snapshot de version introuvable")
+
+    try {
+        const controls = await AuditWorker.auditerSnapshot(snap.fiche, snap.produit ?? {})
+        const hasFail = controls.some((c) => c.statut === "FAIL")
+        const hasWarn = controls.some((c) => c.statut === "WARNING")
+        const overallStatus = hasFail ? "FAIL" : hasWarn ? "WARNING" : "PASS"
+
+        await writeAuditLog({
+            typeEntite: "version_etiquette",
+            entiteId: versionId,
+            action: "VERSION_RE_AUDITEE",
+            utilisateurId: session.user.id,
+            changements: { overallStatus },
+        })
+
+        return { ok: true as const, overallStatus, controls }
+    } catch (e) {
+        return {
+            ok: false as const,
+            error: e instanceof Error ? e.message : "Audit IA indisponible",
+        }
+    }
 }
 
 export async function createFicheEtiquette(formData: FormData) {
