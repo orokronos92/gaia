@@ -5,6 +5,7 @@ import { Copy, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { RecetteCalculee } from "@/lib/business-rules/recette";
+import { genererListeIngredients } from "@/lib/recette/liste-ingredients";
 
 export interface RecetteListeGenereeProps {
   resultat: RecetteCalculee;
@@ -24,18 +25,7 @@ export function RecetteListeGeneree({
 }: RecetteListeGenereeProps) {
   const [copie, setCopie] = useState(false);
 
-  const lignes = resultat.ingredients
-    .map((ing, i) => ({ ing, pct: etiquettes[i] ?? ing.pourcentageEtiquette }))
-    .sort((a, b) => a.ing.ordreTri - b.ing.ordreTri)
-    .map(({ ing, pct }) => {
-      const marqueurs = [
-        ing.estDemeter ? "✱" : "",
-        ing.estEquitable ? "°" : "",
-      ].join("");
-      return `${ing.designation}${marqueurs} ${pct} %`;
-    });
-
-  const texte = lignes.join(", ") + ".";
+  const texte = genererListeIngredients(resultat.ingredients, etiquettes);
 
   const copier = async () => {
     try {

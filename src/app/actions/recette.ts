@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
 import { computeRecette } from "@/lib/business-rules/recette";
+import { genererListeIngredients } from "@/lib/recette/liste-ingredients";
 import { validerRecette } from "@/db/queries/recettes";
+import { alignerListeIngredients } from "@/db/queries/fiches";
 import { CopilotAgent } from "@/agents/copilot-agent";
 
 const IngredientPayload = z.object({
@@ -66,7 +68,14 @@ export async function validerRecetteAction(input: unknown) {
     etiquettesEffectives,
   });
 
-  if (data.ficheId) revalidatePath(`/etiquettes/${data.ficheId}`);
+  // Lot 5 — align the produit's declared composition with the validated recette.
+  // The recette is the truth; this regenerates the fiche's declared ingredient
+  // list, which also closes the composition differential (ready for audit).
+  if (data.ficheId) {
+    const ingredientsFr = genererListeIngredients(calc.ingredients, etiquettesEffectives);
+    await alignerListeIngredients(data.ficheId, ingredientsFr);
+    revalidatePath(`/etiquettes/${data.ficheId}`);
+  }
   return { ok: true as const, recetteId };
 }
 

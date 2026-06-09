@@ -27,6 +27,18 @@ export const CHAMPS_FICHE_EDITABLES = [
 
 export type ChampFicheEditable = (typeof CHAMPS_FICHE_EDITABLES)[number];
 
+/**
+ * Aligns the fiche's declared ingredient list with a validated recette (Lot 5):
+ * the produit's declared composition becomes the recette truth, which also
+ * closes the composition differential.
+ */
+export async function alignerListeIngredients(ficheId: string, ingredientsFr: string): Promise<void> {
+  await db
+    .update(fichesEtiquettes)
+    .set({ ingredientsFr, misAJourLe: new Date() })
+    .where(eq(fichesEtiquettes.id, ficheId));
+}
+
 /** Resolves a fiche's product id server-side (never trust a client-sent id). */
 export const getFicheProduitId = cache(async (ficheId: string): Promise<string | null> => {
   const fiche = await db.query.fichesEtiquettes.findFirst({
