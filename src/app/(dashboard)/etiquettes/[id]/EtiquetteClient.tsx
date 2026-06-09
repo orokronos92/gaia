@@ -982,6 +982,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                     {/* SPEC-03 §6 — bloc additif : champs complémentaires + arbitrages */}
                     <div className="mt-6">
                         <DossierComplementaire
+                            ficheId={labelData.id}
+                            produitId={labelData.produitId}
+                            degustationId={labelData.degustation?.id ?? null}
                             floId={labelData.floId}
                             nomLatin={labelData.nomLatin}
                             dateMiseMarche={labelData.dateMiseMarche}

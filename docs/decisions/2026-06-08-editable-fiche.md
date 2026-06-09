@@ -47,8 +47,10 @@ par la calculatrice recette.
   diff). Branché sur **Mentions Légales** (instance de référence). Commit `076131d`.
   Chemin table `produits` **ouvert** (commit `fa914ca`) : `updateChampsAction`
   dispatche fiche|produit (whitelist par table), **titre éditable inline**
-  (`denominationFr`, renomme le produit). Reste à répliquer : Textes commerciaux,
-  Identité (champs produits). **Dupliquer** (clone vers nouvelle fiche) = à faire.
+  (`denominationFr`, renomme le produit). **Dupliquer** ✅ (commit `8891bec`) :
+  `dupliquerFiche` (transaction) clone produit + fiche + recette QUID (décision :
+  produit+fiche+recette) → nouvelle fiche DRAFT, source intacte ; bouton header.
+  Reste à répliquer l'édition : Textes commerciaux, Identité (champs produits).
 - **Phase 3** : versioning + re-audit (cas législation) + re-extraction des anciens.
 
 ## Garde-fous (CLAUDE.md)

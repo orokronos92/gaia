@@ -341,3 +341,59 @@ export const getVersionSnapshot = cache(
       | null;
   }
 );
+
+/**
+ * Mixed-table save for the "Données complémentaires" card (editable-fiche étape 2):
+ * writes produit + fiche fields and upserts the dégustation, all in one
+ * transaction. Values are already coerced/whitelisted by the Server Action.
+ */
+export async function updateDossier(params: {
+  ficheId: string;
+  produitId: string;
+  degustationId?: string | null;
+  produit: Record<string, unknown>;
+  fiche: Record<string, unknown>;
+  degustation: Record<string, unknown>;
+}): Promise<{ degustationId: string | null }> {
+  return db.transaction(async (tx) => {
+    if (Object.keys(params.produit).length > 0) {
+      await tx
+        .update(produits)
+        .set({ ...(params.produit as Record<string, never>), misAJourLe: new Date() })
+        .where(eq(produits.id, params.produitId));
+    }
+    if (Object.keys(params.fiche).length > 0) {
+      await tx
+        .update(fichesEtiquettes)
+        .set({ ...(params.fiche as Record<string, never>), misAJourLe: new Date() })
+        .where(eq(fichesEtiquettes.id, params.ficheId));
+    }
+
+    let degId = params.degustationId ?? null;
+    if (Object.keys(params.degustation).length > 0) {
+      const cible = params.degustationId
+        ? await tx.query.fichesDegustation.findFirst({
+            where: eq(fichesDegustation.id, params.degustationId),
+          })
+        : await tx.query.fichesDegustation.findFirst({
+            where: eq(fichesDegustation.produitId, params.produitId),
+            orderBy: [desc(fichesDegustation.creeLe)],
+          });
+      if (cible) {
+        await tx
+          .update(fichesDegustation)
+          .set({ ...(params.degustation as Record<string, never>) })
+          .where(eq(fichesDegustation.id, cible.id));
+        degId = cible.id;
+      } else {
+        const [cree] = await tx
+          .insert(fichesDegustation)
+          .values({ produitId: params.produitId, ...(params.degustation as Record<string, never>) })
+          .returning({ id: fichesDegustation.id });
+        degId = cree.id;
+      }
+    }
+
+    return { degustationId: degId };
+  });
+}

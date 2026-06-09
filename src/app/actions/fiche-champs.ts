@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
-import { CHAMPS_FICHE_EDITABLES, updateFicheEtiquetteChamps } from "@/db/queries/fiches";
+import { CHAMPS_FICHE_EDITABLES, updateFicheEtiquetteChamps, updateDossier } from "@/db/queries/fiches";
 import { CHAMPS_PRODUIT_EDITABLES, updateProduitChamps } from "@/db/queries/produits";
 import {
   CHAMPS_DEGUSTATION_EDITABLES,
@@ -94,6 +94,82 @@ export async function updateChampsAction(input: unknown) {
     action: "CHAMPS_MODIFIES",
     utilisateurId: session.user.id,
     changements: { table: data.table, avant, apres: champs },
+  });
+
+  revalidatePath(`/etiquettes/${data.ficheId}`);
+  return { ok: true as const };
+}
+
+// "Données complémentaires" — fields by table + special types (editable-fiche étape 2).
+const DOSSIER_PRODUIT_TEXTE = [
+  "floId",
+  "nomLatin",
+  "dateMiseMarche",
+  "organismeCertificateur",
+  "fournisseur",
+  "producteurJardin",
+  "infoProducteur",
+  "typeProducteur",
+];
+const DOSSIER_FICHE_TEXTE = ["allegationChoisie", "nbTassesAllegation"];
+
+const DossierSchema = z.object({
+  ficheId: z.string().uuid(),
+  produitId: z.string().uuid(),
+  degustationId: z.string().uuid().nullable().optional(),
+  champs: z.record(z.string(), z.string().nullable()),
+});
+
+const texteOuNull = (v: string | null | undefined) =>
+  v && v.trim() !== "" ? v : null;
+
+/**
+ * Saves the "Données complémentaires & arbitrages" card — mixed produit + fiche +
+ * dégustation, with special types (estAromatise boolean, labelsClient list). auth
+ * → Zod → coerce/whitelist per field → one transaction (updateDossier) → audit.
+ */
+export async function updateDossierAction(input: unknown) {
+  const data = DossierSchema.parse(input);
+
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const c = data.champs;
+  const produit: Record<string, unknown> = {};
+  for (const k of DOSSIER_PRODUIT_TEXTE) if (k in c) produit[k] = texteOuNull(c[k]);
+  if ("estAromatise" in c) produit.estAromatise = c.estAromatise === "true";
+  if ("labelsClient" in c) {
+    produit.labelsClient = (c.labelsClient ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  const fiche: Record<string, unknown> = {};
+  for (const k of DOSSIER_FICHE_TEXTE) if (k in c) fiche[k] = texteOuNull(c[k]);
+
+  const degustation: Record<string, unknown> = {};
+  if ("numeroDeLot" in c) {
+    const v = texteOuNull(c.numeroDeLot);
+    // Don't create an empty dégustation row just for a blank lot number.
+    if (v !== null || data.degustationId) degustation.numeroDeLot = v;
+  }
+
+  const { degustationId } = await updateDossier({
+    ficheId: data.ficheId,
+    produitId: data.produitId,
+    degustationId: data.degustationId ?? null,
+    produit,
+    fiche,
+    degustation,
+  });
+
+  await writeAuditLog({
+    typeEntite: "produit",
+    entiteId: data.produitId,
+    action: "DOSSIER_MODIFIE",
+    utilisateurId: session.user.id,
+    changements: { produit, fiche, degustation, degustationId },
   });
 
   revalidatePath(`/etiquettes/${data.ficheId}`);
