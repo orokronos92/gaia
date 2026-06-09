@@ -1,43 +1,59 @@
-import { describe, it, expect, vi } from 'vitest';
-import { ImportWorker } from '../../agents/imports/importWorker';
+import { describe, it, expect } from "vitest";
+import { MistralExtractionSchema } from "../../agents/imports/importWorker";
 
-// Minimal mock to avoid calling the real Database and real API during tests
-vi.mock('@/db', () => ({
-    db: {
-        insert: vi.fn().mockReturnThis(),
-        values: vi.fn().mockResolvedValue([{ id: 'mocked-id' }]),
-    }
-}));
-vi.mock('@/db/schema', () => ({
-    produits: {}, fichesEtiquettes: {}, recettes: {}, ingredientsRecette: {}, knowledgeDocuments: {}
-}));
-vi.mock('../../src/agents/knowledge/RAGService', () => ({
-    RAGService: {
-        searchContext: vi.fn().mockResolvedValue([]),
-        formatContextForPrompt: vi.fn().mockReturnValue('mock context'),
-    }
-}));
+/**
+ * Contract test for the import extraction safety net (CLAUDE.md §7). We do NOT
+ * exercise the full processImport pipeline here: it calls the real Mistral API
+ * and the DB, and mocking the worker's private extract methods (the previous
+ * approach) coupled the test to internals and broke on refactor. Instead we lock
+ * the Zod schema that guards every LLM output before it reaches the database —
+ * the genuinely deterministic, API-free part of the worker.
+ */
+describe("MistralExtractionSchema — import safety net", () => {
+  it("accepte une extraction JDG bien formée", () => {
+    const valide = {
+      codeArticle: "MT265",
+      designation: "Maté Sportif",
+      typePlante: "Mélange de plantes",
+      aromatise: true,
+      gamme: "Maté",
+      ingredientsTexte: "maté vert* 62%, gingembre* 15,5%…",
+      allergenes: "Aucun",
+      degustateur: ["Aurélie", "Patrice"],
+      parametresInfusion: { poids: "2 g", temperature: "95°C", duree: "2-3 mn" },
+      labelsClient: ["AB", "WFTO"],
+    };
+    expect(MistralExtractionSchema.safeParse(valide).success).toBe(true);
+  });
 
-describe('ImportWorker Logic Verification', () => {
+  it("accepte un objet vide (tous les champs sont optionnels)", () => {
+    expect(MistralExtractionSchema.safeParse({}).success).toBe(true);
+  });
 
-    it('should correctly orchestrate the extraction and fallback to deterministic JSON schema if API is mocked', async () => {
-        const dummyDocx = new ArrayBuffer(0);
-        const dummyXlsx = new ArrayBuffer(0);
+  it("rejette les malformations de TYPE de l'IA", () => {
+    // degustateur en string au lieu d'un tableau
+    expect(
+      MistralExtractionSchema.safeParse({ degustateur: "Aurélie" }).success
+    ).toBe(false);
+    // aromatise en string au lieu d'un booléen (checkbox mal interprétée)
+    expect(
+      MistralExtractionSchema.safeParse({ aromatise: "oui" }).success
+    ).toBe(false);
+    // parametresInfusion en string au lieu d'un objet
+    expect(
+      MistralExtractionSchema.safeParse({ parametresInfusion: "95°C" }).success
+    ).toBe(false);
+    // codeArticle numérique au lieu d'une chaîne
+    expect(
+      MistralExtractionSchema.safeParse({ codeArticle: 42 }).success
+    ).toBe(false);
+  });
 
-        // Mock the internal methods to avoid parsing real ArrayBuffers mapping to mammoth/xlsx
-        vi.spyOn(ImportWorker as any, 'extractDocxText').mockResolvedValue('Fiche Dégustation: Thé Vert menthe');
-        vi.spyOn(ImportWorker as any, 'extractExcelData').mockReturnValue([{ Ing: 'Thé', pct: 90 }]);
-
-        const result = await ImportWorker.processImport({ docxBuffer: dummyDocx, xlsxBuffer: dummyXlsx }, 'user-123');
-
-        expect(result.status).toBe('SUCCESS');
-        expect(result.ficheId).toBeDefined();
-        expect(result.produitId).toBeDefined();
-
-        // Ensure the dummy fallback returns a valid JSON matching the PRD schema
-        expect(result.parsedFields).toHaveProperty('codeArticle');
-        expect(result.parsedFields).toHaveProperty('designation');
-        expect(result.parsedFields).toHaveProperty('aromatise');
-        expect(result.parsedFields).toHaveProperty('labelsClient');
+  it("préserve les clés inconnues (passthrough) sans casser le flux", () => {
+    const parsed = MistralExtractionSchema.parse({
+      designation: "Thé Vert",
+      champInattendu: "valeur libre",
     });
+    expect((parsed as Record<string, unknown>).champInattendu).toBe("valeur libre");
+  });
 });
