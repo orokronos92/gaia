@@ -25,7 +25,19 @@ export async function POST(req: Request) {
         const xlsxBuffer = excelFile ? await excelFile.arrayBuffer() : undefined;
         const pdfBuffer = pdfFile ? await pdfFile.arrayBuffer() : undefined;
 
-        const importResult = await ImportWorker.processImport({ docxBuffer, xlsxBuffer, pdfBuffer }, session.user.id);
+        const resolutionRaw = formData.get("resolution");
+        const resolution = resolutionRaw === "overwrite" || resolutionRaw === "new" ? resolutionRaw : undefined;
+
+        const importResult = await ImportWorker.processImport({ docxBuffer, xlsxBuffer, pdfBuffer }, session.user.id, resolution);
+
+        // codePf déjà existant et pas de résolution → on laisse Marie choisir.
+        if (importResult.status === "CONFLICT") {
+            return NextResponse.json({
+                conflict: true,
+                codePf: importResult.codePf,
+                ficheExistanteId: importResult.ficheExistanteId,
+            });
+        }
 
         return NextResponse.json({
             success: true,

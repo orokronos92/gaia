@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
 import { saveRecette } from "@/db/queries/recettes";
+import { getFicheExistantePourCodePf } from "@/db/queries/produits";
 import { extraireRecetteDepuisXlsx } from "./recetteExtractor";
 import crypto from "crypto";
 
@@ -101,9 +102,12 @@ export interface ImportResult {
     ficheId: string;
     produitId: string;
     ficheDegustationId: string | null;
-    status: "SUCCESS" | "WARNING" | "ERROR";
+    status: "SUCCESS" | "WARNING" | "ERROR" | "CONFLICT";
     message: string;
     parsedFields: Record<string, any>;
+    /** On CONFLICT (codePf already exists): the existing fiche to offer opening. */
+    ficheExistanteId?: string | null;
+    codePf?: string;
 }
 
 export interface ImportDocuments {
@@ -297,7 +301,8 @@ ${combinedText.substring(0, 22000)}`;
 
     public static async processImport(
         docs: ImportDocuments,
-        userId?: string
+        userId?: string,
+        resolution?: "overwrite" | "new"
     ): Promise<ImportResult> {
         console.log("[ImportWorker] Démarrage de l'extraction multi-format...");
 
@@ -385,6 +390,26 @@ ${combinedText.substring(0, 22000)}`;
             return String(val);
         };
 
+        // Verrou codePf : si l'IA a lu un code déjà existant et qu'aucune résolution
+        // n'est demandée, on NE persiste PAS — on renvoie un conflit pour que Marie
+        // choisisse (ouvrir / écraser / nouvelle fiche). Évite l'écrasement silencieux.
+        const codeExtrait = ensureString(p.codeArticle);
+        if (codeExtrait && !resolution) {
+            const existante = await getFicheExistantePourCodePf(codeExtrait);
+            if (existante) {
+                return {
+                    ficheId: "",
+                    produitId: existante.produitId,
+                    ficheDegustationId: null,
+                    status: "CONFLICT",
+                    message: `Le produit ${codeExtrait} existe déjà.`,
+                    parsedFields: p,
+                    ficheExistanteId: existante.ficheId,
+                    codePf: codeExtrait,
+                };
+            }
+        }
+
         const produitValues = {
             codePf: ensureString(p.codeArticle) || `IMP-${Date.now()}`,
             gamme: ensureString(p.gamme) || "Inconnue",
@@ -428,6 +453,14 @@ ${combinedText.substring(0, 22000)}`;
             commentaires: ensureString(p.commentaires) || null,
             misAJourLe: new Date(),
         };
+
+        // « Nouvelle fiche » sur un code déjà pris : on force un code temporaire
+        // (codePf unique) et un TITRE VIDE — Marie doit identifier consciemment le
+        // produit (sécurité anti-doublon). L'upsert insère alors une fiche neuve.
+        if (resolution === "new") {
+            produitValues.codePf = `IMP-${Date.now()}`;
+            produitValues.denominationFr = "";
+        }
 
         const [upsertedProduit] = await db.insert(produits)
             .values({

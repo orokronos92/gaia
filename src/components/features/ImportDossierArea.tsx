@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UploadCloud, FileText, Loader2, FileSpreadsheet, FileIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,7 @@ import { cn } from "@/lib/utils";
 export function ImportDossierArea() {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [conflit, setConflit] = useState<{ codePf?: string; ficheExistanteId: string | null; files: File[] } | null>(null);
     const router = useRouter();
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -38,7 +40,7 @@ export function ImportDossierArea() {
         }
     };
 
-    const uploadFiles = async (files: File[]) => {
+    const uploadFiles = async (files: File[], resolution?: "overwrite" | "new") => {
         const formData = new FormData();
         let validFileFound = false;
 
@@ -64,6 +66,8 @@ export function ImportDossierArea() {
             return;
         }
 
+        if (resolution) formData.append("resolution", resolution);
+
         setIsUploading(true);
 
         try {
@@ -85,6 +89,13 @@ export function ImportDossierArea() {
             }
 
             const data = await res.json();
+
+            // codePf déjà existant → on laisse Marie choisir (modale).
+            if (data.conflict) {
+                setConflit({ codePf: data.codePf, ficheExistanteId: data.ficheExistanteId ?? null, files });
+                return;
+            }
+
             toast.success("Importation réussie avec l'IA !", {
                 description: `Produit ${data.data.codeArticle || "créé"} généré.`,
             });
@@ -94,17 +105,28 @@ export function ImportDossierArea() {
             } else {
                 router.push("/etiquettes");
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Upload Error:", error);
             toast.error("Erreur d'importation", {
-                description: error.message,
+                description: error instanceof Error ? error.message : "Erreur inconnue",
             });
         } finally {
             setIsUploading(false);
         }
     };
 
+    const ouvrirExistante = () => {
+        if (conflit?.ficheExistanteId) router.push(`/etiquettes/${conflit.ficheExistanteId}`);
+        setConflit(null);
+    };
+    const resoudre = (resolution: "overwrite" | "new") => {
+        const files = conflit?.files ?? [];
+        setConflit(null);
+        void uploadFiles(files, resolution);
+    };
+
     return (
+        <>
         <Card className="bg-white/60 backdrop-blur-xl border-dashed border-2 border-emerald-200 shadow-sm overflow-hidden mb-6 transition-all hover:border-emerald-400">
             <CardContent className="p-0">
                 <div
@@ -151,7 +173,7 @@ export function ImportDossierArea() {
                                     Déposer les documents produit
                                 </h3>
                                 <p className="text-sm text-stone-500 max-w-sm">
-                                    Glissez jusqu'à 3 fichiers simultanément. Mistral extrait tous les champs automatiquement.
+                                    Glissez jusqu&apos;à 3 fichiers simultanément. Mistral extrait tous les champs automatiquement.
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 mt-2 flex-wrap justify-center">
@@ -172,5 +194,39 @@ export function ImportDossierArea() {
                 </div>
             </CardContent>
         </Card>
+
+        {conflit && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+                <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+                    <h3 className="text-lg font-bold text-stone-900">Produit déjà existant</h3>
+                    <p className="mt-2 text-sm text-stone-600">
+                        Le code <span className="font-semibold">{conflit.codePf}</span> existe déjà.
+                        Que veux-tu faire ?
+                    </p>
+                    <div className="mt-5 flex flex-col gap-2">
+                        <Button
+                            onClick={ouvrirExistante}
+                            disabled={!conflit.ficheExistanteId}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold"
+                        >
+                            Ouvrir sa fiche
+                        </Button>
+                        <Button variant="outline" onClick={() => resoudre("overwrite")} className="rounded-xl">
+                            Écraser la fiche existante
+                        </Button>
+                        <Button variant="outline" onClick={() => resoudre("new")} className="rounded-xl">
+                            Créer une nouvelle fiche
+                        </Button>
+                        <p className="text-xs text-amber-700 leading-relaxed">
+                            ⚠ La nouvelle fiche aura un <strong>titre vide</strong> — à remplir par sécurité (évite un doublon non identifié).
+                        </p>
+                        <Button variant="ghost" onClick={() => setConflit(null)} className="rounded-xl text-stone-500">
+                            Annuler
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }

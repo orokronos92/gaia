@@ -1,6 +1,28 @@
-import { eq } from "drizzle-orm";
+import { cache } from "react";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { produits } from "@/db/schema";
+import { produits, fichesEtiquettes } from "@/db/schema";
+
+/**
+ * Resolves an existing product (and its latest fiche) by codePf — used to detect
+ * an import conflict before silently overwriting (codePf is the unique identity).
+ * Returns null when the code is free.
+ */
+export const getFicheExistantePourCodePf = cache(
+  async (codePf: string): Promise<{ produitId: string; ficheId: string | null } | null> => {
+    const produit = await db.query.produits.findFirst({
+      where: eq(produits.codePf, codePf),
+      columns: { id: true },
+    });
+    if (!produit) return null;
+    const fiche = await db.query.fichesEtiquettes.findFirst({
+      where: eq(fichesEtiquettes.produitId, produit.id),
+      columns: { id: true },
+      orderBy: [desc(fichesEtiquettes.creeLe)],
+    });
+    return { produitId: produit.id, ficheId: fiche?.id ?? null };
+  }
+);
 
 /**
  * Whitelist of produit fields Marie may edit (editable-fiche pattern). Grows as
