@@ -1,14 +1,14 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Search, Bot } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { PlusCircle, Bot } from "lucide-react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
 import { db } from "@/db"
 import { fichesEtiquettes, produits } from "@/db/schema"
-import { eq } from "drizzle-orm"
+import { eq, ilike, or } from "drizzle-orm"
+import { ProductSearch } from "@/components/features/ProductSearch"
 
 const columns = [
     { id: "quality", title: "À faire - Qualité" },
@@ -17,9 +17,15 @@ const columns = [
     { id: "reception", title: "Contrôle réception" },
 ]
 
-export default async function KanbanPage() {
+export default async function KanbanPage(
+    props: {
+        searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+    }
+) {
+    const searchParams = await props.searchParams;
+    const q = typeof searchParams?.q === "string" ? searchParams.q : "";
 
-    const data = await db
+    const base = db
         .select({
             id: fichesEtiquettes.id,
             title: produits.denominationFr,
@@ -29,6 +35,17 @@ export default async function KanbanPage() {
         })
         .from(fichesEtiquettes)
         .leftJoin(produits, eq(fichesEtiquettes.produitId, produits.id));
+
+    // Case-insensitive substring search across code / name / gamme (mirrors the produits filter).
+    const data = q
+        ? await base.where(
+              or(
+                  ilike(produits.codePf, `%${q}%`),
+                  ilike(produits.denominationFr, `%${q}%`),
+                  ilike(produits.gamme, `%${q}%`)
+              )
+          )
+        : await base;
 
     const mappedCards = data.map(item => {
         let colId = "quality";
@@ -57,10 +74,7 @@ export default async function KanbanPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                        <Input type="search" placeholder="Filtrer les cartes..." className="pl-9 bg-white/60 backdrop-blur-md border-stone-200/50 rounded-full w-64 shadow-sm" />
-                    </div>
+                    <ProductSearch />
                     <Link href="/etiquettes/nouveau">
                         <Button variant="outline" className="bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm rounded-full px-5 flex items-center gap-2 font-medium">
                             <Bot className="h-4 w-4" />
