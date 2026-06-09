@@ -140,3 +140,56 @@ export const ControlResultSchema = z.object({
   suggestionIa: z.string().optional(),
 });
 export type ControlResult = z.infer<typeof ControlResultSchema>;
+
+/**
+ * Already-fetched audit input. The lane is pure (CLAUDE.md §3 — `lib/` never
+ * touches the DB): the orchestrator loads fiche/produit/recette via
+ * `src/db/queries/` and hands this shape down. Decoupled from the Drizzle row
+ * shape on purpose, so the audit logic doesn't bind to the schema.
+ */
+export interface AuditIngredient {
+  codeArticle: string;
+  designation: string;
+  quantiteKg: number;
+  pourcentageBrut: number;
+  pourcentageEtiquette: number;
+  estDemeter: boolean;
+  estEquitable: boolean;
+  estCamellia: boolean;
+  ordreTri: number;
+}
+
+export interface AuditFicheData {
+  ingredientsFr?: string | null;
+  allergenes?: string | null;
+  allegationsSanteFr?: string | null;
+  mentionConservation?: string | null;
+  mentionFabricant?: string | null;
+  codeEtiquette?: string | null;
+  denominationLegale?: string | null;
+}
+
+export interface AuditProduitData {
+  typeTheFr?: string | null;
+  denominationFr?: string | null;
+  estAromatise?: boolean;
+  poidsNet?: string | null;
+  codeOc?: string | null;
+  contientReglisse?: boolean;
+  allergenesMp?: string | null;
+  codeEan?: string | null;
+}
+
+export interface AuditInput {
+  fiche: AuditFicheData;
+  produit: AuditProduitData;
+  /** Recette ingredient lines (may be empty if no recette yet). */
+  ingredients: AuditIngredient[];
+}
+
+/** Verdict an individual deterministic check returns (joined into a ControlResult). */
+export interface DeterministicVerdict {
+  statut: ControlStatus;
+  justification: string;
+  suggestionIa?: string;
+}
