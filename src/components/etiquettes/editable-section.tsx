@@ -28,11 +28,13 @@ export interface EditableSection {
 
 export function useEditableSection(opts: {
   /** Which table the fields belong to. */
-  table: "fiche" | "produit";
-  /** Row to update — ficheId for "fiche", produitId for "produit". */
-  entityId: string;
+  table: "fiche" | "produit" | "degustation";
+  /** Row id — fiche/produit id, or dégustation id (null if not created yet). */
+  entityId: string | null;
   /** Fiche whose page to revalidate after save. */
   ficheId: string;
+  /** Needed to create a dégustation when none exists. */
+  produitId?: string;
   champs: Record<string, string | null>;
 }): EditableSection {
   const router = useRouter();
@@ -57,6 +59,7 @@ export function useEditableSection(opts: {
       await updateChampsAction({
         table: opts.table,
         id: opts.entityId,
+        produitId: opts.produitId,
         ficheId: opts.ficheId,
         champs: draft,
       });

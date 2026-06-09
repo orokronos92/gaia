@@ -6,27 +6,35 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { CHAMPS_FICHE_EDITABLES, updateFicheEtiquetteChamps } from "@/db/queries/fiches";
 import { CHAMPS_PRODUIT_EDITABLES, updateProduitChamps } from "@/db/queries/produits";
+import {
+  CHAMPS_DEGUSTATION_EDITABLES,
+  upsertDegustationChamps,
+} from "@/db/queries/degustation";
 import { writeAuditLog } from "@/db/queries/audit-logs";
 
 const Schema = z.object({
-  table: z.enum(["fiche", "produit"]),
-  /** Row to update — ficheId for "fiche", produitId for "produit". */
-  id: z.string().uuid(),
+  table: z.enum(["fiche", "produit", "degustation"]),
+  /** Row id — ficheId / produitId / degustationId. Null for a not-yet-created dégustation. */
+  id: z.string().uuid().nullable().optional(),
+  /** Needed to create a dégustation when none exists. */
+  produitId: z.string().uuid().optional(),
   /** Fiche whose page to revalidate. */
   ficheId: z.string().uuid(),
   champs: z.record(z.string(), z.string().nullable()),
 });
 
-const WHITELIST: Record<"fiche" | "produit", Set<string>> = {
+const WHITELIST: Record<"fiche" | "produit" | "degustation", Set<string>> = {
   fiche: new Set(CHAMPS_FICHE_EDITABLES),
   produit: new Set(CHAMPS_PRODUIT_EDITABLES),
+  degustation: new Set(CHAMPS_DEGUSTATION_EDITABLES),
 };
 
 /**
- * Saves a per-card edit of fiche OR produit text fields (editable-fiche pattern).
- * auth → Zod → per-table whitelist (no mass assignment) → query delegation →
- * audit-log the diff → revalidate. Fiche fields: "" → null (all nullable).
- * Produit fields: kept as string (some are NOT NULL); the title can't be emptied.
+ * Saves a per-card edit of fiche / produit / dégustation text fields (editable-
+ * fiche pattern). auth → Zod → per-table whitelist (no mass assignment) → query
+ * delegation → audit-log the diff → revalidate. Fiche & dégustation fields:
+ * "" → null. Produit fields: kept as string (some NOT NULL); the title can't be
+ * emptied. Dégustation is upserted (created if none exists).
  */
 export async function updateChampsAction(input: unknown) {
   const data = Schema.parse(input);
@@ -38,28 +46,51 @@ export async function updateChampsAction(input: unknown) {
   const champs: Record<string, string | null> = {};
   for (const [k, v] of Object.entries(data.champs)) {
     if (!allowed.has(k)) continue;
-    if (data.table === "fiche") {
-      champs[k] = v && v.trim() !== "" ? v : null;
-    } else {
+    if (data.table === "produit") {
       const val = (v ?? "").trim();
       if (k === "denominationFr" && val === "") {
         throw new Error("Le titre ne peut pas être vide.");
       }
       champs[k] = val;
+    } else {
+      // fiche & degustation: nullable → "" becomes null
+      champs[k] = v && v.trim() !== "" ? v : null;
     }
   }
   if (Object.keys(champs).length === 0) {
     throw new Error("Aucun champ modifiable fourni.");
   }
 
-  const { avant } =
-    data.table === "fiche"
-      ? await updateFicheEtiquetteChamps(data.id, champs)
-      : await updateProduitChamps(data.id, champs as Record<"denominationFr", string>);
+  let avant: Record<string, string | null>;
+  let entiteId: string;
+
+  if (data.table === "fiche") {
+    if (!data.id) throw new Error("Identifiant fiche manquant.");
+    ({ avant } = await updateFicheEtiquetteChamps(data.id, champs));
+    entiteId = data.id;
+  } else if (data.table === "produit") {
+    if (!data.id) throw new Error("Identifiant produit manquant.");
+    ({ avant } = await updateProduitChamps(data.id, champs as Record<"denominationFr", string>));
+    entiteId = data.id;
+  } else {
+    if (!data.produitId) throw new Error("Produit requis pour la dégustation.");
+    const res = await upsertDegustationChamps({
+      produitId: data.produitId,
+      degustationId: data.id ?? null,
+      champs,
+    });
+    avant = res.avant;
+    entiteId = res.degustationId;
+  }
 
   await writeAuditLog({
-    typeEntite: data.table === "fiche" ? "fiche_etiquette" : "produit",
-    entiteId: data.id,
+    typeEntite:
+      data.table === "fiche"
+        ? "fiche_etiquette"
+        : data.table === "produit"
+          ? "produit"
+          : "degustation",
+    entiteId,
     action: "CHAMPS_MODIFIES",
     utilisateurId: session.user.id,
     changements: { table: data.table, avant, apres: champs },

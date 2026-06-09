@@ -53,6 +53,15 @@ const hasRealValue = (val: string | null | undefined) => {
     return !['/', 'aucun', 'néant', 'non', 'n/a', 'na', '', '-'].includes(clean);
 }
 
+function DegField({ section, field, label, value }: { section: EditableSection, field: string, label: string, value: any }) {
+    return (
+        <div>
+            <span className="text-[10px] font-bold text-stone-400 uppercase">{label}</span>
+            <EditableText section={section} field={field} value={value ?? null} placeholder="—" className="text-sm text-stone-800" />
+        </div>
+    )
+}
+
 function DataPointEdit({ icon: Icon, label, field, value, suffix, section }: { icon: any, label: string, field: string, value: any, suffix?: string, section: EditableSection }) {
     if (!section.editing) {
         return <DataPoint icon={Icon} label={label} value={value} suffix={suffix} />
@@ -200,6 +209,32 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
         entityId: labelData.id,
         ficheId: labelData.id,
         champs: { ingredientsFr: labelData.ingredientsFr },
+    })
+
+    // Editable organoleptic grid (dégustation table — upserted if absent).
+    const deg = labelData.degustation
+    const degustationSection = useEditableSection({
+        table: "degustation",
+        entityId: deg?.id ?? null,
+        produitId: labelData.produitId,
+        ficheId: labelData.id,
+        champs: {
+            dateDegustation: deg?.dateDegustation ?? null,
+            numeroDeLot: deg?.numeroDeLot ?? null,
+            momentDegustation: deg?.momentDegustation ?? null,
+            poidsInfuse: deg?.poidsInfuse ?? null,
+            temperatureDegustation: deg?.temperatureDegustation ?? null,
+            tempsDegustation: deg?.tempsDegustation ?? null,
+            feuillesSechesAspect: deg?.feuillesSechesAspect ?? null,
+            feuillesSechesCouleur: deg?.feuillesSechesCouleur ?? null,
+            feuillesSechesSenteur: deg?.feuillesSechesSenteur ?? null,
+            feuillesInfuseesAspect: deg?.feuillesInfuseesAspect ?? null,
+            feuillesInfuseesCouleur: deg?.feuillesInfuseesCouleur ?? null,
+            feuillesInfuseesSenteur: deg?.feuillesInfuseesSenteur ?? null,
+            infusionAspectCouleur: deg?.infusionAspectCouleur ?? null,
+            infusionParfum: deg?.infusionParfum ?? null,
+            saveurBouche: deg?.saveurBouche ?? null,
+        },
     })
 
     // Save the fiche's current state as a new version snapshot.
@@ -699,22 +734,60 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                             {/* Card: Déclarations Légales par Langue */}
                             <Card className="border border-blue-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl flex flex-col">
 
-                                {/* NOUVEAU: Grille Organoleptique (Notes de Dégustation) — toujours visible */}
-                                {hasDegustation ? (
-                                    <div className="bg-stone-50/50 border-b border-stone-100 p-6 flex flex-col gap-5">
-                                        <div className="flex items-center justify-between">
-                                            <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-                                                <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-pink-100 border-none flex items-center justify-center">
-                                                    <Eye className="h-4 w-4 text-pink-700" />
-                                                </Badge>
-                                                Grille Organoleptique & Dégustation
-                                            </h3>
-                                            <div className="flex items-center gap-2 text-[10px] font-bold text-stone-500 uppercase">
-                                                <span>{labelData.degustation.degustateur?.length ? labelData.degustation.degustateur.join(", ") : "Comité"}</span> •
-                                                <span>{labelData.degustation.dateDegustation || "Date non précisée"}</span>
+                                {/* Grille Organoleptique (Dégustation) — éditable, toujours visible */}
+                                <div className="bg-stone-50/50 border-b border-stone-100 p-6 flex flex-col gap-5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                                            <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-pink-100 border-none flex items-center justify-center">
+                                                <Eye className="h-4 w-4 text-pink-700" />
+                                            </Badge>
+                                            Grille Organoleptique & Dégustation
+                                        </h3>
+                                        <div className="flex items-center gap-3">
+                                            {!degustationSection.editing && deg && (
+                                                <div className="flex items-center gap-2 text-[10px] font-bold text-stone-500 uppercase">
+                                                    <span>{deg.degustateur?.length ? deg.degustateur.join(", ") : "Comité"}</span> •
+                                                    <span>{deg.dateDegustation || "Date non précisée"}</span>
+                                                </div>
+                                            )}
+                                            <EditButtons section={degustationSection} />
+                                        </div>
+                                    </div>
+
+                                    {degustationSection.editing ? (
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="bg-white rounded-2xl border border-stone-200/60 p-4 space-y-2">
+                                                    <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest">Feuilles Sèches</h4>
+                                                    <DegField section={degustationSection} field="feuillesSechesAspect" label="Aspect" value={deg?.feuillesSechesAspect} />
+                                                    <DegField section={degustationSection} field="feuillesSechesCouleur" label="Couleur" value={deg?.feuillesSechesCouleur} />
+                                                    <DegField section={degustationSection} field="feuillesSechesSenteur" label="Senteur / Nez" value={deg?.feuillesSechesSenteur} />
+                                                </div>
+                                                <div className="bg-emerald-50/30 rounded-2xl border border-emerald-100/60 p-4 space-y-2">
+                                                    <h4 className="text-xs font-bold text-emerald-600/70 uppercase tracking-widest">Feuilles Infusées</h4>
+                                                    <DegField section={degustationSection} field="feuillesInfuseesAspect" label="Aspect" value={deg?.feuillesInfuseesAspect} />
+                                                    <DegField section={degustationSection} field="feuillesInfuseesCouleur" label="Couleur" value={deg?.feuillesInfuseesCouleur} />
+                                                    <DegField section={degustationSection} field="feuillesInfuseesSenteur" label="Senteur / Nez" value={deg?.feuillesInfuseesSenteur} />
+                                                </div>
+                                                <div className="bg-amber-50/50 rounded-2xl border border-amber-200/60 p-4 space-y-2">
+                                                    <h4 className="text-xs font-bold text-amber-700/70 uppercase tracking-widest">En Tasse (Liqueur)</h4>
+                                                    <DegField section={degustationSection} field="infusionAspectCouleur" label="Aspect & Couleur" value={deg?.infusionAspectCouleur} />
+                                                    <DegField section={degustationSection} field="infusionParfum" label="Parfum" value={deg?.infusionParfum} />
+                                                    <DegField section={degustationSection} field="saveurBouche" label="Saveur en bouche" value={deg?.saveurBouche} />
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-white rounded-2xl border border-stone-200/60 p-4">
+                                                <DegField section={degustationSection} field="dateDegustation" label="Date" value={deg?.dateDegustation} />
+                                                <DegField section={degustationSection} field="momentDegustation" label="Moment" value={deg?.momentDegustation} />
+                                                <DegField section={degustationSection} field="numeroDeLot" label="N° de lot" value={deg?.numeroDeLot} />
+                                                <DegField section={degustationSection} field="poidsInfuse" label="Poids infusé" value={deg?.poidsInfuse} />
+                                                <DegField section={degustationSection} field="temperatureDegustation" label="Température" value={deg?.temperatureDegustation} />
+                                                <DegField section={degustationSection} field="tempsDegustation" label="Temps" value={deg?.tempsDegustation} />
                                             </div>
                                         </div>
-
+                                    ) : !hasDegustation ? (
+                                        <EmptyState icon={Eye} label="Grille organoleptique non renseignée pour cette fiche." />
+                                    ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             {/* Feuilles Sèches */}
                                             <div className="bg-white rounded-2xl border border-stone-200/60 shadow-sm p-4 space-y-3">
@@ -764,18 +837,8 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="bg-stone-50/50 border-b border-stone-100 p-6 flex flex-col gap-4">
-                                        <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-                                            <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-pink-100 border-none flex items-center justify-center">
-                                                <Eye className="h-4 w-4 text-pink-700" />
-                                            </Badge>
-                                            Grille Organoleptique & Dégustation
-                                        </h3>
-                                        <EmptyState icon={Eye} label="Grille organoleptique non renseignée pour cette fiche." />
-                                    </div>
-                                )}
+                                    )}
+                                </div>
 
                                 <CardHeader className="bg-blue-500/10 border-b border-blue-100 pb-4">
                                     <CardTitle className="text-lg font-bold text-emerald-950 flex items-center justify-between">
