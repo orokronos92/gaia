@@ -1,7 +1,6 @@
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 import mammoth from "mammoth";
-import * as xlsx from "xlsx";
 import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
@@ -168,21 +167,6 @@ export class ImportWorker {
         return `[DOCUMENT WORD - FICHE DÉGUSTATION]\n${text}`;
     }
 
-    private static extractXlsxText(buffer: ArrayBuffer): string {
-        const workbook = xlsx.read(buffer, { type: "buffer" });
-        let text = "[DOCUMENT EXCEL - RECETTE / INGRÉDIENTS]\n";
-        for (const sheetName of workbook.SheetNames) {
-            const sheet = workbook.Sheets[sheetName];
-            const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
-            text += `\nFeuille: ${sheetName}\n`;
-            text += rows
-                .filter(row => row.some(cell => cell !== null && cell !== undefined && cell !== ""))
-                .map(row => row.join("\t"))
-                .join("\n");
-        }
-        return text;
-    }
-
     private static async extractPdfText(buffer: ArrayBuffer): Promise<string> {
         try {
             // Utilisation de pdf2json à la place de pdf-parse qui crashe sous Next.js 16/Turbopack
@@ -221,7 +205,7 @@ CONTEXTE RÉGLEMENTAIRE INTERNE (utilise-le pour valider et enrichir) :
 ${ragContext}
 ---
 
-Ton rôle: extraire, normaliser et enrichir les données du/des document(s) fourni(s) (Word, Excel et/ou PDF).
+Ton rôle: extraire, normaliser et enrichir les données du/des document(s) fourni(s) (Word et/ou PDF). La recette (Excel) est traitée séparément — ne l'attends pas ici.
 Retourne UNIQUEMENT un objet JSON valide, sans markdown, sans commentaire, sans explication.
 
 SCHÉMA JSON ATTENDU :
@@ -292,7 +276,7 @@ RÈGLES DE SÉLECTION (IMPORTANT) :
 Les passages entourés de ⟦SÉLECTIONNÉ⟧...⟦/SÉLECTIONNÉ⟧ sont les valeurs cochées dans la fiche (équivalent d'une case cochée par surlignage). Quand une liste d'options est présente, retiens UNIQUEMENT les options marquées SÉLECTIONNÉ. Plusieurs options d'une même liste peuvent être sélectionnées (ex : plusieurs dégustateurs, plusieurs labels, plusieurs conditionnements). Si aucune option d'une liste n'est marquée, retourne null pour ce champ. Ignore tout symbole de case à cocher résiduel.
 
 RÈGLES D'ENRICHISSEMENT :
-- Si les % QUID sont dans l'Excel, intègre-les dans "ingredientsTexte" (ex: "Thé vert bio* 90%, citron* 10%")
+- "ingredientsTexte": la liste d'ingrédients telle qu'elle figure dans la fiche dégustation (avec % si présents)
 - Pour "aromatise": true si arôme naturel ou artificiel détecté dans les ingrédients
 - Pour les listes d'options, n'extraire que les valeurs marquées ⟦SÉLECTIONNÉ⟧ (voir RÈGLES DE SÉLECTION)
 - "conditionnementsOptions": retiens TOUS les conditionnements ET gammes marqués SÉLECTIONNÉ comme un tableau d'objets {gamme, format, grammage}. Mets la gamme cochée DANS l'entrée correspondante (champ "gamme"), jamais dans un champ séparé. Une gamme seule sans format/grammage précisé donne une entrée avec format/grammage à null. Les déclinaisons futures (ex 'courant 2026') vont dans le champ "declinaisons" séparé, PAS dans conditionnementsOptions.
@@ -328,11 +312,9 @@ ${combinedText.substring(0, 22000)}`;
             textParts.push(await this.extractDocxText(docs.docxBuffer));
         }
 
-        if (docs.xlsxBuffer && docs.xlsxBuffer.byteLength > 0) {
-            console.log("[ImportWorker] Extraction XLSX...");
-            textParts.push(this.extractXlsxText(docs.xlsxBuffer));
-        }
-
+        // The Excel (recette) no longer feeds this produit/dégustation call —
+        // it is handled by the dedicated structured recette extraction below,
+        // keeping each source routed to its target (provenance).
         if (docs.pdfBuffer && docs.pdfBuffer.byteLength > 0) {
             console.log("[ImportWorker] Extraction PDF...");
             textParts.push(await this.extractPdfText(docs.pdfBuffer));

@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { ImportWorker } from "@/agents/imports/importWorker";
+import { auth } from "@/auth";
 
 export async function POST(req: Request) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+    }
     try {
         const formData = await req.formData();
 
@@ -20,7 +25,7 @@ export async function POST(req: Request) {
         const xlsxBuffer = excelFile ? await excelFile.arrayBuffer() : undefined;
         const pdfBuffer = pdfFile ? await pdfFile.arrayBuffer() : undefined;
 
-        const importResult = await ImportWorker.processImport({ docxBuffer, xlsxBuffer, pdfBuffer });
+        const importResult = await ImportWorker.processImport({ docxBuffer, xlsxBuffer, pdfBuffer }, session.user.id);
 
         return NextResponse.json({
             success: true,
@@ -29,9 +34,9 @@ export async function POST(req: Request) {
             produitId: importResult.produitId,
             message: importResult.message,
         });
-    } catch (error: any) {
-        console.error("[API Import] Erreur complète:", error?.message, "\nStack:", error?.stack);
-        const details = error?.message ?? "Erreur inconnue";
+    } catch (error) {
+        const details = error instanceof Error ? error.message : "Erreur inconnue";
+        console.error("[API Import] Erreur:", details, error instanceof Error ? error.stack : "");
         return NextResponse.json(
             { error: details, details },
             { status: 500 }
