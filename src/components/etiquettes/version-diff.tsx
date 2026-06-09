@@ -12,7 +12,7 @@ export interface VersionLite {
 }
 
 /** Fields compared between two snapshots (table + key + human label). */
-const CHAMPS_COMPARE: { label: string; table: "fiche" | "produit"; key: string }[] = [
+const CHAMPS_COMPARE: { label: string; table: string; key: string }[] = [
   { label: "Titre", table: "produit", key: "denominationFr" },
   { label: "Type de thé", table: "produit", key: "typeTheFr" },
   { label: "Origine", table: "produit", key: "origine" },
@@ -34,6 +34,10 @@ const CHAMPS_COMPARE: { label: string; table: "fiche" | "produit"; key: string }
   { label: "Conservation", table: "fiche", key: "mentionConservation" },
   { label: "Fabricant", table: "fiche", key: "mentionFabricant" },
   { label: "Statut", table: "fiche", key: "statut" },
+  { label: "Total QUID %", table: "recette", key: "pourcentageTotal" },
+  { label: "Saveur en bouche", table: "degustation", key: "saveurBouche" },
+  { label: "Parfum (infusion)", table: "degustation", key: "infusionParfum" },
+  { label: "Senteur (feuilles sèches)", table: "degustation", key: "feuillesSechesSenteur" },
 ];
 
 const valeur = (v: VersionLite, table: string, key: string): string => {

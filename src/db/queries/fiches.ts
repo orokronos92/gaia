@@ -204,6 +204,24 @@ export async function creerVersionFiche(params: {
       where: eq(produits.id, fiche.produitId),
     });
 
+    // Broaden the snapshot: latest recette QUID (+ ingredients) and dégustation.
+    const recette = await tx.query.recettes.findFirst({
+      where: eq(recettes.produitId, fiche.produitId),
+      orderBy: [desc(recettes.creeLe)],
+    });
+    let recetteSnap: unknown = null;
+    if (recette) {
+      const ingredients = await tx.query.ingredientsRecette.findMany({
+        where: eq(ingredientsRecette.recetteId, recette.id),
+        orderBy: [ingredientsRecette.ordreTri],
+      });
+      recetteSnap = { ...recette, ingredients };
+    }
+    const degustation = await tx.query.fichesDegustation.findFirst({
+      where: eq(fichesDegustation.produitId, fiche.produitId),
+      orderBy: [desc(fichesDegustation.creeLe)],
+    });
+
     const [agg] = await tx
       .select({
         max: sql<number>`coalesce(max(${versionsEtiquettes.numeroVersion}), 0)`,
@@ -217,7 +235,12 @@ export async function creerVersionFiche(params: {
       .values({
         ficheEtiquetteId: params.ficheId,
         numeroVersion,
-        donneesSnapshot: { fiche, produit },
+        donneesSnapshot: {
+          fiche,
+          produit,
+          recette: recetteSnap,
+          degustation: degustation ?? null,
+        },
         statut: fiche.statut,
         creePar: params.utilisateurId,
         resumeChangements: params.resume ?? null,

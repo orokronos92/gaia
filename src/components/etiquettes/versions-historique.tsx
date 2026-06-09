@@ -146,9 +146,13 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
         const snap = (v.donneesSnapshot ?? {}) as {
           fiche?: Record<string, unknown>;
           produit?: Record<string, unknown>;
+          recette?: { ingredients?: unknown[]; pourcentageTotal?: unknown } | null;
+          degustation?: Record<string, unknown> | null;
         };
         const fiche = snap.fiche ?? {};
         const produit = snap.produit ?? {};
+        const recette = snap.recette;
+        const degustation = snap.degustation;
         const isOpen = open === v.id;
         const courante = i === 0;
 
@@ -260,6 +264,18 @@ export function VersionsHistorique({ versions }: { versions: VersionItem[] }) {
                 <Champ label="Texte commercial" value={fiche.texteCommercialFr} />
                 <Champ label="Conservation" value={fiche.mentionConservation} />
                 <Champ label="Fabricant" value={fiche.mentionFabricant} />
+                {recette && (
+                  <Champ
+                    label="Recette QUID"
+                    value={`${recette.ingredients?.length ?? 0} ingrédient(s) · total ${recette.pourcentageTotal ?? "—"} %`}
+                  />
+                )}
+                {degustation && (
+                  <Champ label="Saveur en bouche" value={degustation.saveurBouche} />
+                )}
+                {degustation && (
+                  <Champ label="Parfum (infusion)" value={degustation.infusionParfum} />
+                )}
               </div>
             )}
 
