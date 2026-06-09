@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import {
     FileText,
     CheckCircle2,
@@ -46,6 +46,7 @@ import { DossierComplementaire } from "@/components/recette/DossierComplementair
 import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 import { DeterministicAuditPanel } from "./_components/deterministic-audit-panel"
+import type { RecetteCalculatorHandle } from "@/components/recette/RecetteCalculator"
 
 // --- Helper pour vérifier si un champ "vide" Excel contient une vraie valeur
 const hasRealValue = (val: string | null | undefined) => {
@@ -240,6 +241,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
 
     // Save the fiche's current state as a new version snapshot.
     const [savingVersion, setSavingVersion] = useState(false)
+    const recetteRef = useRef<RecetteCalculatorHandle>(null)
     const sauvegarder = async () => {
         const resume = window.prompt(
             "Nom / note de cette version (optionnel) — ex. « avant changement règle additifs 2026 ». Annuler = ne pas sauvegarder.",
@@ -248,9 +250,22 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
         if (resume === null) return // annulé
         setSavingVersion(true)
         try {
+            // Persist the recette first (if its tab is mounted) so the version
+            // snapshot captures it. The fiche save proceeds either way (decision Q2).
+            let recetteNote = ""
+            if (recetteRef.current) {
+                try {
+                    const r = await recetteRef.current.persister()
+                    recetteNote = r.saved
+                        ? " Recette enregistrée."
+                        : ` Recette non enregistrée : ${r.reason}.`
+                } catch {
+                    recetteNote = " Recette : échec d'enregistrement."
+                }
+            }
             const res = await sauvegarderVersionAction({ ficheId: labelData.id, resume })
             toast.success(`Version ${res.numeroVersion} enregistrée`, {
-                description: "L'état complet de la fiche est archivé.",
+                description: "L'état complet de la fiche est archivé." + recetteNote,
             })
             router.refresh()
         } catch (e) {
@@ -1005,7 +1020,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
 
                 {/* RECETTE / QUID (SPEC-03) */}
                 <TabsContent value="recette" className="mt-0 focus-visible:outline-none">
-                    <RecettePanel ficheId={labelData.id} produitId={labelData.produitId} recette={recette} ingredientsExtraits={ingredientsExtraits} />
+                    <RecettePanel ref={recetteRef} ficheId={labelData.id} produitId={labelData.produitId} recette={recette} ingredientsExtraits={ingredientsExtraits} />
                 </TabsContent>
 
                 {/* 2. AUDIT ZONE */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { Info, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,12 +40,16 @@ export interface RecetteCalculatorProps {
   ficheId: string;
 }
 
-export function RecetteCalculator({
-  recette,
-  ingredientsExtraits,
-  produitId,
-  ficheId,
-}: RecetteCalculatorProps) {
+export interface RecetteCalculatorHandle {
+  /** Persists the recette if complete; returns why not when it can't. Throws on a server error. */
+  persister: () => Promise<{ saved: boolean; reason?: string }>;
+}
+
+export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalculatorProps>(
+  function RecetteCalculator(
+    { recette, ingredientsExtraits, produitId, ficheId }: RecetteCalculatorProps,
+    ref
+  ) {
   const initial: EtatCalculatrice = useMemo(
     () => etatInitial(recette, ingredientsExtraits),
     [recette, ingredientsExtraits]
@@ -76,20 +80,39 @@ export function RecetteCalculator({
     sugg.retirer(ligneId);
   };
 
+  // Shared persistence used by the recette's own button AND by the fiche save
+  // (coupling). Returns a reason instead of toasting when the recette isn't
+  // ready, so each caller can phrase it. Throws only on a server error.
+  const persister = async (): Promise<{ saved: boolean; reason?: string }> => {
+    if (!c.peutValider) {
+      const reason =
+        etat.lignes.length === 0
+          ? "aucun ingrédient"
+          : c.nbIncomplets > 0
+            ? "lignes incomplètes"
+            : "Σ ≠ 100 %";
+      return { saved: false, reason };
+    }
+    const ingredients = normaliserVersKg(etat).map((ing, i) => ({
+      codeArticle: etat.lignes[i].codeArticle,
+      designation: ing.designation,
+      quantiteKg: ing.quantiteKg,
+      estDemeter: ing.estDemeter,
+      estEquitable: ing.estEquitable,
+      overrideEtiquette: etat.lignes[i].overrideEtiquette,
+    }));
+    await validerRecetteAction({ produitId, ficheId, pas: etat.pas, ingredients });
+    return { saved: true };
+  };
+
+  useImperativeHandle(ref, () => ({ persister }));
+
   const valider = async () => {
-    if (!c.peutValider) return;
     setValidating(true);
     try {
-      const ingredients = normaliserVersKg(etat).map((ing, i) => ({
-        codeArticle: etat.lignes[i].codeArticle,
-        designation: ing.designation,
-        quantiteKg: ing.quantiteKg,
-        estDemeter: ing.estDemeter,
-        estEquitable: ing.estEquitable,
-        overrideEtiquette: etat.lignes[i].overrideEtiquette,
-      }));
-      await validerRecetteAction({ produitId, ficheId, pas: etat.pas, ingredients });
-      toast.success("Recette validée et enregistrée.");
+      const r = await persister();
+      if (r.saved) toast.success("Recette validée et enregistrée.");
+      else toast.info(`Recette non enregistrée : ${r.reason}.`);
     } catch (e) {
       toast.error("Échec de la validation.", {
         description: e instanceof Error ? e.message : undefined,
@@ -114,7 +137,7 @@ export function RecetteCalculator({
       {c.masseRequise && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
           <Info className="size-4 shrink-0" />
-          Renseigner la masse de l&apos;ingrédient principal (kg) pour obtenir les grammages.
+          Renseignez la masse de l&apos;ingrédient principal (kg) pour afficher les grammages — la recette reste enregistrable en % (masses relatives).
         </div>
       )}
 
@@ -224,7 +247,7 @@ export function RecetteCalculator({
       )}
     </div>
   );
-}
+});
 
 function ColLabel({ label, accent }: { label: string; accent?: boolean }) {
   return (
