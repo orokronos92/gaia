@@ -46,6 +46,7 @@ import { DossierComplementaire } from "@/components/recette/DossierComplementair
 import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 import { DeterministicAuditPanel } from "./_components/deterministic-audit-panel"
+import { ReintegrerRecetteButton } from "./_components/reintegrer-recette"
 import type { RecetteCalculatorHandle } from "@/components/recette/RecetteCalculator"
 
 // --- Helper pour vérifier si un champ "vide" Excel contient une vraie valeur
@@ -496,6 +497,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
+                    <ReintegrerRecetteButton ficheId={labelData.id} />
                     <Button
                         type="button"
                         variant="outline"

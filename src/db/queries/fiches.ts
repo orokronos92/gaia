@@ -27,6 +27,15 @@ export const CHAMPS_FICHE_EDITABLES = [
 
 export type ChampFicheEditable = (typeof CHAMPS_FICHE_EDITABLES)[number];
 
+/** Resolves a fiche's product id server-side (never trust a client-sent id). */
+export const getFicheProduitId = cache(async (ficheId: string): Promise<string | null> => {
+  const fiche = await db.query.fichesEtiquettes.findFirst({
+    where: eq(fichesEtiquettes.id, ficheId),
+    columns: { produitId: true },
+  });
+  return fiche?.produitId ?? null;
+});
+
 /**
  * Updates a whitelisted set of fiche text fields, returning the previous values
  * (for the audit diff). Caller (Server Action) guarantees the keys are allowed.
