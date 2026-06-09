@@ -51,6 +51,9 @@ export async function updateChampsAction(input: unknown) {
       if (k === "denominationFr" && val === "") {
         throw new Error("Le titre ne peut pas être vide.");
       }
+      if (k === "codePf" && val === "") {
+        throw new Error("Le code modèle ne peut pas être vide.");
+      }
       champs[k] = val;
     } else {
       // fiche & degustation: nullable → "" becomes null

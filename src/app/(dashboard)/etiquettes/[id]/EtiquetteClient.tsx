@@ -159,13 +159,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
         champs: { denominationFr: labelData.title },
     })
 
-    // Editable "Dossier #" reference — fiche field (codeEtiquette). Lets Marie replace
-    // the app-assigned IMP-… code with a chosen one (e.g. MT2806).
+    // Editable model reference — produit field (codePf), the authoritative product
+    // identity across the app. Lets Marie replace the app-assigned IMP-… placeholder
+    // with the real code (e.g. MT2806). Renames the product in place (all its fiches).
     const dossierSection = useEditableSection({
-        table: "fiche",
-        entityId: labelData.id,
+        table: "produit",
+        entityId: labelData.produitId,
         ficheId: labelData.id,
-        champs: { codeEtiquette: labelData.code },
+        champs: { codePf: labelData.codePf },
     })
 
     // Editable commercial texts (fiche fields).
@@ -469,20 +470,19 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                         <ChevronRight className="h-3 w-3" />
                         {dossierSection.editing ? (
                             <span className="inline-flex items-center gap-1.5">
-                                <span className="text-emerald-700">Dossier #</span>
+                                <span className="text-emerald-700">Modèle #</span>
                                 <input
                                     type="text"
-                                    value={dossierSection.draft.codeEtiquette ?? ""}
-                                    onChange={(e) => dossierSection.setField("codeEtiquette", e.target.value)}
-                                    placeholder={labelData.codePf ?? "Réf. dossier"}
-                                    className="bg-white rounded-md border border-emerald-300 px-2 py-0.5 text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-300 w-40"
+                                    value={dossierSection.draft.codePf ?? ""}
+                                    onChange={(e) => dossierSection.setField("codePf", e.target.value)}
+                                    placeholder="Réf. modèle (ex. MT2806)"
+                                    className="bg-white rounded-md border border-emerald-300 px-2 py-0.5 text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-300 w-48"
                                 />
                             </span>
                         ) : (
-                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Dossier #{labelData.code || labelData.codePf}</span>
+                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Modèle #{labelData.codePf}</span>
                         )}
                         <EditButtons section={dossierSection} />
-                        {labelData.codePf && <span className="text-stone-400">| Modele: {labelData.codePf}</span>}
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
                         {titreSection.editing ? (
