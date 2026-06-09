@@ -171,8 +171,8 @@ politique de bucket privée.
 verrou avec avertissement 4 choix (Ouvrir sa fiche / Écraser / Créer une nouvelle fiche à titre
 vide / Annuler). Détail : `docs/decisions/2026-06-09-reconciliation-sources.md`.
 
-**Reste.** Le flux « nouveau produit » lance encore l'IA dès le 1er document (pas de staging) —
-voir le point ingestion deux-temps de la décision (optionnel).
+**Reste.** ✅ Le staging deux-temps est fait (2026-06-09) : les documents sont mis en attente
+(un par rôle), Marie revoit, puis « Lancer l'analyse IA ». L'IA ne part plus au 1er fichier.
 
 **Fichiers.** `src/agents/imports/importWorker.ts`, `src/db/queries/produits.ts`,
 `src/app/api/agents/import/route.ts`, `src/components/features/ImportDossierArea.tsx`.
