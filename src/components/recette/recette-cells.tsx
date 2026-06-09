@@ -31,11 +31,12 @@ export function CodeArticleText({ code }: { code: string | null }) {
   return <span className="ml-2 text-[10px] text-stone-400">{code}</span>;
 }
 
-/** Raw % — computed, greyed, 3 decimals. "—" when not computable yet. */
+/** Raw % — computed, greyed, 2 decimals (matches the source fiche convention).
+ *  "—" when not computable yet. */
 export function PctBrutText({ value }: { value: number | null }) {
   return (
     <span className="tabular-nums text-xs text-stone-400">
-      {value == null ? "—" : value.toFixed(3)}
+      {value == null ? "—" : value.toFixed(2)}
     </span>
   );
 }

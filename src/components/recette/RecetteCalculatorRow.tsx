@@ -23,6 +23,7 @@ export function CelluleNombre({
   alerte,
   unite,
   className,
+  decimales,
 }: {
   value: number | null;
   onCommit: (raw: string) => void;
@@ -30,12 +31,18 @@ export function CelluleNombre({
   alerte?: boolean;
   unite?: string;
   className?: string;
+  /** Display precision while unfocused — the underlying value stays full-precision. */
+  decimales?: number;
 }) {
-  const [draft, setDraft] = useState(value == null ? "" : String(value));
+  // Clean the display (kill kg→% float noise) without touching the stored value.
+  const afficher = (v: number | null) =>
+    v == null ? "" : decimales != null ? v.toFixed(decimales) : String(v);
+  const [draft, setDraft] = useState(() => afficher(value));
   const [focus, setFocus] = useState(false);
   useEffect(() => {
-    if (!focus) setDraft(value == null ? "" : String(value));
-  }, [value, focus]);
+    if (!focus) setDraft(afficher(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, focus, decimales]);
 
   return (
     <div className="relative">
@@ -155,6 +162,7 @@ export function RecetteCalculatorRow({
               placeholder={incomplete ? "à compléter" : ""}
               alerte={incomplete}
               unite={saisieUnite}
+              decimales={unitMode === "kg" ? 3 : 2}
             />
             {incomplete && !suggestion && onSuggerer && (
               <button

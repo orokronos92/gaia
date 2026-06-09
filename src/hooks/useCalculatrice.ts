@@ -63,6 +63,8 @@ export function etatDepuisRecette(
       codeArticle: i.codeArticle || null,
       designation: i.designation,
       quantiteKg: i.quantiteKg,
+      // Kept at full precision so Σ% saisis lands exactly on 100 (the SPEC-03b
+      // verrou); the kg→% float noise is cleaned at the display layer (2 dec).
       pourcentageSaisi: totalKg > 0 ? kgVersPct(i.quantiteKg, totalKg) : null,
       overrideEtiquette: null,
       estDemeter: i.estDemeter,
