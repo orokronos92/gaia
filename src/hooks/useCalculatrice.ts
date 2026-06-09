@@ -12,6 +12,7 @@ import {
   pctVersKg,
   normaliserVersKg,
   masseLotDe,
+  masseLotEffective,
 } from "@/lib/recette/conversion";
 import { parseIngredientsTexte } from "@/lib/recette/parse-ingredients";
 import type {
@@ -138,6 +139,8 @@ export interface UseCalculatriceResult {
   totalEtiquette: number | null;
   nbIncomplets: number;
   masseRequise: boolean;
+  /** True when the lot mass is the notional base-100 (no real principal mass). */
+  masseNotionnelle: boolean;
   /** Effective label % (override ?? computed) for the line at `idx`. */
   etiquetteEffective: (idx: number) => number | null;
   setMassePrincipale: (v: number | null) => void;
@@ -165,13 +168,19 @@ export function useCalculatrice(
   const majLignes = (fn: (l: LigneIngredient[]) => LigneIngredient[]) =>
     setEtat((e) => ({ ...e, lignes: fn(e.lignes) }));
 
+  // Real lot mass (display/grammages) — null in % mode until Marie enters it.
   const masseLot = useMemo(() => masseLotDe(etat), [etat]);
+  // Effective lot for compute/persist — falls back to a notional base of 100.
+  const eff = useMemo(() => masseLotEffective(etat), [etat]);
+  const masseNotionnelle = eff.notionnel;
 
   const nbIncomplets = useMemo(
     () => etat.lignes.filter((l) => estIncomplete(l, etat.unitMode)).length,
     [etat.lignes, etat.unitMode]
   );
 
+  // No real principal mass yet (% mode): grammages stay hidden, but persistence
+  // is allowed on the notional base — so this no longer blocks compute/validate.
   const masseRequise =
     etat.unitMode === "pct" &&
     (etat.massePrincipaleKg == null || etat.massePrincipaleKg <= 0);
@@ -179,9 +188,8 @@ export function useCalculatrice(
   const peutCalculer =
     etat.lignes.length > 0 &&
     nbIncomplets === 0 &&
-    !masseRequise &&
-    masseLot != null &&
-    masseLot > 0;
+    eff.lot != null &&
+    eff.lot > 0;
 
   const etiquetteEffective = (idx: number): number | null => {
     const ov = etat.lignes[idx]?.overrideEtiquette;
@@ -357,6 +365,7 @@ export function useCalculatrice(
     totalEtiquette,
     nbIncomplets,
     masseRequise,
+    masseNotionnelle,
     etiquetteEffective,
     setMassePrincipale,
     setUnitMode,

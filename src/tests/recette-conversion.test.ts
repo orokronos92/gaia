@@ -4,6 +4,7 @@ import {
   kgVersPct,
   normaliserVersKg,
   masseLotDe,
+  masseLotEffective,
 } from "../lib/recette/conversion";
 import type { EtatCalculatrice, LigneIngredient } from "../lib/recette/types";
 import { computeRecette } from "../lib/business-rules/recette";
@@ -113,6 +114,41 @@ describe("masseLotDe — lot dérivé (SPEC-03b)", () => {
   });
 });
 
+describe("masseLotEffective — repli base notionnelle 100", () => {
+  it("masse réelle connue : lot réel, non notionnel", () => {
+    const etat: EtatCalculatrice = {
+      massePrincipaleKg: 10,
+      unitMode: "pct",
+      pas: 0.5,
+      lignes: [ligne({ designation: "Maté", pourcentageSaisi: 62 })],
+    };
+    expect(masseLotEffective(etat)).toEqual({ lot: (10 * 100) / 62, notionnel: false });
+  });
+
+  it("mode % complet sans masse : base 100 notionnelle", () => {
+    const etat: EtatCalculatrice = {
+      massePrincipaleKg: null,
+      unitMode: "pct",
+      pas: 0.5,
+      lignes: [
+        ligne({ designation: "Maté", pourcentageSaisi: 62 }),
+        ligne({ designation: "Gingembre", pourcentageSaisi: 38 }),
+      ],
+    };
+    expect(masseLotEffective(etat)).toEqual({ lot: 100, notionnel: true });
+  });
+
+  it("ligne incomplète : pas de base notionnelle (null)", () => {
+    const etat: EtatCalculatrice = {
+      massePrincipaleKg: null,
+      unitMode: "pct",
+      pas: 0.5,
+      lignes: [ligne({ designation: "Maté", pourcentageSaisi: null, incomplet: true })],
+    };
+    expect(masseLotEffective(etat)).toEqual({ lot: null, notionnel: false });
+  });
+});
+
 describe("normaliserVersKg — jonction unique avec computeRecette", () => {
   const etatKg = (): EtatCalculatrice => ({
     massePrincipaleKg: 10,
@@ -148,14 +184,32 @@ describe("normaliserVersKg — jonction unique avec computeRecette", () => {
     );
   });
 
-  it("mode % sans masse principale : refuse de convertir", () => {
+  it("mode % sans masse principale, lignes complètes : base notionnelle 100 (kg = %)", () => {
     const etat: EtatCalculatrice = {
       massePrincipaleKg: null,
       unitMode: "pct",
       pas: 0.5,
-      lignes: [ligne({ designation: "Maté", pourcentageSaisi: 62 })],
+      lignes: [
+        ligne({ designation: "Maté", pourcentageSaisi: 62 }),
+        ligne({ designation: "Gingembre", pourcentageSaisi: 38 }),
+      ],
     };
-    expect(() => normaliserVersKg(etat)).toThrow(/principal/i);
+    expect(normaliserVersKg(etat).map((o) => o.quantiteKg)).toEqual([62, 38]);
+  });
+
+  it("mode % sans masse, ligne incomplète : refuse de convertir (pas de base notionnelle)", () => {
+    const etat: EtatCalculatrice = {
+      massePrincipaleKg: null,
+      unitMode: "pct",
+      pas: 0.5,
+      lignes: [
+        ligne({ designation: "Maté", pourcentageSaisi: 62 }),
+        ligne({ designation: "Stévia", pourcentageSaisi: null, incomplet: true }),
+      ],
+    };
+    // An incomplete line disables the notional base → conversion must fail, not
+    // silently invent a quantity.
+    expect(() => normaliserVersKg(etat)).toThrow();
   });
 
   it("ligne incomplète (kg manquant) : lève une erreur explicite", () => {

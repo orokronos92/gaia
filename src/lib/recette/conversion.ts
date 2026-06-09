@@ -18,6 +18,8 @@ import type { EtatCalculatrice, LigneIngredient } from "./types";
 import type { IngredientRecetteInput } from "@/lib/business-rules/recette";
 
 const POURCENTAGE = 100;
+/** Notional lot mass when only % are known — kg become relative (decision 2026-06-09). */
+const BASE_NOTIONNELLE = 100;
 
 /** % -> kg, pivoting on the lot mass. Pure formula, unrounded. */
 export function pctVersKg(pct: number, masseLotKg: number): number {
@@ -57,6 +59,29 @@ export function masseLotDe(etat: EtatCalculatrice): number | null {
   const maxPct = maxPourcentage(etat);
   if (mp == null || mp <= 0 || maxPct <= 0) return null;
   return (mp * 100) / maxPct;
+}
+
+/**
+ * Effective lot mass for COMPUTE / PERSIST (not for display). Falls back to a
+ * NOTIONAL base of 100 when Marie works in % with every line complete but no
+ * real principal mass yet — so the recette can be saved from % alone (kg become
+ * relative, Σ-ratios and the audit are preserved). `notionnel` flags that
+ * fallback; grammages stay hidden (masseLotDe, the real lot, returns null) until
+ * a real principal mass is entered. The real path (mass set / kg mode) is
+ * unchanged.
+ */
+export function masseLotEffective(
+  etat: EtatCalculatrice
+): { lot: number | null; notionnel: boolean } {
+  const reel = masseLotDe(etat);
+  if (reel != null) return { lot: reel, notionnel: false };
+  const complet =
+    etat.unitMode === "pct" &&
+    etat.lignes.length > 0 &&
+    etat.lignes.every((l) => l.pourcentageSaisi != null);
+  return complet
+    ? { lot: BASE_NOTIONNELLE, notionnel: true }
+    : { lot: null, notionnel: false };
 }
 
 /**
@@ -101,7 +126,7 @@ function resoudreKg(
 export function normaliserVersKg(
   etat: EtatCalculatrice
 ): IngredientRecetteInput[] {
-  const lot = masseLotDe(etat);
+  const lot = masseLotEffective(etat).lot;
   return etat.lignes.map((ligne) => ({
     codeArticle: ligne.codeArticle ?? "",
     designation: ligne.designation,
