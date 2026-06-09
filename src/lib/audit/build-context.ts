@@ -4,7 +4,12 @@
  * authoritative; designation scans are fallbacks for not-yet-flagged data.
  */
 
-import { CAMELLIA_KEYWORDS, normalize, REGLISSE_KEYWORDS } from "./canonical";
+import {
+  allergeneMatierePresent,
+  CAMELLIA_KEYWORDS,
+  normalize,
+  REGLISSE_KEYWORDS,
+} from "./canonical";
 import type { AuditContext, AuditInput } from "./types";
 
 function scanDesignations(input: AuditInput, keywords: readonly string[]): boolean {
@@ -36,6 +41,7 @@ export function buildAuditContext(input: AuditInput): AuditContext {
     estParfumeEnfleurage: false,
     ingredients: fiche.ingredientsFr ?? null,
     allergenes: fiche.allergenes ?? null,
+    allergeneMatiere: allergeneMatierePresent(produit.allergenesMp),
     allegationsSanteFr: fiche.allegationsSanteFr ?? null,
     contientReglisse: detectContientReglisse(input),
     // No backing data yet — surface/origin controls stay manual or LLM.

@@ -13,6 +13,7 @@
  * joined back here by `id`.
  */
 
+import { declareAllergeneFiche } from "./canonical";
 import type { AuditContext, ControlMode, ControlPoint } from "./types";
 
 export const CONTROL_CHECKLIST: ControlPoint[] = [
@@ -98,7 +99,9 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     id: "5.1", ordre: 15, section: "PARTICULARITES", typeControle: "ALLERGEN", mode: "deterministic",
     libelle: "Allergènes présents : mis en évidence (gras / souligné) et conformes à LIS-QHS-008 ?",
     reference: "PRO-QHS-013 §3.1 ; annexe 2",
-    applicableSi: (c) => !!c.allergenes && c.allergenes.toLowerCase() !== "non" && c.allergenes.trim() !== "",
+    // Applicable if the fiche declares an allergen OR the raw material flags one.
+    // The latter catches the dangerous undeclared case (FAIL in checkAllergen).
+    applicableSi: (c) => declareAllergeneFiche(c.allergenes) || c.allergeneMatiere === true,
   },
   {
     id: "5.2", ordre: 16, section: "PARTICULARITES", typeControle: "ALLEGATION", mode: "llm",

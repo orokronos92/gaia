@@ -163,6 +163,27 @@ describe("Voie A déterministe — golden MT265", () => {
     expect(byId(r, "5.3").statut).toBe("WARNING");
   });
 
+  it("allergène matière non déclaré sur l'étiquette → 5.1 FAIL", () => {
+    const input: AuditInput = {
+      // "Aucun" = défaut d'import → ne déclare rien.
+      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "Aucun" },
+      produit: { allergenesMp: "oui" }, // la matière première signale un allergène
+      ingredients: buildIngredients(),
+    };
+    const r = auditDeterministic(input);
+    expect(byId(r, "5.1").statut).toBe("FAIL");
+  });
+
+  it("allergène déclaré sur la fiche → 5.1 PASS (gras manuel)", () => {
+    const input: AuditInput = {
+      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "Fruits à coque" },
+      produit: { allergenesMp: "oui" },
+      ingredients: buildIngredients(),
+    };
+    const r = auditDeterministic(input);
+    expect(byId(r, "5.1").statut).toBe("PASS");
+  });
+
   it("flag estCamellia → 1.1 calcule le seuil 51 %", () => {
     // Un thé majoritaire (8 kg Camellia / 8.5 kg total ≈ 94 %).
     const theBase: AuditIngredient[] = [

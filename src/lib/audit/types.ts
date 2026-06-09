@@ -102,7 +102,8 @@ export interface AuditContext {
   estAromatise?: boolean;
   estParfumeEnfleurage?: boolean;
   ingredients?: string | null;
-  allergenes?: string | null;
+  allergenes?: string | null; // declared on the fiche/label
+  allergeneMatiere?: boolean; // raw material flags an allergen (produits.allergenesMp)
   allegationsSanteFr?: string | null;
   contientReglisse?: boolean;
   surfaceFacePrincipaleCm2?: number | null;

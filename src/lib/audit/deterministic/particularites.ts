@@ -4,18 +4,33 @@
  * applies. The highlight/visual part stays a manual BAT check.
  */
 
-import { MENTION_REGLISSE_TOKENS, normalize } from "../canonical";
+import {
+  allergeneMatierePresent,
+  declareAllergeneFiche,
+  MENTION_REGLISSE_TOKENS,
+  normalize,
+} from "../canonical";
 import type { AuditInput, DeterministicVerdict } from "../types";
 
 /**
- * 5.1 — ALLERGEN. Reached only when allergens are declared on the fiche. The
- * declaration's presence is satisfied; the bold/underline emphasis is visual.
- *
- * NOTE (debt): an UNDECLARED allergen (produit.allergenesMp = "oui" while the
- * fiche field is empty) currently slips to NA via the registry predicate. A
- * dedicated guard is needed — flagged for Ouro.
+ * 5.1 — ALLERGEN. Cross-checks the raw material against the label declaration.
+ * The dangerous case is an allergen flagged on the matière première
+ * (produits.allergenesMp = "oui") that is NOT declared on the fiche → FAIL.
+ * When declared, presence is satisfied and the bold/underline emphasis stays a
+ * visual BAT check.
  */
-export function checkAllergen(): DeterministicVerdict {
+export function checkAllergen(input: AuditInput): DeterministicVerdict {
+  const declareFiche = declareAllergeneFiche(input.fiche.allergenes);
+  const matiere = allergeneMatierePresent(input.produit.allergenesMp);
+
+  if (matiere && !declareFiche) {
+    return {
+      statut: "FAIL",
+      justification:
+        "Allergène signalé sur la matière première mais non déclaré sur l'étiquette.",
+      suggestionIa: "Déclarer l'allergène dans la liste d'ingrédients et le mettre en évidence (gras).",
+    };
+  }
   return {
     statut: "PASS",
     justification: "Allergène déclaré sur la fiche ; mise en évidence (gras/souligné) à vérifier sur le BAT.",

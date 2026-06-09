@@ -50,3 +50,18 @@ export const CAMELLIA_KEYWORDS = [
 
 /** PRO-QHS-013 §4 — net-quantity mass units. */
 export const MASS_UNIT_PATTERN = /\d+([.,]\d+)?\s*(mg|g|kg)\b/i;
+
+/**
+ * True if the label field actually DECLARES an allergen. The import default is
+ * "Aucun" (importWorker §6), so "aucun"/"non"/empty all mean "not declared".
+ */
+export function declareAllergeneFiche(allergenes?: string | null): boolean {
+  if (!allergenes) return false;
+  const n = normalize(allergenes);
+  return n !== "" && n !== "non" && n !== "aucun";
+}
+
+/** True if the raw material flags an allergen (produits.allergenesMp = "oui"). */
+export function allergeneMatierePresent(allergenesMp?: string | null): boolean {
+  return !!allergenesMp && normalize(allergenesMp) === "oui";
+}
