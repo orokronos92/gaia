@@ -1,0 +1,94 @@
+"use client"
+
+import { useState, useTransition } from "react"
+import { Cpu, Loader2, ShieldCheck, AlertTriangle, XCircle } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { auditDeterministeAction, type AuditDeterministeResult } from "@/app/actions/audit"
+import type { ControlStatus } from "@/lib/audit/types"
+import { AuditResultList } from "./audit-result-list"
+
+const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string; icon: typeof ShieldCheck }> = {
+    PASS: { title: "Conforme", box: "bg-emerald-50/60 border-emerald-200", tone: "text-emerald-700", icon: ShieldCheck },
+    WARNING: { title: "Vérifications requises", box: "bg-orange-50/60 border-orange-200", tone: "text-orange-700", icon: AlertTriangle },
+    FAIL: { title: "Non conforme", box: "bg-red-50/60 border-red-200", tone: "text-red-700", icon: XCircle },
+    NA: { title: "Non applicable", box: "bg-stone-50 border-stone-200", tone: "text-stone-500", icon: ShieldCheck },
+}
+
+interface DeterministicAuditPanelProps {
+    ficheId: string
+}
+
+export function DeterministicAuditPanel({ ficheId }: DeterministicAuditPanelProps) {
+    const [pending, startTransition] = useTransition()
+    const [data, setData] = useState<AuditDeterministeResult | null>(null)
+
+    const run = () => {
+        startTransition(async () => {
+            setData(await auditDeterministeAction({ ficheId }))
+        })
+    }
+
+    const overall = data?.ok && data.overallStatus ? OVERALL[data.overallStatus] : null
+    const counts = data?.counts
+
+    return (
+        <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
+            <CardHeader className="pb-4 flex flex-row items-center justify-between bg-emerald-50/40 border-b border-emerald-100">
+                <div>
+                    <CardTitle className="text-lg font-bold text-emerald-950 flex items-center gap-2">
+                        <Badge variant="outline" className="p-1 h-8 w-8 rounded-lg bg-emerald-100 border-none flex items-center justify-center">
+                            <Cpu className="h-5 w-5 text-emerald-700" />
+                        </Badge>
+                        Audit déterministe (Voie A)
+                    </CardTitle>
+                    <CardDescription className="ml-10">
+                        Contrôles vérifiés par calcul — reproductibles, sans IA (PRO-QHS-013).
+                    </CardDescription>
+                </div>
+                <Button
+                    onClick={run}
+                    disabled={pending}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 rounded-xl font-bold px-6"
+                >
+                    {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Cpu className="mr-2 h-4 w-4" />}
+                    Lancer
+                </Button>
+            </CardHeader>
+            <CardContent className="p-6 sm:p-8">
+                {!data && !pending && (
+                    <div className="flex flex-col items-center justify-center text-center h-40 opacity-70">
+                        <Cpu className="h-14 w-14 text-stone-300 mb-3 stroke-[1.5]" />
+                        <p className="text-stone-600 font-medium">Audit déterministe non lancé.</p>
+                        <p className="text-stone-400 text-sm mt-1">Vérifie QUID, mentions, codes et allergènes par calcul.</p>
+                    </div>
+                )}
+
+                {data && !data.ok && (
+                    <div className="p-4 rounded-2xl border border-red-200 bg-red-50/60 text-red-700 text-sm font-medium">
+                        {data.error}
+                    </div>
+                )}
+
+                {data?.ok && overall && (
+                    <div className="space-y-6 max-w-3xl">
+                        <div className={cn("p-5 rounded-2xl border-2 flex items-center gap-4", overall.box)}>
+                            <overall.icon className={cn("h-9 w-9 shrink-0", overall.tone)} />
+                            <div>
+                                <h3 className={cn("font-black text-xl uppercase tracking-tight", overall.tone)}>{overall.title}</h3>
+                                {counts && (
+                                    <p className="text-sm text-stone-600 mt-1 font-medium">
+                                        {counts.PASS} conforme(s) · {counts.WARNING} à vérifier · {counts.FAIL} non conforme(s) · {counts.NA} N/A
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        {data.results && <AuditResultList results={data.results} />}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    )
+}

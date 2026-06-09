@@ -45,6 +45,7 @@ import { RecettePanel } from "@/components/recette/RecettePanel"
 import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
 import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
+import { DeterministicAuditPanel } from "./_components/deterministic-audit-panel"
 
 // --- Helper pour vérifier si un champ "vide" Excel contient une vraie valeur
 const hasRealValue = (val: string | null | undefined) => {
@@ -1009,6 +1010,8 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
 
                 {/* 2. AUDIT ZONE */}
                 <TabsContent value="audit" className="mt-0 focus-visible:outline-none">
+                  <div className="space-y-6">
+                    <DeterministicAuditPanel ficheId={labelData.id} />
                     <Card className="border border-stone-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden min-h-[400px] rounded-3xl">
                         <CardHeader className="pb-4 flex flex-row items-center justify-between bg-stone-50/50 border-b border-stone-100">
                             <div>
@@ -1095,6 +1098,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                             )}
                         </CardContent>
                     </Card>
+                  </div>
                 </TabsContent>
 
                 {/* 3. BAT — Viewer intégré */}
