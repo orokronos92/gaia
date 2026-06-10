@@ -125,13 +125,12 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
     }),
   ];
 
-  // Conditional: only when the fiche actually declares an allegation / allergens.
-  if (declares(input.allegation)) {
-    results.push(checkPresence(batN, input.allegation, {
-      id: "TXT_ALLEGATION", rubrique: "Particularités", libelle: "Allégation présente sur le BAT ?",
-      absent: "Allégation déclarée sur la fiche mais non retrouvée sur le BAT — à vérifier.",
-    }));
-  }
+  // The allegation is deliberately NOT a deterministic check: its wording on the
+  // label differs from the fiche libellé (fiche "Tonifiant / vitalité" vs label
+  // "STIMULANT & TONIQUE" + "Consommation journalière… 3 tasses"). Exact match
+  // produces false warnings — judging that equivalence is the LLM's job, and the
+  // graphic emphasis the visual robot's. Handled in a later lot (input.allegation
+  // is kept for them).
   if (declares(input.allergenes)) {
     results.push(checkPresence(batN, input.allergenes, {
       id: "TXT_ALLERGENES", rubrique: "Particularités", libelle: "Allergènes déclarés présents sur le BAT ?",

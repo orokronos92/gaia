@@ -63,7 +63,9 @@ describe("Robot Texte — golden MT265", () => {
     expect(byId(r, "TXT_DENOMINATION").statut).toBe("PASS");
     expect(byId(r, "TXT_POIDS_NET").statut).toBe("PASS"); // "100 g" fiche ↔ "100g" BAT
     expect(byId(r, "TXT_CODE_ETIQUETTE").statut).toBe("PASS");
-    expect(byId(r, "TXT_ALLEGATION").statut).toBe("PASS");
+
+    // L'allégation n'est PAS un contrôle déterministe (formulation libre) → LLM/vision.
+    expect(r.find((x) => x.id === "TXT_ALLEGATION")).toBeUndefined();
 
     // Mentions obligatoires absentes des faces analysées → WARNING (pas FAIL).
     expect(byId(r, "TXT_CONSERVATION").statut).toBe("WARNING");
