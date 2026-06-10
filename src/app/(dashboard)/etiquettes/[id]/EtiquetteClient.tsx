@@ -38,7 +38,7 @@ import { useEditableSection, EditButtons, EditableText, type EditableSection } f
 import { VersionsHistorique } from "@/components/etiquettes/versions-historique"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { RecettePanel } from "@/components/recette/RecettePanel"
@@ -136,8 +136,6 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
 export default function EtiquetteClient({ labelData, recette, versions = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[] }) {
     // State
     const router = useRouter()
-    const [auditingType, setAuditingType] = useState<string | null>(null)
-    const [auditResult, setAuditResult] = useState<any>(null)
     const [allegChoisie, setAllegChoisie] = useState<string | null>(labelData.allegationChoisie ?? null)
     const [allegSaving, setAllegSaving] = useState<string | null>(null)
 
@@ -349,109 +347,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
         ? labelData.ingredientsFr
         : labelData.ingredientsSuggestion;
 
-    const runAudit = async () => {
-        setAuditingType('complet')
 
-        const erreur = (description: string) =>
-            setAuditResult({
-                status: "WARNING",
-                issues: [{ type: "API_ERROR", description, severity: "HIGH" }],
-                summary: "Erreur technique lors de l'audit.",
-            })
-
-        try {
-            // Single-fiche, synchronous audit — the route reloads the fiche, runs
-            // Mistral + RAG, persists the controls and returns the report.
-            const response = await fetch('/api/agents/audit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ficheIds: [labelData.id] }),
-            })
-
-            const data = await response.json()
-            const report = data?.data?.[0]
-
-            if (response.ok && report) {
-                const controls = report.controls || []
-                const issues = controls
-                    .filter((c: any) => c.statut !== 'PASS' && c.statut !== 'SKIPPED')
-                    .map((c: any) => ({
-                        type: c.typeControle,
-                        description:
-                            (c.justification || '') +
-                            (c.suggestionIa ? ` → Suggestion : ${c.suggestionIa}` : ''),
-                        severity: c.statut === 'FAIL' ? 'HIGH' : 'MEDIUM',
-                    }))
-                setAuditResult({
-                    status: report.overallStatus,
-                    issues,
-                    summary:
-                        report.overallStatus === 'PASS'
-                            ? `Conforme — ${controls.length} contrôle(s) vérifié(s), aucune anomalie.`
-                            : `${issues.length} non-conformité(s) sur ${controls.length} contrôle(s).`,
-                })
-                router.refresh()
-            } else {
-                erreur(data?.error || "Impossible de joindre l'agent d'audit.")
-            }
-        } catch (err) {
-            console.error(err)
-            erreur("Erreur réseau lors de l'audit.")
-        } finally {
-            setAuditingType(null)
-        }
-    }
-
-    const [isVisionAuditing, setIsVisionAuditing] = useState(false);
-    const [visionResult, setVisionResult] = useState<any>(null);
     const [activeBatFile, setActiveBatFile] = useState<{ url: string; name: string } | null>(null);
 
     const selectBatFile = (file: { url: string; name: string }) => {
         setActiveBatFile(file);
-        setVisionResult(null); // Reset résultat précédent
-    };
-
-    const runVisionAuditFromUrl = async (fileUrl: string) => {
-        setIsVisionAuditing(true);
-        setVisionResult(null);
-
-        try {
-            const fileRes = await fetch(fileUrl);
-            const blob = await fileRes.blob();
-            const file = new File([blob], fileUrl.split('/').pop() || 'bat.pdf', { type: blob.type });
-
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('etiquetteId', labelData.id);
-
-            const response = await fetch('/api/agents/bat-vision', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setVisionResult(data.data);
-            } else {
-                setVisionResult({
-                    status: "A_VERIFIER",
-                    defautsDetectes: [
-                        { type: "AUTRE", description: data.error || "Erreur lors de l'analyse Vision.", severity: "CRITIQUE" }
-                    ],
-                    conclusion: "Impossible de terminer l'analyse visuelle."
-                });
-            }
-        } catch (err) {
-            console.error(err);
-            setVisionResult({
-                status: "A_VERIFIER",
-                defautsDetectes: [{ type: "AUTRE", description: "Erreur réseau lors de l'analyse.", severity: "CRITIQUE" }],
-                conclusion: "Impossible de terminer l'analyse visuelle."
-            });
-        } finally {
-            setIsVisionAuditing(false);
-        }
     };
 
     return (
@@ -1053,92 +953,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                 <TabsContent value="audit" className="mt-0 focus-visible:outline-none">
                   <div className="space-y-6">
                     <DeterministicAuditPanel ficheId={labelData.id} />
-                    <Card className="border border-stone-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden min-h-[400px] rounded-3xl">
-                        <CardHeader className="pb-4 flex flex-row items-center justify-between bg-stone-50/50 border-b border-stone-100">
-                            <div>
-                                <CardTitle className="text-lg font-bold text-emerald-950 flex items-center gap-2">
-                                    <Badge variant="outline" className="p-1 h-8 w-8 rounded-lg bg-emerald-100 border-none flex items-center justify-center">
-                                        <Bot className="h-5 w-5 text-emerald-700" />
-                                    </Badge>
-                                    Audit de Conformité (Agent IA)
-                                </CardTitle>
-                                <CardDescription className="ml-10">
-                                    Vérification algorithmique stricte du PRO-QHS-013 (QUID, Allergènes, Dénominations).
-                                </CardDescription>
-                            </div>
-                            <div className="flex flex-wrap gap-2 justify-end mt-4 sm:mt-0">
-                                <Button
-                                    onClick={() => runAudit()}
-                                    disabled={!!auditingType}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 rounded-xl font-bold px-6"
-                                >
-                                    {auditingType ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                    Lancer l&apos;audit
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-8">
-                            {!auditResult && !auditingType && (
-                                <div className="flex flex-col items-center justify-center text-center h-48 opacity-70">
-                                    <ShieldAlert className="h-16 w-16 text-stone-300 mb-4 stroke-[1.5]" />
-                                    <p className="text-stone-600 font-medium text-lg">Aucun audit récent.</p>
-                                    <p className="text-stone-400 text-sm mt-1">Cliquez sur "Lancer l'Audit" pour vérifier l'étiquette actuelle.</p>
-                                </div>
-                            )}
-
-                            {auditResult && (
-                                <div className="grid gap-6 animate-in fade-in zoom-in-95 duration-500 max-w-4xl mx-auto">
-                                    <div className={cn(
-                                        "p-6 rounded-3xl border-2 flex items-start gap-5 shadow-sm",
-                                        auditResult.status === "PASS" ? "bg-emerald-50/50 border-emerald-200" :
-                                            auditResult.status === "WARNING" ? "bg-orange-50/50 border-orange-200" :
-                                                "bg-red-50/50 border-red-200"
-                                    )}>
-                                        {auditResult.status === "PASS" ? (
-                                            <div className="h-14 w-14 bg-emerald-100 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-200/50 text-emerald-600">
-                                                <CheckCircle2 className="h-7 w-7" />
-                                            </div>
-                                        ) : (
-                                            <div className="h-14 w-14 bg-orange-100 rounded-2xl flex items-center justify-center shrink-0 border border-orange-200/50 text-orange-600">
-                                                <AlertTriangle className="h-7 w-7" />
-                                            </div>
-                                        )}
-                                        <div className="mt-1">
-                                            <h3 className={cn(
-                                                "font-black text-2xl uppercase tracking-tight",
-                                                auditResult.status === "PASS" ? "text-emerald-900" : "text-orange-950"
-                                            )}>
-                                                {auditResult.status === "PASS" ? "Conforme" : "Attention Requise"}
-                                            </h3>
-                                            <p className={cn("text-lg mt-2 font-medium leading-relaxed", auditResult.status === "PASS" ? "text-emerald-700" : "text-orange-800")}>
-                                                {auditResult.summary}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {auditResult?.issues?.length > 0 && (
-                                        <div className="space-y-4">
-                                            <h4 className="font-extrabold text-stone-800 text-sm uppercase tracking-widest pl-2">Détails des Non-Conformités :</h4>
-                                            {auditResult.issues.map((issue: any, i: number) => (
-                                                <div key={i} className="flex gap-4 p-5 bg-white border border-stone-200/80 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-                                                    <div className="bg-orange-50 p-2 rounded-xl shrink-0 h-10 w-10 flex items-center justify-center border border-orange-100 text-orange-500">
-                                                        <AlertTriangle className="h-5 w-5" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-stone-900 text-base flex items-center gap-3">
-                                                            Règle: {issue.type}
-                                                            <Badge variant="outline" className="text-[10px] px-2 py-0 border-orange-200 text-orange-700 bg-orange-50 font-bold uppercase">WARN</Badge>
-                                                        </div>
-                                                        <div className="text-sm text-stone-600 mt-2 font-medium leading-relaxed">{issue.description}</div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
                   </div>
                 </TabsContent>
 
@@ -1198,25 +1012,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                                         </button>
                                     );
                                 })}
-
-                                {/* Bouton analyse IA sur le fichier actif */}
-                                {(() => {
-                                    const activeFile = activeBatFile ?? pdfFiles[0];
-                                    if (!activeFile?.name.toLowerCase().endsWith('.pdf')) return null;
-                                    return (
-                                        <Button
-                                            onClick={() => runVisionAuditFromUrl(activeFile.url)}
-                                            disabled={isVisionAuditing}
-                                            className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-semibold text-sm py-5 shadow-sm shadow-emerald-700/20"
-                                        >
-                                            {isVisionAuditing ? (
-                                                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Analyse IA...</>
-                                            ) : (
-                                                <><Bot className="h-4 w-4 mr-2" />Analyser avec l&apos;IA</>
-                                            )}
-                                        </Button>
-                                    );
-                                })()}
                             </div>
 
                             {/* Colonne droite : viewer embarqué + résultat IA */}
@@ -1274,71 +1069,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                                         </Card>
                                     );
                                 })()}
-
-                                {/* Résultat analyse IA */}
-                                {(visionResult || isVisionAuditing) && (
-                                    <Card className={cn(
-                                        "border-2 flex flex-col shadow-sm overflow-hidden rounded-3xl",
-                                        visionResult?.status === "CONFORME" ? "border-emerald-300/60 bg-emerald-50/20" :
-                                            visionResult?.status === "NON_CONFORME" ? "border-red-200/60 bg-red-50/10" :
-                                                "border-orange-200/60 bg-orange-50/10"
-                                    )}>
-                                        <CardHeader className={cn(
-                                            "pb-4 border-b",
-                                            visionResult?.status === "CONFORME" ? "border-emerald-100 bg-emerald-50/50" :
-                                                visionResult?.status === "NON_CONFORME" ? "border-red-100 bg-red-50/30" :
-                                                    "border-orange-100 bg-orange-50/30"
-                                        )}>
-                                            <CardTitle className="text-base font-bold flex items-center gap-3">
-                                                {isVisionAuditing && !visionResult ? (
-                                                    <><Loader2 className="h-4 w-4 animate-spin text-emerald-600" /><span className="text-stone-700">Analyse IA en cours...</span></>
-                                                ) : visionResult?.status === "CONFORME" ? (
-                                                    <><div className="h-8 w-8 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center"><CheckCircle2 className="h-4 w-4 text-emerald-600" /></div><span className="text-emerald-900">BAT Conforme ✓</span></>
-                                                ) : visionResult?.status === "NON_CONFORME" ? (
-                                                    <><div className="h-8 w-8 rounded-xl bg-red-100 border border-red-200 flex items-center justify-center"><AlertTriangle className="h-4 w-4 text-red-600" /></div><span className="text-red-900">Défauts Détectés !</span></>
-                                                ) : (
-                                                    <><div className="h-8 w-8 rounded-xl bg-orange-100 border border-orange-200 flex items-center justify-center"><AlertTriangle className="h-4 w-4 text-orange-600" /></div><span className="text-orange-900">Vérification Manuelle Requise</span></>
-                                                )}
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-4">
-                                            {visionResult && (
-                                                <div className="flex flex-col gap-3">
-                                                    <div className="p-3.5 bg-white rounded-xl border border-stone-100 shadow-sm">
-                                                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">Conclusion IA</p>
-                                                        <p className="text-sm font-medium text-stone-800 leading-relaxed">{visionResult.conclusion}</p>
-                                                    </div>
-                                                    {visionResult.defautsDetectes?.length > 0 && (
-                                                        <div className="space-y-2">
-                                                            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Défauts ({visionResult.defautsDetectes.length})</p>
-                                                            {visionResult.defautsDetectes.map((defaut: any, i: number) => (
-                                                                <div key={i} className={cn(
-                                                                    "p-3 rounded-xl border flex gap-3",
-                                                                    defaut.severity === "CRITIQUE" ? "bg-red-50/60 border-red-200/60" : "bg-orange-50/60 border-orange-200/60"
-                                                                )}>
-                                                                    <AlertTriangle className={cn("h-4 w-4 shrink-0 mt-0.5", defaut.severity === "CRITIQUE" ? "text-red-500" : "text-orange-500")} />
-                                                                    <div>
-                                                                        <div className="flex items-center gap-2 mb-0.5">
-                                                                            <Badge className={cn("text-[10px] font-bold uppercase px-1.5", defaut.severity === "CRITIQUE" ? "bg-red-100 text-red-700 border-red-200" : "bg-orange-100 text-orange-700 border-orange-200")}>{defaut.severity}</Badge>
-                                                                            <span className="text-[10px] text-stone-500 font-semibold uppercase tracking-wider">{defaut.type}</span>
-                                                                        </div>
-                                                                        <p className="text-sm text-stone-700 leading-relaxed">{defaut.description}</p>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    {visionResult.defautsDetectes?.length === 0 && (
-                                                        <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                                                            <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                                                            <p className="text-sm font-semibold text-emerald-800">Aucun défaut détecté — BAT conforme.</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                )}
                             </div>
                         </div>
                     )}
