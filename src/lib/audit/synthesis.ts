@@ -4,10 +4,13 @@
  * doesn't block. NA is ignored for the overall verdict.
  */
 
-import { CONTROL_STATUSES, type ControlResult, type ControlStatus } from "./types";
+import { CONTROL_STATUSES, type ControlStatus } from "./types";
+
+/** Anything carrying a status — works for both data and visual lane results. */
+type Statused = { statut: ControlStatus };
 
 /** Worst-wins overall status: FAIL > WARNING > PASS; NA-only → NA. */
-export function overallStatus(results: ControlResult[]): ControlStatus {
+export function overallStatus(results: readonly Statused[]): ControlStatus {
   if (results.some((r) => r.statut === "FAIL")) return "FAIL";
   if (results.some((r) => r.statut === "WARNING")) return "WARNING";
   if (results.some((r) => r.statut === "PASS")) return "PASS";
@@ -15,7 +18,7 @@ export function overallStatus(results: ControlResult[]): ControlStatus {
 }
 
 /** Count of results per status (every status key present, zero-filled). */
-export function countByStatus(results: ControlResult[]): Record<ControlStatus, number> {
+export function countByStatus(results: readonly Statused[]): Record<ControlStatus, number> {
   const counts = Object.fromEntries(CONTROL_STATUSES.map((s) => [s, 0])) as Record<ControlStatus, number>;
   for (const r of results) counts[r.statut] += 1;
   return counts;

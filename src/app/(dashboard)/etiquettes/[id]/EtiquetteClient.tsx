@@ -46,6 +46,7 @@ import { DossierComplementaire } from "@/components/recette/DossierComplementair
 import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 import { DeterministicAuditPanel } from "./_components/deterministic-audit-panel"
+import { BatTextAuditPanel } from "./_components/bat-text-audit-panel"
 import { ReintegrerDocumentMenu } from "./_components/reintegrer-recette"
 import type { RecetteCalculatorHandle } from "@/components/recette/RecetteCalculator"
 
@@ -1143,6 +1144,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
 
                 {/* 3. BAT — Viewer intégré */}
                 <TabsContent value="pdf" className="mt-0 focus-visible:outline-none">
+                    <div className="mb-6">
+                        <BatTextAuditPanel ficheId={labelData.id} />
+                    </div>
                     {pdfFiles.length === 0 ? (
                         <Card className="border border-stone-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
                             <CardContent className="p-16 flex flex-col items-center justify-center text-center">

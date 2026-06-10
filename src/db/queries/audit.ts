@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { fichesEtiquettes, produits, recettes, ingredientsRecette } from "@/db/schema";
 import type { AuditInput } from "@/lib/audit/types";
+import type { BatTextInput } from "@/lib/audit/visual/text-robot";
 
 /**
  * Assembles the deterministic audit input for a fiche: label fields + product
@@ -67,6 +68,41 @@ export const getAuditInputForFiche = cache(
         estCamellia: l.estCamellia,
         ordreTri: l.ordreTri,
       })),
+    };
+  }
+);
+
+/**
+ * Input for the visual text robot: the validated fiche fields to look for on
+ * the BAT, plus the product `codePf` used to locate its artwork in MinIO.
+ * Returns null if the fiche or its product is missing.
+ */
+export const getBatTextInputForFiche = cache(
+  async (
+    ficheId: string
+  ): Promise<{ codePf: string; input: BatTextInput } | null> => {
+    const fiche = await db.query.fichesEtiquettes.findFirst({
+      where: eq(fichesEtiquettes.id, ficheId),
+    });
+    if (!fiche) return null;
+
+    const produit = await db.query.produits.findFirst({
+      where: eq(produits.id, fiche.produitId),
+    });
+    if (!produit) return null;
+
+    return {
+      codePf: produit.codePf,
+      input: {
+        denomination: produit.denominationFr ?? fiche.denominationLegale,
+        ingredients: fiche.ingredientsFr,
+        allegation: fiche.allegationsSanteFr ?? fiche.allegationChoisie,
+        allergenes: fiche.allergenes,
+        poidsNet: produit.poidsNet,
+        codeEtiquette: fiche.codeEtiquette,
+        mentionConservation: fiche.mentionConservation,
+        mentionFabricant: fiche.mentionFabricant,
+      },
     };
   }
 );
