@@ -12,7 +12,7 @@
 const DEFAULT_TIMEOUT_MS = 30_000;
 
 export async function extractPdfText(
-  buffer: ArrayBuffer,
+  buffer: ArrayBuffer | Uint8Array,
   timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -63,7 +63,8 @@ export async function extractPdfText(
     );
 
     try {
-      parser.parseBuffer(Buffer.from(buffer));
+      const data = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+      parser.parseBuffer(Buffer.from(data));
     } catch (e) {
       finish(() =>
         reject(e instanceof Error ? e : new Error("Extraction PDF échouée"))

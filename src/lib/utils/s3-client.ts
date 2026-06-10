@@ -95,6 +95,26 @@ export async function getPresignedUrl(fileKey: string, expiresInBytesSeconds = 3
 }
 
 /**
+ * Récupère le contenu brut d'un objet MinIO (PDF du BAT, etc.) côté serveur.
+ * Passe par l'API S3 (objet logique intègre) — ne JAMAIS lire le `part.1` sur
+ * disque, qui n'est pas l'objet (header décalé, XRef invalide).
+ */
+export async function getObjectBuffer(fileKey: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileKey,
+    });
+
+    const response = await s3Client.send(command);
+    if (!response.Body) {
+        throw new Error(`Objet S3 introuvable ou vide : ${fileKey}`);
+    }
+
+    const bytes = await response.Body.transformToByteArray();
+    return Buffer.from(bytes);
+}
+
+/**
  * Génère une URL directe si le bucket est configuré en public (rapide)
  */
 export function getPublicUrl(fileKey: string): string {
