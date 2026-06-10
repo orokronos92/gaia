@@ -3,6 +3,7 @@
 import { z } from "zod"
 
 import { auth } from "@/auth"
+import { auditSemantique } from "@/agents/audit/semantic-robot"
 import { contreExaminerPictos, detectPictos } from "@/agents/audit/visual-robot"
 import { getBatTextInputForFiche } from "@/db/queries/audit"
 import { aggregateAll, checksFromPresences, reconcile, type Presence } from "@/lib/audit/visual/pictos"
@@ -69,7 +70,16 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
         return { ok: false, error: "BAT trouvés mais texte non extractible." }
     }
 
-    const textChecks = runTextRobot(texts.join("\n\n"), data.input)
+    const batText = texts.join("\n\n")
+    const textChecks = runTextRobot(batText, data.input)
+
+    // Semantic robot (LLM) — free-text elements judged by meaning (allegation…).
+    let semanticChecks: BatTextCheck[] = []
+    try {
+        semanticChecks = (await auditSemantique(batText, data.input)).checks
+    } catch {
+        // LLM unavailable (no key / API error) — skip, never a fabricated verdict.
+    }
 
     // Visual robot — perception per face, then an adversarial counter-exam on the
     // contested logos, reconciled and judged by code (a split opinion → INCERTAIN).
@@ -107,7 +117,7 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
         visualChecks = checksFromPresences(finalPresences)
     }
 
-    const checks = [...textChecks, ...visualChecks]
+    const checks = [...textChecks, ...semanticChecks, ...visualChecks]
     return {
         ok: true,
         faces,
