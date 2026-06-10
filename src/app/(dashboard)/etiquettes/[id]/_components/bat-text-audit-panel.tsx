@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { auditVisuelTexteAction, type AuditVisuelTexteResult } from "@/app/actions/audit-visuel"
 import type { ControlStatus } from "@/lib/audit/types"
+import type { SousResultatAudit } from "./audit-synthese"
 
 const STATUS_STYLE: Record<ControlStatus, { label: string; chip: string; icon: typeof CheckCircle2; tone: string }> = {
     PASS: { label: "Conforme", chip: "border-emerald-200 text-emerald-700 bg-emerald-50", icon: CheckCircle2, tone: "text-emerald-600" },
@@ -17,15 +18,18 @@ const STATUS_STYLE: Record<ControlStatus, { label: string; chip: string; icon: t
 
 interface BatTextAuditPanelProps {
     ficheId: string
+    onResult?: (r: SousResultatAudit) => void
 }
 
-export function BatTextAuditPanel({ ficheId }: BatTextAuditPanelProps) {
+export function BatTextAuditPanel({ ficheId, onResult }: BatTextAuditPanelProps) {
     const [isPending, startTransition] = useTransition()
     const [result, setResult] = useState<AuditVisuelTexteResult | null>(null)
 
     const run = () =>
         startTransition(async () => {
-            setResult(await auditVisuelTexteAction({ ficheId }))
+            const res = await auditVisuelTexteAction({ ficheId })
+            setResult(res)
+            if (res.ok) onResult?.({ overallStatus: res.overallStatus, counts: res.counts })
         })
 
     const checks = result?.checks ?? []

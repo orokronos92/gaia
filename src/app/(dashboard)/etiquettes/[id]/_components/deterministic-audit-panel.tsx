@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { auditDeterministeAction, type AuditDeterministeResult } from "@/app/actions/audit"
 import type { ControlStatus } from "@/lib/audit/types"
 import { AuditResultList } from "./audit-result-list"
+import type { SousResultatAudit } from "./audit-synthese"
 
 const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string; icon: typeof ShieldCheck }> = {
     PASS: { title: "Conforme", box: "bg-emerald-50/60 border-emerald-200", tone: "text-emerald-700", icon: ShieldCheck },
@@ -19,15 +20,18 @@ const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string;
 
 interface DeterministicAuditPanelProps {
     ficheId: string
+    onResult?: (r: SousResultatAudit) => void
 }
 
-export function DeterministicAuditPanel({ ficheId }: DeterministicAuditPanelProps) {
+export function DeterministicAuditPanel({ ficheId, onResult }: DeterministicAuditPanelProps) {
     const [pending, startTransition] = useTransition()
     const [data, setData] = useState<AuditDeterministeResult | null>(null)
 
     const run = () => {
         startTransition(async () => {
-            setData(await auditDeterministeAction({ ficheId }))
+            const res = await auditDeterministeAction({ ficheId })
+            setData(res)
+            if (res.ok) onResult?.({ overallStatus: res.overallStatus, counts: res.counts })
         })
     }
 
