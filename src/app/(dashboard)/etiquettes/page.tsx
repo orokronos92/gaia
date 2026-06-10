@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Bot } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -76,15 +76,9 @@ export default async function KanbanPage(
                 <div className="flex items-center gap-2">
                     <ProductSearch />
                     <Link href="/etiquettes/nouveau">
-                        <Button variant="outline" className="bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm rounded-full px-5 flex items-center gap-2 font-medium">
-                            <Bot className="h-4 w-4" />
-                            Import IA
-                        </Button>
-                    </Link>
-                    <Link href="/etiquettes/nouveau">
                         <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-sm shadow-emerald-700/20 text-white rounded-full px-5">
                             <PlusCircle className="h-4 w-4" />
-                            Nouveau Dossier
+                            Nouveau Produit
                         </Button>
                     </Link>
                 </div>

@@ -74,10 +74,12 @@ export default async function ProductsPage(
                         <Filter className="h-4 w-4 text-stone-500" />
                         Filtres Avancés
                     </Button>
-                    <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-sm shadow-emerald-700/20 text-white rounded-full px-5">
-                        <PlusCircle className="h-4 w-4" />
-                        Nouveau Produit
-                    </Button>
+                    <Link href="/etiquettes/nouveau">
+                        <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-sm shadow-emerald-700/20 text-white rounded-full px-5">
+                            <PlusCircle className="h-4 w-4" />
+                            Nouveau Produit
+                        </Button>
+                    </Link>
                 </div>
             </div>
 
