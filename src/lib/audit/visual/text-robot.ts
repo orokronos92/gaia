@@ -2,8 +2,8 @@
  * Visual audit — text robot (deterministic layer).
  *
  * Compares the text printed on the BAT (all faces concatenated) against the
- * validated fiche. Pure and DB-free: the orchestrator extracts the BAT text
- * (lib/utils/bat-text) and hands it here with the fiche fields.
+ * validated fiche. Pure and DB-free: the orchestrator (actions/audit-visuel)
+ * extracts the BAT text and hands it here with the fiche fields.
  *
  * Deterministic by design — it never rewrites the fiche, it only checks whether
  * each expected element is actually present/identical on the artwork. The LLM
