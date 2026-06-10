@@ -652,7 +652,9 @@ ${combinedText.substring(0, 22000)}`;
         const s = (v: unknown) => this.ensureStringValue(v);
 
         const candidat: Record<string, unknown> = {
-            codePf: s(p.codeArticle),
+            // codePf is the product's unique identity key — NEVER overwritten on
+            // re-integration (it would collide with another produit, e.g. a
+            // duplicate, violating produits_code_pf_unique). Data only below.
             gamme: s(p.gamme),
             denominationFr: s(p.designation),
             typeTheFr: s(p.typePlante),
