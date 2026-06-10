@@ -43,7 +43,7 @@ const CHECKS: Record<string, CheckFn> = {
   "7.2": checkConservationMention,
   "9.1": checkFabricantAdresse,
   // 10.1 (gencode) and 13.2 (code OC) are BAT controls now — not in the fiche.
-  // Vision-eligible (BatVisionAgent), out of the deterministic lane. See
+  // Vision-eligible (visual robot), out of the deterministic lane. See
   // control-checklist.ts.
   "15.1": checkCodeEtiquette,
 };
