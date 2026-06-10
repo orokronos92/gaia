@@ -1,12 +1,11 @@
 /**
  * Deterministic mention / code controls — canonical JDG string matches and
- * field-presence checks (PRO-QHS-013 §4, §5, §7, §8, §11, §13). Absent or
- * unconfirmable data → WARNING; structurally wrong data → FAIL.
+ * field-presence checks (PRO-QHS-013 §4, §5, §7, §13). Absent or unconfirmable
+ * data → WARNING; structurally wrong data → FAIL. Gencode (10.1) and code OC
+ * (13.2) are NOT here: they're BAT/vision controls, absent from the fiche.
  */
 
 import {
-  CODE_OC_ATTENDU,
-  CODE_OC_PATTERN,
   FABRICANT_JDG_TOKENS,
   MASS_UNIT_PATTERN,
   normalize,
@@ -65,29 +64,6 @@ export function checkFabricantAdresse(input: AuditInput): DeterministicVerdict {
   return {
     statut: "WARNING",
     justification: `Adresse fabricant incomplète (manque : ${manquants.join(", ")}) — à vérifier.`,
-  };
-}
-
-/** 10.1 — GENCODE_STRUCTURE: not auto-verifiable yet (no structured gencode). */
-export function checkGencodeStructure(): DeterministicVerdict {
-  return {
-    statut: "WARNING",
-    justification: "Structure Gencode non vérifiable automatiquement (donnée non structurée) — à valider.",
-  };
-}
-
-/** 13.2 — CODE_OC: control-body code present (FR-BIO-01). */
-export function checkCodeOc(input: AuditInput): DeterministicVerdict {
-  const code = input.produit.codeOc;
-  if (!code || code.trim() === "") {
-    return { statut: "WARNING", justification: `Code organisme de contrôle absent (attendu ${CODE_OC_ATTENDU}) — à compléter.` };
-  }
-  if (CODE_OC_PATTERN.test(code)) {
-    return { statut: "PASS", justification: `Code organisme de contrôle présent (${code.trim()}).` };
-  }
-  return {
-    statut: "WARNING",
-    justification: `Code organisme de contrôle « ${code.trim()} » au format inattendu — à vérifier.`,
   };
 }
 

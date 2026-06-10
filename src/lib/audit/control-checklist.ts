@@ -166,7 +166,10 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   // 10. GENCODE
   {
-    id: "10.1", ordre: 26, section: "GENCODE", typeControle: "GENCODE_STRUCTURE", mode: "deterministic",
+    // BAT control, not deterministic: no structured gencode in the fiche (only
+    // raw codeEan). The printed barcode/gencode is read on the BAT — vision-
+    // eligible (BatVisionAgent), confirmed by Marie.
+    id: "10.1", ordre: 26, section: "GENCODE", typeControle: "GENCODE_STRUCTURE", mode: "manual",
     libelle: "Structure Gencode conforme (35 / 8281 / famille / code article / conditionnement / clé) ?",
     reference: "PRO-QHS-013 §8 ; annexe 4 ; MOP-PRO-029",
   },
@@ -194,7 +197,10 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     reference: "PRO-QHS-013 §11.1 ; annexe 6",
   },
   {
-    id: "13.2", ordre: 31, section: "LABELS", typeControle: "CODE_OC", mode: "deterministic",
+    // BAT control, not deterministic: FR-BIO-01 is a JDG invariant printed on
+    // the label, absent from the fiche. Its presence is read on the BAT —
+    // vision-eligible (BatVisionAgent), confirmed by Marie.
+    id: "13.2", ordre: 31, section: "LABELS", typeControle: "CODE_OC", mode: "manual",
     libelle: "Code de l'organisme de contrôle du dernier opérateur présent (FR-BIO-01) ?",
     reference: "PRO-QHS-013 §11.1",
   },

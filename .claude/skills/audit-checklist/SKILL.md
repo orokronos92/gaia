@@ -79,12 +79,12 @@ Legend — **Backing**: `engine` = computeRecette · `match` = string/regex on e
 | 8.2 | ORIGINE | ORIGINE_AGRICULTURE_98 | llm | field? | "Agriculture UE/non UE" coherent with ≥98% origin → needs % origin. |
 | 8.3 | ORIGINE | ORIGINE_VOLONTAIRE_50 | llm | field? | Voluntary origin only if >50%. Applic: origineMpUnique (gap). |
 | 9.1 | FABRICANT | FABRICANT_ADRESSE | deterministic | match | Full JDG address, no packer code. |
-| 10.1 | GENCODE | GENCODE_STRUCTURE | deterministic | field? | 35/8281/famille/article/cond/clé. codeEan exists; full gencode partial. |
+| 10.1 | GENCODE | GENCODE_STRUCTURE | manual | visual | 35/8281/famille/article/cond/clé. Reclassed deterministic→manual (2026-06-09): no structured gencode in the fiche (only raw codeEan) — printed barcode read on the BAT, vision-eligible (BatVisionAgent). |
 | 11.1 | METROLOGIE | METRO_E_ABSENT | manual | visual | The "e" must be ABSENT (JDG policy). |
 | 12.1 | PICTOGRAMMES | TRIMAN | manual | visual | Triman ≥1×1cm. |
 | 12.2 | PICTOGRAMMES | INFOTRI | manual | visual | Info-Tri cartouche complete. |
 | 13.1 | LABELS | EUROFEUILLE | manual | visual | Eurofeuille dimensions, same visual field as OC + origin. |
-| 13.2 | LABELS | CODE_OC | deterministic | field? | FR-BIO-01 present → **needs an OC-code field (gap, only codeEan today)**. |
+| 13.2 | LABELS | CODE_OC | manual | visual | FR-BIO-01 present. Reclassed deterministic→manual (2026-06-09): FR-BIO-01 is a JDG invariant printed on the label, absent from the fiche — read on the BAT, vision-eligible (BatVisionAgent). |
 | 13.3 | LABELS | LABELS_NON_OFFICIELS | llm | json | WFTO/Fairtrade/Demeter… justified by raw material. labelsMP/labelsClient. |
 | 13.4 | LABELS | POINT_VERT_ABSENT | manual | visual | Point Vert must be ABSENT (AGEC). |
 | 14.1 | TYPOGRAPHIE | TYPO_HAUTEUR_X | manual | visual | x-height by largest face (<80cm² / >80cm²). |
@@ -98,11 +98,15 @@ Legend — **Backing**: `engine` = computeRecette · `match` = string/regex on e
 
 ## 5. Data gaps (no backing field today — decide field-by-field with Ouro)
 
-`contientReglisse` (5.3) · OC code FR-BIO-01 (13.2) · Camellia-sinensis flag (1.1) · `surfaceFacePrincipaleCm2`
-(typo/dematerialisation thresholds) · % per origin / `origineMpUnique` (8.2/8.3) · full gencode (10.1) ·
+`contientReglisse` (5.3) · Camellia-sinensis flag (1.1) · `surfaceFacePrincipaleCm2`
+(typo/dematerialisation thresholds) · % per origin / `origineMpUnique` (8.2/8.3) ·
 pictos & typo are inherently `visual` → stay `manual`.
 
-The deterministic socle (Voie A) only needs the first three to be complete; the rest are manual or LLM.
+OC code FR-BIO-01 (13.2) and full gencode (10.1) are NOT Voie A gaps anymore: they're
+printed-on-BAT data, reclassed `manual` and vision-eligible (BatVisionAgent), not fiche fields.
+
+The deterministic socle (Voie A) = 12 points, only needs `contientReglisse` + Camellia flag to
+be fully backed; the rest of the registry is manual or LLM.
 
 ## 6. What NOT to do
 

@@ -18,10 +18,8 @@ import {
 import { checkIngrMono, checkIngrOrdreDecroissant } from "./ingredients";
 import {
   checkCodeEtiquette,
-  checkCodeOc,
   checkConservationMention,
   checkFabricantAdresse,
-  checkGencodeStructure,
   checkQteNetteUnite,
 } from "./mentions";
 import { checkAllergen, checkReglisse } from "./particularites";
@@ -44,8 +42,9 @@ const CHECKS: Record<string, CheckFn> = {
   "6.1": checkQteNetteUnite,
   "7.2": checkConservationMention,
   "9.1": checkFabricantAdresse,
-  "10.1": checkGencodeStructure,
-  "13.2": checkCodeOc,
+  // 10.1 (gencode) and 13.2 (code OC) are BAT controls now — not in the fiche.
+  // Vision-eligible (BatVisionAgent), out of the deterministic lane. See
+  // control-checklist.ts.
   "15.1": checkCodeEtiquette,
 };
 
