@@ -3,9 +3,9 @@
 import { z } from "zod"
 
 import { auth } from "@/auth"
-import { detectPictos } from "@/agents/audit/visual-robot"
+import { contreExaminerPictos, detectPictos } from "@/agents/audit/visual-robot"
 import { getBatTextInputForFiche } from "@/db/queries/audit"
-import { buildPictoChecks, type Presence } from "@/lib/audit/visual/pictos"
+import { aggregateAll, checksFromPresences, reconcile, type Presence } from "@/lib/audit/visual/pictos"
 import { runTextRobot, type BatTextCheck } from "@/lib/audit/visual/text-robot"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
 import type { ControlStatus } from "@/lib/audit/types"
@@ -71,7 +71,8 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
 
     const textChecks = runTextRobot(texts.join("\n\n"), data.input)
 
-    // Visual robot — one perception call per face, then aggregate + judge by code.
+    // Visual robot — perception per face, then an adversarial counter-exam on the
+    // contested logos, reconciled and judged by code (a split opinion → INCERTAIN).
     const detections: Record<string, Presence>[] = []
     for (const b64 of base64s) {
         try {
@@ -80,7 +81,31 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
             // Vision unavailable (no key / API error) — degrade to text-only.
         }
     }
-    const visualChecks = detections.length > 0 ? buildPictoChecks(detections) : []
+
+    let visualChecks: BatTextCheck[] = []
+    if (detections.length > 0) {
+        const agg1 = aggregateAll(detections)
+        const contested = checksFromPresences(agg1)
+            .filter((c) => c.statut === "FAIL" || c.statut === "WARNING")
+            .map((c) => c.id.replace("VIS_", ""))
+
+        const finalPresences = { ...agg1 }
+        if (contested.length > 0) {
+            const counter: Record<string, Presence>[] = []
+            for (const b64 of base64s) {
+                try {
+                    counter.push((await contreExaminerPictos(b64, contested)).presences)
+                } catch {
+                    // Counter-exam unavailable — keep the first-pass verdict.
+                }
+            }
+            if (counter.length > 0) {
+                const agg2 = aggregateAll(counter)
+                for (const cle of contested) finalPresences[cle] = reconcile(agg1[cle], agg2[cle])
+            }
+        }
+        visualChecks = checksFromPresences(finalPresences)
+    }
 
     const checks = [...textChecks, ...visualChecks]
     return {

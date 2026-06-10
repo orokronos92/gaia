@@ -59,12 +59,33 @@ function verdict(attendu: Attendu, p: Presence): { statut: ControlStatus; justif
     : { statut: "NA", justification: "Non présent (facultatif)." };
 }
 
-/** Maps per-face detections to verdicts (one BatTextCheck per logo). */
-export function buildPictoChecks(detections: Record<string, Presence>[]): BatTextCheck[] {
+/** Aggregates per-face detections into one presence per logo. */
+export function aggregateAll(detections: Record<string, Presence>[]): Record<string, Presence> {
+  const out: Record<string, Presence> = {};
+  for (const def of PICTOS_A_DETECTER) {
+    out[def.cle] = aggregate(detections.map((d) => d[def.cle]).filter(Boolean) as Presence[]);
+  }
+  return out;
+}
+
+/**
+ * Reconcile two independent reads of the same logo (initial + adversarial
+ * counter-exam). Agreement keeps the verdict; disagreement → INCERTAIN, so a
+ * contested FAIL is never asserted on a split opinion — it degrades to WARNING.
+ */
+export function reconcile(p1: Presence, p2: Presence): Presence {
+  return p1 === p2 ? p1 : "INCERTAIN";
+}
+
+/** Builds the verdict checks from a final presence per logo. */
+export function checksFromPresences(presences: Record<string, Presence>): BatTextCheck[] {
   return PICTOS_A_DETECTER.map((def) => {
-    const seen = detections.map((d) => d[def.cle]).filter(Boolean) as Presence[];
-    const agg = aggregate(seen);
-    const v = verdict(def.attendu, agg);
+    const v = verdict(def.attendu, presences[def.cle] ?? "INCERTAIN");
     return { id: `VIS_${def.cle}`, rubrique: def.rubrique, libelle: def.libelle, statut: v.statut, justification: v.justification };
   });
+}
+
+/** Maps per-face detections to verdicts (one BatTextCheck per logo). */
+export function buildPictoChecks(detections: Record<string, Presence>[]): BatTextCheck[] {
+  return checksFromPresences(aggregateAll(detections));
 }

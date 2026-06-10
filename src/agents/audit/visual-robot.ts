@@ -10,7 +10,7 @@
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 
-import { PICTOS_A_DETECTER, type Presence } from "@/lib/audit/visual/pictos";
+import { PICTOS_A_DETECTER, type PictoDef, type Presence } from "@/lib/audit/visual/pictos";
 
 const VISUAL_MODEL = "pixtral-large-latest";
 
@@ -24,16 +24,10 @@ export interface VisualRobotResult {
   tokensUsed: number;
 }
 
-/** Detects the checklist logos on a single BAT face (one PDF, base64). */
-export async function detectPictos(pdfBase64: string): Promise<VisualRobotResult> {
+/** One pixtral call over the BAT PDF asking for the presence of the given logos. */
+async function askPresence(pdfBase64: string, defs: PictoDef[], instruction: string): Promise<VisualRobotResult> {
   const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY ?? "" });
-
-  const liste = PICTOS_A_DETECTER.map((p) => `- ${p.cle} : ${p.desc}`).join("\n");
-  const instruction = `Tu inspectes une étiquette alimentaire (le PDF joint). Pour CHAQUE logo ci-dessous, indique s'il est PRESENT, ABSENT ou INCERTAIN sur l'étiquette. N'invente rien : si tu hésites, réponds INCERTAIN.
-${liste}
-
-Réponds STRICTEMENT en JSON, sans aucun autre texte :
-{"pictos":[{"cle":"EUROFEUILLE","presence":"PRESENT"}, ...]}`;
+  const liste = defs.map((p) => `- ${p.cle} : ${p.desc}`).join("\n");
 
   const response = await client.chat.complete({
     model: VISUAL_MODEL,
@@ -42,7 +36,7 @@ Réponds STRICTEMENT en JSON, sans aucun autre texte :
         role: "user",
         content: [
           { type: "document_url", documentUrl: `data:application/pdf;base64,${pdfBase64}`, documentName: "bat.pdf" },
-          { type: "text", text: instruction },
+          { type: "text", text: `${instruction}\n${liste}\n\nRéponds STRICTEMENT en JSON, sans aucun autre texte :\n{"pictos":[{"cle":"...","presence":"PRESENT|ABSENT|INCERTAIN"}]}` },
         ],
       },
     ],
@@ -57,4 +51,29 @@ Réponds STRICTEMENT en JSON, sans aucun autre texte :
   const presences: Record<string, Presence> = {};
   for (const p of parsed.pictos) presences[p.cle] = p.presence;
   return { presences, tokensUsed: response.usage?.totalTokens ?? 0 };
+}
+
+/** First pass: detect all checklist logos on a single BAT face. */
+export async function detectPictos(pdfBase64: string): Promise<VisualRobotResult> {
+  return askPresence(
+    pdfBase64,
+    PICTOS_A_DETECTER,
+    "Tu inspectes une étiquette alimentaire (le PDF joint). Pour CHAQUE logo ci-dessous, indique s'il est PRESENT, ABSENT ou INCERTAIN. N'invente rien : si tu hésites, réponds INCERTAIN."
+  );
+}
+
+/**
+ * Counter-exam: an independent adversarial second look at the contested logos.
+ * Pushes the model to actively look for each (a first pass too easily says
+ * ABSENT). The orchestrator reconciles this with the first pass — a split
+ * opinion becomes INCERTAIN, killing the false alarm.
+ */
+export async function contreExaminerPictos(pdfBase64: string, cles: string[]): Promise<VisualRobotResult> {
+  const defs = PICTOS_A_DETECTER.filter((p) => cles.includes(p.cle));
+  if (defs.length === 0) return { presences: {}, tokensUsed: 0 };
+  return askPresence(
+    pdfBase64,
+    defs,
+    "CONTRE-EXAMEN. Une première analyse a un doute sur ces logos. Regarde TRÈS attentivement l'étiquette (le PDF joint) et cherche ACTIVEMENT chacun, même petit ou dans un coin. Conclus honnêtement PRESENT, ABSENT ou INCERTAIN."
+  );
 }

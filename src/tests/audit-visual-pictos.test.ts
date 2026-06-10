@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { aggregate, buildPictoChecks, type Presence } from "../lib/audit/visual/pictos";
+import { aggregate, buildPictoChecks, checksFromPresences, reconcile, type Presence } from "../lib/audit/visual/pictos";
 
 const byId = (r: ReturnType<typeof buildPictoChecks>, id: string) => {
   const c = r.find((x) => x.id === id);
@@ -35,5 +35,16 @@ describe("Robot Visuel — jugement par code (perception → verdict)", () => {
     const r = buildPictoChecks([{ POINT_VERT: "PRESENT", EUROFEUILLE: "INCERTAIN" }]);
     expect(byId(r, "VIS_POINT_VERT").statut).toBe("FAIL");   // Point Vert présent = interdit
     expect(byId(r, "VIS_EUROFEUILLE").statut).toBe("WARNING"); // incertain
+  });
+
+  it("contre-examen : désaccord → INCERTAIN (on n'affirme pas le défaut)", () => {
+    expect(reconcile("ABSENT", "ABSENT")).toBe("ABSENT");   // 2 avis concordants
+    expect(reconcile("ABSENT", "PRESENT")).toBe("INCERTAIN"); // désaccord
+    expect(reconcile("PRESENT", "INCERTAIN")).toBe("INCERTAIN");
+
+    // 1re passe : Triman ABSENT → FAIL. Contre-examen : PRESENT → désaccord.
+    const final: Record<string, Presence> = { TRIMAN: reconcile("ABSENT", "PRESENT") };
+    const r = checksFromPresences(final);
+    expect(byId(r, "VIS_TRIMAN").statut).toBe("WARNING"); // plus de FAIL : fausse alarme désamorcée
   });
 });
