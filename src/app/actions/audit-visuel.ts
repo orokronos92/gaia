@@ -6,6 +6,7 @@ import { auth } from "@/auth"
 import { auditSemantique } from "@/agents/audit/semantic-robot"
 import { contreExaminerPictos, detectPictos } from "@/agents/audit/visual-robot"
 import { getBatTextInputForFiche } from "@/db/queries/audit"
+import { writeAuditLog } from "@/db/queries/audit-logs"
 import { aggregateAll, checksFromPresences, reconcile, type Presence } from "@/lib/audit/visual/pictos"
 import { runTextRobot, type BatTextCheck } from "@/lib/audit/visual/text-robot"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
@@ -38,7 +39,7 @@ export interface AuditVisuelTexteResult {
  */
 export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelTexteResult> {
     const session = await auth()
-    if (!session?.user) return { ok: false, error: "Non autorisé." }
+    if (!session?.user?.id) return { ok: false, error: "Non autorisé." }
 
     const parsed = AuditVisuelSchema.safeParse(raw)
     if (!parsed.success) return { ok: false, error: "Entrée invalide." }
@@ -73,10 +74,16 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     const batText = texts.join("\n\n")
     const textChecks = runTextRobot(batText, data.input)
 
+    // Token accounting per LLM robot (CLAUDE.md §7 — audit trail expected by the
+    // client). The deterministic text robot consumes nothing.
+    const tokens = { semantique: 0, vision: 0, contreExamen: 0 }
+
     // Semantic robot (LLM) — free-text elements judged by meaning (allegation…).
     let semanticChecks: BatTextCheck[] = []
     try {
-        semanticChecks = (await auditSemantique(batText, data.input)).checks
+        const semantic = await auditSemantique(batText, data.input)
+        semanticChecks = semantic.checks
+        tokens.semantique = semantic.tokensUsed
     } catch {
         // LLM unavailable (no key / API error) — skip, never a fabricated verdict.
     }
@@ -86,7 +93,9 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     const detections: Record<string, Presence>[] = []
     for (const b64 of base64s) {
         try {
-            detections.push((await detectPictos(b64)).presences)
+            const detected = await detectPictos(b64)
+            detections.push(detected.presences)
+            tokens.vision += detected.tokensUsed
         } catch {
             // Vision unavailable (no key / API error) — degrade to text-only.
         }
@@ -104,7 +113,9 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
             const counter: Record<string, Presence>[] = []
             for (const b64 of base64s) {
                 try {
-                    counter.push((await contreExaminerPictos(b64, contested)).presences)
+                    const examined = await contreExaminerPictos(b64, contested)
+                    counter.push(examined.presences)
+                    tokens.contreExamen += examined.tokensUsed
                 } catch {
                     // Counter-exam unavailable — keep the first-pass verdict.
                 }
@@ -118,6 +129,17 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     }
 
     const checks = [...textChecks, ...semanticChecks, ...visualChecks]
+
+    // Token-usage trail (best-effort; a logging failure never breaks the audit).
+    const tokensUsed = tokens.semantique + tokens.vision + tokens.contreExamen
+    await writeAuditLog({
+        typeEntite: "audit",
+        entiteId: data.codePf,
+        action: "AUDIT_VISUEL",
+        utilisateurId: session.user.id,
+        changements: { tokensUsed, parRobot: tokens, faces },
+    })
+
     return {
         ok: true,
         faces,
