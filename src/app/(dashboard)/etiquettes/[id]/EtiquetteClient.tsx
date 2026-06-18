@@ -447,7 +447,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                         Dupliquer
                     </Button>
                     <Button className="bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-700/20 text-white rounded-xl font-medium">
-                        Soumettre au Graphiste
+                        Mettre à disposition
                     </Button>
                 </div>
             </div>
