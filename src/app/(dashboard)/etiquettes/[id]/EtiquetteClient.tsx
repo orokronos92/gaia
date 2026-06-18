@@ -42,6 +42,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { RecettePanel } from "@/components/recette/RecettePanel"
+import { RecetteListeCards } from "./_components/recette-liste-cards"
 import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
 import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
@@ -219,13 +220,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
     })
 
     // Editable ingredient list FR (fiche field).
-    const denomSection = useEditableSection({
-        table: "fiche",
-        entityId: labelData.id,
-        ficheId: labelData.id,
-        champs: { ingredientsFr: labelData.ingredientsFr },
-    })
-
     // Editable organoleptic grid (dégustation table — upserted if absent).
     const deg = labelData.degustation
     const degustationSection = useEditableSection({
@@ -854,28 +848,16 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                                         )}
                                     </div>
 
-                                    {/* Traductions */}
+                                    {/* Dénominations & listes d'ingrédients — read-only,
+                                        driven by the Recette / QUID tab (decision 2026-06). */}
                                     <div className="space-y-4">
-                                        <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800 flex justify-between items-center">
+                                        <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800">
                                             Dénominations & Listes d'ingrédients
-                                            <EditButtons section={denomSection} />
                                         </h3>
                                         <div className="grid gap-3">
-                                            {denomSection.editing ? (
-                                                <div className="p-4 bg-white rounded-xl border border-stone-200">
-                                                    <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">Ingrédients (QUID) — FR</div>
-                                                    <EditableText section={denomSection} field="ingredientsFr" value={labelData.ingredientsFr} placeholder="Liste d'ingrédients en français…" multiline className="text-sm text-stone-600 leading-relaxed font-medium" />
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <LanguageRow lang="FR" sousDes={labelData.sousDesignationFr} ingredients={labelData.ingredientsFr} />
-                                                    {(!hasRealValue(labelData.ingredientsFr) && !hasRealValue(labelData.sousDesignationFr)) && (
-                                                        <div className="text-stone-400 font-medium text-sm text-center py-10 bg-stone-50/80 rounded-2xl border border-stone-200 border-dashed">
-                                                            Aucune donnée d'ingrédient ou de sous-dénomination disponible en Français.
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
+                                            {/* Sous-dénomination FR only — the ingredient list now lives in the two derived cards below. */}
+                                            <LanguageRow lang="FR" sousDes={labelData.sousDesignationFr} ingredients="" />
+                                            <RecetteListeCards recette={recette} />
                                         </div>
                                     </div>
 
