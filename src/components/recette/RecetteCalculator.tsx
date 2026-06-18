@@ -202,6 +202,9 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
                 <ColLabel label="% étiquette" />
               </TableHead>
               <TableHead className="text-center">
+                <ColLabel label="Masquer %" />
+              </TableHead>
+              <TableHead className="text-center">
                 <ColLabel label="Demeter" />
               </TableHead>
               <TableHead className="text-center">
@@ -215,7 +218,7 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
             {etat.lignes.length === 0 && (
               <TableRow className="hover:bg-transparent">
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   className="py-10 text-center text-sm text-stone-400"
                 >
                   Aucun ingrédient. Ajoutez une ligne ou renseignez la fiche.

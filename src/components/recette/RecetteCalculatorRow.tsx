@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GripVertical, X, AlertTriangle, Sparkles, Check, Loader2 } from "lucide-react";
+import { GripVertical, X, AlertTriangle, Sparkles, Check, Loader2, Eye, EyeOff } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { TableCell, TableRow } from "@/components/ui/table";
@@ -236,6 +236,32 @@ export function RecetteCalculatorRow({
             className="w-20 font-bold text-emerald-900 dark:text-emerald-100"
           />
         </div>
+      </TableCell>
+
+      <TableCell className="text-center">
+        <button
+          type="button"
+          onClick={() => c.toggleMasque(ligne.id)}
+          aria-label="Masquer le pourcentage sur l'étiquette"
+          aria-pressed={ligne.masquerEtiquette}
+          title={
+            ligne.masquerEtiquette
+              ? "% masqué sur l'étiquette (secret industriel) — cliquer pour l'afficher"
+              : "% affiché sur l'étiquette — cliquer pour le masquer"
+          }
+          className={cn(
+            "transition-colors",
+            ligne.masquerEtiquette
+              ? "text-amber-600 hover:text-amber-700"
+              : "text-stone-300 hover:text-stone-500"
+          )}
+        >
+          {ligne.masquerEtiquette ? (
+            <EyeOff className="size-4" aria-hidden />
+          ) : (
+            <Eye className="size-4" aria-hidden />
+          )}
+        </button>
       </TableCell>
 
       <TableCell className="text-center">
