@@ -76,8 +76,14 @@ export async function validerRecetteAction(input: unknown) {
   // Lot 5 — align the produit's declared composition with the validated recette.
   // The recette is the truth; this regenerates the fiche's declared ingredient
   // list, which also closes the composition differential (ready for audit).
+  // Decision 2026-06-18: the canonical printed/audited list is the MASKED one
+  // (what actually goes on the label) — masked ingredients print without their %.
   if (data.ficheId) {
-    const ingredientsFr = genererListeIngredients(calc.ingredients, etiquettesEffectives);
+    const ingredientsFr = genererListeIngredients(
+      calc.ingredients,
+      etiquettesEffectives,
+      masques
+    );
     await alignerListeIngredients(data.ficheId, ingredientsFr);
     revalidatePath(`/etiquettes/${data.ficheId}`);
   }

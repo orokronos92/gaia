@@ -157,6 +157,8 @@ export interface AuditIngredient {
   estDemeter: boolean;
   estEquitable: boolean;
   estCamellia: boolean;
+  /** Marie hides this ingredient's % on the label (industrial secret). The real % stays in pourcentageEtiquette; only the QUID declaration check (3.1) treats it as a deliberate omission. */
+  pourcentageMasque: boolean;
   ordreTri: number;
 }
 

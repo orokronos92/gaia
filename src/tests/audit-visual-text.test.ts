@@ -83,6 +83,17 @@ describe("Robot Texte — golden MT265", () => {
     expect(ingr.justification).toContain("maté vert* 62%");
   });
 
+  it("tolère un ingrédient masqué (sans %) — pas de faux mismatch", () => {
+    // Guarana masqué côté fiche (juste le nom), le BAT affiche encore "guarana* 6%".
+    // L'item masqué = son nom → retrouvé en sous-chaîne, donc PASS et non FAIL.
+    const ficheMasquee: BatTextInput = {
+      ...FICHE_MT265,
+      ingredients: FICHE_MT265.ingredients!.replace("guarana* 6%", "guarana*"),
+    };
+    const r = runTextRobot(BAT_MT265, ficheMasquee);
+    expect(byId(r, "TXT_INGREDIENTS").statut).toBe("PASS");
+  });
+
   it("WARNING honnête quand la fiche n'a pas la donnée", () => {
     const r = runTextRobot(BAT_MT265, { ingredients: null });
     expect(byId(r, "TXT_INGREDIENTS").statut).toBe("WARNING");

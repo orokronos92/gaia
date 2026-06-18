@@ -66,6 +66,7 @@ export const getAuditInputForFiche = cache(
         estDemeter: l.estDemeter,
         estEquitable: l.estEquitable,
         estCamellia: l.estCamellia,
+        pourcentageMasque: l.masquerPourcentageEtiquette,
         ordreTri: l.ordreTri,
       })),
     };

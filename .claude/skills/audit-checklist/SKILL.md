@@ -63,7 +63,7 @@ Legend — **Backing**: `engine` = computeRecette · `match` = string/regex on e
 | 2.2 | INGREDIENTS | INGR_ORDRE_DECROISSANT | deterministic | engine | Descending weight order via `ordreTri`. |
 | 2.3 | INGREDIENTS | INGR_MONO | deterministic | engine | Mono-ingredient: list correctly omitted. |
 | 2.4 | INGREDIENTS | INGR_ETOILES_BIO | manual | visual | * bio / ** demeter + certification mention, demeter bold italic. |
-| 3.1 | QUID | QUID | deterministic | engine | % declared for highlighted/denomination ingredients. |
+| 3.1 | QUID | QUID | deterministic | engine | % declared for every ingredient (JDG rule, stricter than INCO). **Masking (2026-06-18):** an ingredient Marie flags `pourcentageMasque` (% hidden on the label, industrial secret) is a deliberate omission → **WARNING** (explicit trace), never FAIL. The real % stays in `pourcentageEtiquette`, so 3.2/3.3 are untouched. |
 | 3.2 | QUID | ROUNDING | deterministic | engine | One decimal, 2nd-decimal 0-4↓ / 5-9↑. Largest-remainder, golden MT265. |
 | 3.3 | QUID | QUID_AJUSTEMENT_100 | deterministic | engine | Overshoot adjusted on the most important ingredient. |
 | 4.1 | NUTRITION | NUTRITION_EXEMPTION | llm | text | Exempt category (infusions/thés). |

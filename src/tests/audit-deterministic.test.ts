@@ -29,6 +29,7 @@ function buildIngredients(overrides: Partial<AuditIngredient> = {}): AuditIngred
     estDemeter: i.estDemeter,
     estEquitable: i.estEquitable,
     estCamellia: false,
+    pourcentageMasque: false,
     ordreTri: i.ordreTri,
     ...overrides,
   }));
@@ -133,6 +134,24 @@ describe("Voie A déterministe — golden MT265", () => {
     expect(byId(r, "6.1").statut).toBe("FAIL"); // volume interdit
   });
 
+  it("% masqué (secret industriel) → 3.1 WARNING, pas FAIL ; 3.2/3.3 intacts", () => {
+    // Marie masque le % du guarana ; le vrai % reste en base.
+    const avecMasque = buildIngredients().map((i) =>
+      i.codeArticle === "EF033" ? { ...i, pourcentageMasque: true } : i
+    );
+    const input: AuditInput = {
+      fiche: { ingredientsFr: INGREDIENTS_TEXTE },
+      produit: {},
+      ingredients: avecMasque,
+    };
+    const r = auditDeterministic(input);
+    // Omission volontaire validée → trace explicite, jamais un FAIL.
+    expect(byId(r, "3.1").statut).toBe("WARNING");
+    // Le masquage est purement d'affichage : la maths d'arrondi/total ne bouge pas.
+    expect(byId(r, "3.2").statut).toBe("PASS");
+    expect(byId(r, "3.3").statut).toBe("PASS");
+  });
+
   it("réglisse détectée par scan (sans flag) → 5.3 applicable", () => {
     const avecReglisse: AuditIngredient[] = [
       ...buildIngredients(),
@@ -145,6 +164,7 @@ describe("Voie A déterministe — golden MT265", () => {
         estDemeter: false,
         estEquitable: false,
         estCamellia: false,
+        pourcentageMasque: false,
         ordreTri: 9,
       },
     ];
@@ -185,12 +205,12 @@ describe("Voie A déterministe — golden MT265", () => {
       {
         codeArticle: "TV100", designation: "Thé vert", quantiteKg: 8,
         pourcentageBrut: 94, pourcentageEtiquette: 94,
-        estDemeter: false, estEquitable: false, estCamellia: true, ordreTri: 1,
+        estDemeter: false, estEquitable: false, estCamellia: true, pourcentageMasque: false, ordreTri: 1,
       },
       {
         codeArticle: "EF020", designation: "Menthe", quantiteKg: 0.5,
         pourcentageBrut: 6, pourcentageEtiquette: 6,
-        estDemeter: false, estEquitable: false, estCamellia: false, ordreTri: 2,
+        estDemeter: false, estEquitable: false, estCamellia: false, pourcentageMasque: false, ordreTri: 2,
       },
     ];
     const input: AuditInput = {

@@ -54,16 +54,34 @@ export function checkDenomThe51(input: AuditInput): DeterministicVerdict {
  * require one for each — stricter than INCO art. 22, which only mandates QUID
  * for ingredients in the denomination / graphically highlighted / source of
  * confusion. Do NOT "fix" this to the INCO minimum: it's the validated JDG rule.
+ *
+ * MASKING (Ouro, 2026-06-18): Marie may hide some ingredients' % on the label
+ * (industrial secret) via `pourcentageMasque`. That is a deliberate, Quality-
+ * validated omission, NOT a missing-% error → it is a WARNING (an explicit trace
+ * for review), never a FAIL. The real % still lives in pourcentageEtiquette, so
+ * 3.2 (rounding) and 3.3 (Σ=100) keep computing on the full set, untouched.
  */
 export function checkQuid(input: AuditInput): DeterministicVerdict {
   if (input.ingredients.length === 0) {
     return { statut: "WARNING", justification: "Aucune recette : QUID non vérifiable." };
   }
-  const manquants = input.ingredients.filter((i) => !(i.pourcentageEtiquette > 0));
+  // A real error: an ingredient with no % that Marie did NOT choose to mask.
+  const manquants = input.ingredients.filter(
+    (i) => !i.pourcentageMasque && !(i.pourcentageEtiquette > 0)
+  );
   if (manquants.length > 0) {
     return {
       statut: "FAIL",
       justification: `${manquants.length} ingrédient(s) sans % déclaré : ${manquants
+        .map((i) => i.designation)
+        .join(", ")}.`,
+    };
+  }
+  const masques = input.ingredients.filter((i) => i.pourcentageMasque);
+  if (masques.length > 0) {
+    return {
+      statut: "WARNING",
+      justification: `${masques.length} ingrédient(s) volontairement sans % sur l'étiquette (secret industriel, à confirmer par la Qualité) : ${masques
         .map((i) => i.designation)
         .join(", ")}.`,
     };

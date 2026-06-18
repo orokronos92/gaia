@@ -57,7 +57,12 @@ function checkIngredients(batN: string, input: BatTextInput): BatTextCheck {
     return { ...base, statut: "WARNING", justification: "Liste d'ingrédients absente de la fiche — comparaison impossible." };
   }
   // Split on list separators (comma + space) only, so French decimals (15,5%) survive.
-  const items = input.ingredients.split(/,\s+/).map((s) => s.trim()).filter(Boolean);
+  // Drop the trailing "." of the last item; a masked ingredient is just its name
+  // (no "%"), so it matches the BAT whether or not the artwork prints the %.
+  const items = input.ingredients
+    .split(/,\s+/)
+    .map((s) => s.trim().replace(/\.\s*$/, ""))
+    .filter(Boolean);
   const missing = items.filter((it) => !batN.includes(normCmp(it)));
   if (missing.length === 0) {
     return { ...base, statut: "PASS", justification: "Tous les ingrédients et % de la fiche figurent sur le BAT." };
