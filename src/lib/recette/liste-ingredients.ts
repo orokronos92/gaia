@@ -16,18 +16,27 @@ export interface IngredientListe {
 /**
  * Ordered by `ordreTri`, each line "designation✱° P %", joined ", " + ".".
  * `etiquettes` (optional, same order as `ingredients`) applies Marie's per-line
- * label-% overrides. Empty input → empty string.
+ * label-% overrides. `masques` (optional, same order) drops the "P %" for the
+ * ingredients Marie hides on the label (industrial secret) — the name and the
+ * Demeter/fair-trade markers always stay. Empty input → empty string.
  */
 export function genererListeIngredients(
   ingredients: IngredientListe[],
-  etiquettes?: number[]
+  etiquettes?: number[],
+  masques?: boolean[]
 ): string {
   const lignes = ingredients
-    .map((ing, i) => ({ ing, pct: etiquettes?.[i] ?? ing.pourcentageEtiquette }))
+    .map((ing, i) => ({
+      ing,
+      pct: etiquettes?.[i] ?? ing.pourcentageEtiquette,
+      masque: masques?.[i] ?? false,
+    }))
     .sort((a, b) => a.ing.ordreTri - b.ing.ordreTri)
-    .map(({ ing, pct }) => {
+    .map(({ ing, pct, masque }) => {
       const marqueurs = `${ing.estDemeter ? "✱" : ""}${ing.estEquitable ? "°" : ""}`;
-      return `${ing.designation}${marqueurs} ${pct} %`;
+      return masque
+        ? `${ing.designation}${marqueurs}`
+        : `${ing.designation}${marqueurs} ${pct} %`;
     });
   return lignes.length > 0 ? lignes.join(", ") + "." : "";
 }

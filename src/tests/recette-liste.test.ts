@@ -30,4 +30,24 @@ describe("genererListeIngredients — liste déclarée déterministe", () => {
   it("liste vide → chaîne vide", () => {
     expect(genererListeIngredients([])).toBe("");
   });
+
+  it("masque le % des ingrédients choisis (nom + marqueurs gardés)", () => {
+    const ings = [ing("Maté", 60, 1, true), ing("Citron", 40, 2)];
+    expect(genererListeIngredients(ings, undefined, [false, true])).toBe(
+      "Maté✱ 60 %, Citron."
+    );
+  });
+
+  it("override et masque se combinent (même ordre que les ingrédients)", () => {
+    const ings = [ing("Maté", 60, 1), ing("Citron", 40, 2)];
+    // Citron masqué : son override 45 n'apparaît pas ; Maté garde son override 55.
+    expect(genererListeIngredients(ings, [55, 45], [false, true])).toBe(
+      "Maté 55 %, Citron."
+    );
+  });
+
+  it("masques absent → comportement inchangé (tous les %)", () => {
+    const ings = [ing("Maté", 60, 1), ing("Citron", 40, 2)];
+    expect(genererListeIngredients(ings)).toBe("Maté 60 %, Citron 40 %.");
+  });
 });
