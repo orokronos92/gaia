@@ -9,7 +9,11 @@ import {
   versionsEtiquettes,
   fichesDegustation,
   utilisateurs,
+  StatutEtiquette,
 } from "@/db/schema";
+
+/** Workflow status union, derived from the Drizzle enum (single source of truth). */
+export type StatutFiche = (typeof StatutEtiquette.enumValues)[number];
 
 /**
  * Whitelist of fiche fields Marie may edit (editable-fiche phase 2). Anything
@@ -105,6 +109,31 @@ export async function setAllegationChoisie({
     .where(eq(fichesEtiquettes.id, ficheId));
 
   return { avant: before };
+}
+
+/**
+ * Persists Marie's manual workflow status change on a fiche, returning the
+ * previous value (for the audit diff). No transition logic yet — Marie sets it
+ * freely; a workflow engine may come later.
+ */
+export async function updateStatutFiche(
+  ficheId: string,
+  statut: StatutFiche
+): Promise<{ avant: StatutFiche | null }> {
+  const before = await db.query.fichesEtiquettes.findFirst({
+    where: eq(fichesEtiquettes.id, ficheId),
+    columns: { statut: true },
+  });
+  if (!before) {
+    throw new Error("Fiche introuvable");
+  }
+
+  await db
+    .update(fichesEtiquettes)
+    .set({ statut, misAJourLe: new Date() })
+    .where(eq(fichesEtiquettes.id, ficheId));
+
+  return { avant: before.statut };
 }
 
 /**

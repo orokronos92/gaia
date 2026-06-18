@@ -43,6 +43,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { RecettePanel } from "@/components/recette/RecettePanel"
 import { RecetteListeCards } from "./_components/recette-liste-cards"
+import { StatutSelect } from "./_components/statut-select"
 import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
 import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
@@ -403,9 +404,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                                 {labelData.title}
                             </h1>
                         )}
-                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm">
-                            {labelData.status}
-                        </Badge>
+                        <StatutSelect ficheId={labelData.id} statut={labelData.status} />
                         <EditButtons section={titreSection} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1">

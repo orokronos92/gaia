@@ -5,11 +5,40 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 
 import { db } from "@/db"
-import { fichesEtiquettes } from "@/db/schema"
+import { fichesEtiquettes, StatutEtiquette } from "@/db/schema"
 import { auth } from "@/auth"
-import { setAllegationChoisie, dupliquerFiche, creerVersionFiche, restaurerVersionFiche, getVersionSnapshot } from "@/db/queries/fiches"
+import { setAllegationChoisie, dupliquerFiche, creerVersionFiche, restaurerVersionFiche, getVersionSnapshot, updateStatutFiche } from "@/db/queries/fiches"
 import { writeAuditLog } from "@/db/queries/audit-logs"
 import { AuditWorker } from "@/agents/audit/auditWorker"
+
+const StatutSchema = z.object({
+    ficheId: z.string().uuid(),
+    statut: z.enum(StatutEtiquette.enumValues),
+})
+
+/**
+ * Marie manually sets a fiche's workflow status (no transition rules yet — any
+ * status is allowed). auth → Zod (enum) → query → audit-log the diff → revalidate.
+ */
+export async function updateStatutEtiquetteAction(input: unknown) {
+    const data = StatutSchema.parse(input)
+
+    const session = await auth()
+    if (!session?.user?.id) throw new Error("Unauthorized")
+
+    const { avant } = await updateStatutFiche(data.ficheId, data.statut)
+
+    await writeAuditLog({
+        typeEntite: "fiche_etiquette",
+        entiteId: data.ficheId,
+        action: "STATUT_MODIFIE",
+        utilisateurId: session.user.id,
+        changements: { avant, apres: data.statut },
+    })
+
+    revalidatePath(`/etiquettes/${data.ficheId}`)
+    return { ok: true as const }
+}
 
 const ChoisirAllegationSchema = z.object({
     ficheId: z.string().uuid(),
