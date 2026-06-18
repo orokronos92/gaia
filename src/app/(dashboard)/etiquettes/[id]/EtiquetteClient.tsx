@@ -376,17 +376,20 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                         <ChevronRight className="h-3 w-3" />
                         {dossierSection.editing ? (
                             <span className="inline-flex items-center gap-1.5">
-                                <span className="text-emerald-700">Modèle #</span>
+                                <span className="text-emerald-700/70">CodePF :</span>
                                 <input
                                     type="text"
                                     value={dossierSection.draft.codePf ?? ""}
                                     onChange={(e) => dossierSection.setField("codePf", e.target.value)}
-                                    placeholder="Réf. modèle (ex. MT2806)"
+                                    placeholder="Code PF (ex. MT265)"
                                     className="bg-white rounded-md border border-emerald-300 px-2 py-0.5 text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-300 w-48"
                                 />
                             </span>
                         ) : (
-                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">Modèle #{labelData.codePf}</span>
+                            <span className="inline-flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-md">
+                                <span className="text-emerald-700/70">CodePF :</span>
+                                <span className="font-mono font-semibold text-emerald-800">{labelData.codePf}</span>
+                            </span>
                         )}
                         <EditButtons section={dossierSection} />
                     </div>
