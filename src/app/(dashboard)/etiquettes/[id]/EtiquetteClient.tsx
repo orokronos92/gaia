@@ -419,7 +419,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                         )}
                         <span className="text-stone-300 mx-1">•</span>
                         <span className="text-sm font-medium text-stone-500 flex items-center gap-1.5 border border-stone-100 bg-stone-50 px-2 py-0.5 rounded-md">
-                            <Clock className="h-3.5 w-3.5" /> Modifié le {labelData.date ? new Date(labelData.date).toLocaleDateString('fr-FR') : 'N/A'}
+                            <Clock className="h-3.5 w-3.5" /> Modifié le {labelData.date ?? 'N/A'}
                         </span>
                     </div>
                 </div>
