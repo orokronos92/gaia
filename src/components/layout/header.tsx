@@ -9,8 +9,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Bell, CircleUser, Menu, Search, Check, FileText, BrainCircuit, AlertTriangle, Info } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Bell, CircleUser, Menu, Check, FileText, BrainCircuit, AlertTriangle, Info } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { useNotifications } from "@/components/providers/NotificationProvider"
 import { useRouter } from "next/navigation"
@@ -41,14 +40,6 @@ export function Header() {
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle Menu</span>
             </Button>
-            <div className="relative ml-auto flex-1 md:grow-0">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
-                <Input
-                    type="search"
-                    placeholder="Rechercher par code, EAN..."
-                    className="w-full rounded-full bg-white/60 backdrop-blur-md border-stone-200/50 pl-9 shadow-sm md:w-[240px] lg:w-[400px] hover:bg-white focus:bg-white transition-all dark:bg-stone-950/60"
-                />
-            </div>
 
             {/* Notification Dropdown */}
             <DropdownMenu>
