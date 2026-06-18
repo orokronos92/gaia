@@ -153,6 +153,7 @@ export const ingredientsRecette = pgTable("ingredients_recette", {
     quantiteKg: real("quantite_kg").notNull(),
     pourcentageBrut: real("pourcentage_brut").notNull(),
     pourcentageEtiquette: real("pourcentage_etiquette").notNull(),
+    masquerPourcentageEtiquette: boolean("masquer_pourcentage_etiquette").default(false).notNull(), // Marie hides this ingredient's % on the printed label (industrial secret). Display-only: the real % stays in pourcentageEtiquette.
     ordreTri: integer("ordre_tri").notNull(),
 });
 

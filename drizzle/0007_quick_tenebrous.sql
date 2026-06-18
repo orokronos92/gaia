@@ -1,0 +1,1 @@
+ALTER TABLE "ingredients_recette" ADD COLUMN "masquer_pourcentage_etiquette" boolean DEFAULT false NOT NULL;
