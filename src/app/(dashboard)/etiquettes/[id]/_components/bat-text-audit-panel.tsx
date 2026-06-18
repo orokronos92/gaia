@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useTransition } from "react"
 import { CheckCircle2, AlertTriangle, XCircle, MinusCircle, ScanText, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -18,17 +18,19 @@ const STATUS_STYLE: Record<ControlStatus, { label: string; chip: string; icon: t
 
 interface BatTextAuditPanelProps {
     ficheId: string
+    /** Controlled result, lifted to the fiche so it survives tab switches. */
+    result: AuditVisuelTexteResult | null
+    onResultData: (r: AuditVisuelTexteResult | null) => void
     onResult?: (r: SousResultatAudit) => void
 }
 
-export function BatTextAuditPanel({ ficheId, onResult }: BatTextAuditPanelProps) {
+export function BatTextAuditPanel({ ficheId, result, onResultData, onResult }: BatTextAuditPanelProps) {
     const [isPending, startTransition] = useTransition()
-    const [result, setResult] = useState<AuditVisuelTexteResult | null>(null)
 
     const run = () =>
         startTransition(async () => {
             const res = await auditVisuelTexteAction({ ficheId })
-            setResult(res)
+            onResultData(res)
             if (res.ok) onResult?.({ overallStatus: res.overallStatus, counts: res.counts })
         })
 

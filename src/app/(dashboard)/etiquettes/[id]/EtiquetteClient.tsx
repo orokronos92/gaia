@@ -48,6 +48,8 @@ import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 import { DeterministicAuditPanel } from "./_components/deterministic-audit-panel"
 import { BatTextAuditPanel } from "./_components/bat-text-audit-panel"
+import type { AuditDeterministeResult } from "@/app/actions/audit"
+import type { AuditVisuelTexteResult } from "@/app/actions/audit-visuel"
 import { AuditSynthese, type SousResultatAudit } from "./_components/audit-synthese"
 import { ReintegrerDocumentMenu } from "./_components/reintegrer-recette"
 import type { RecetteCalculatorHandle } from "@/components/recette/RecetteCalculator"
@@ -140,6 +142,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
     const [syntheseVis, setSyntheseVis] = useState<SousResultatAudit | null>(null)
+    // Full audit results lifted here so they survive tab switches (the tab content
+    // unmounts on switch). Reset only when the user leaves the fiche (this client
+    // unmounts) or relaunches an analysis. In-memory, no DB persistence.
+    const [auditDetData, setAuditDetData] = useState<AuditDeterministeResult | null>(null)
+    const [auditVisData, setAuditVisData] = useState<AuditVisuelTexteResult | null>(null)
     const [allegChoisie, setAllegChoisie] = useState<string | null>(labelData.allegationChoisie ?? null)
     const [allegSaving, setAllegSaving] = useState<string | null>(null)
 
@@ -938,14 +945,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
                 <TabsContent value="audit" className="mt-0 focus-visible:outline-none">
                   <div className="space-y-6">
                     <AuditSynthese donnees={syntheseDet} visuel={syntheseVis} />
-                    <DeterministicAuditPanel ficheId={labelData.id} onResult={setSyntheseDet} />
+                    <DeterministicAuditPanel ficheId={labelData.id} data={auditDetData} onData={setAuditDetData} onResult={setSyntheseDet} />
                   </div>
                 </TabsContent>
 
                 {/* 3. BAT — Viewer intégré */}
                 <TabsContent value="pdf" className="mt-0 focus-visible:outline-none">
                     <div className="mb-6">
-                        <BatTextAuditPanel ficheId={labelData.id} onResult={setSyntheseVis} />
+                        <BatTextAuditPanel ficheId={labelData.id} result={auditVisData} onResultData={setAuditVisData} onResult={setSyntheseVis} />
                     </div>
                     {pdfFiles.length === 0 ? (
                         <Card className="border border-stone-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">

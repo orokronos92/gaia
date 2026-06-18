@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useTransition } from "react"
 import { Cpu, Loader2, ShieldCheck, AlertTriangle, XCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -20,17 +20,19 @@ const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string;
 
 interface DeterministicAuditPanelProps {
     ficheId: string
+    /** Controlled result, lifted to the fiche so it survives tab switches. */
+    data: AuditDeterministeResult | null
+    onData: (r: AuditDeterministeResult | null) => void
     onResult?: (r: SousResultatAudit) => void
 }
 
-export function DeterministicAuditPanel({ ficheId, onResult }: DeterministicAuditPanelProps) {
+export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: DeterministicAuditPanelProps) {
     const [pending, startTransition] = useTransition()
-    const [data, setData] = useState<AuditDeterministeResult | null>(null)
 
     const run = () => {
         startTransition(async () => {
             const res = await auditDeterministeAction({ ficheId })
-            setData(res)
+            onData(res)
             if (res.ok) onResult?.({ overallStatus: res.overallStatus, counts: res.counts })
         })
     }
