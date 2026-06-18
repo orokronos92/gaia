@@ -69,6 +69,7 @@ export function etatDepuisRecette(
       overrideEtiquette: null,
       estDemeter: i.estDemeter,
       estEquitable: i.estEquitable,
+      masquerEtiquette: i.masquerEtiquette,
       provenance: "EXTRAIT",
       incomplet: false,
     })),
@@ -100,6 +101,7 @@ export function etatDepuisExtraction(
       overrideEtiquette: null,
       estDemeter: false,
       estEquitable: false,
+      masquerEtiquette: false,
       provenance: "EXTRAIT",
       incomplet: it.pourcentage == null,
     })),
@@ -154,6 +156,7 @@ export interface UseCalculatriceResult {
   setCodeArticle: (id: string, v: string) => void;
   toggleDemeter: (id: string) => void;
   toggleEquitable: (id: string) => void;
+  toggleMasque: (id: string) => void;
   ajouterLigne: () => void;
   supprimerLigne: (id: string) => void;
   /** Display equivalent (the non-active unit) for a line, or null if unknown. */
@@ -325,6 +328,10 @@ export function useCalculatrice(
     majLignes((l) =>
       l.map((x) => (x.id === id ? { ...x, estEquitable: !x.estEquitable } : x))
     );
+  const toggleMasque = (id: string) =>
+    majLignes((l) =>
+      l.map((x) => (x.id === id ? { ...x, masquerEtiquette: !x.masquerEtiquette } : x))
+    );
 
   const ajouterLigne = () =>
     majLignes((l) => [
@@ -338,6 +345,7 @@ export function useCalculatrice(
         overrideEtiquette: null,
         estDemeter: false,
         estEquitable: false,
+        masquerEtiquette: false,
         provenance: "AJOUTE_MARIE",
         incomplet: true,
       },
@@ -378,6 +386,7 @@ export function useCalculatrice(
     setCodeArticle,
     toggleDemeter,
     toggleEquitable,
+    toggleMasque,
     ajouterLigne,
     supprimerLigne,
     equivalent,

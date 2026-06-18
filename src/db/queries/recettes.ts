@@ -80,6 +80,7 @@ export const getRecetteOutputForProduit = cache(
       pourcentageEtiquette: r.pourcentageEtiquette,
       estDemeter: r.estDemeter,
       estEquitable: r.estEquitable,
+      masquerEtiquette: r.masquerPourcentageEtiquette,
       ordreTri: r.ordreTri,
     }));
 
@@ -109,6 +110,8 @@ export interface ValiderRecetteParams {
   calc: RecetteCalculee;
   /** Effective label % per ingredient (Marie's overrides applied), same order as calc. */
   etiquettesEffectives: number[];
+  /** Per-ingredient "hide % on label" flags, same order as calc. */
+  masques: boolean[];
 }
 
 /**
@@ -123,6 +126,7 @@ export async function validerRecette({
   utilisateurId,
   calc,
   etiquettesEffectives,
+  masques,
 }: ValiderRecetteParams) {
   return db.transaction(async (tx) => {
     const existante = await tx.query.recettes.findFirst({
@@ -166,6 +170,7 @@ export async function validerRecette({
         quantiteKg: ing.quantiteKg,
         pourcentageBrut: ing.pourcentageBrut,
         pourcentageEtiquette: etiquettesEffectives[i] ?? ing.pourcentageEtiquette,
+        masquerPourcentageEtiquette: masques[i] ?? false,
         ordreTri: ing.ordreTri,
       }))
     );

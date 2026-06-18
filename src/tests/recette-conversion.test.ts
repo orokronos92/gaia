@@ -34,6 +34,7 @@ const ligne = (
   overrideEtiquette: o.overrideEtiquette ?? null,
   estDemeter: o.estDemeter ?? false,
   estEquitable: o.estEquitable ?? false,
+  masquerEtiquette: o.masquerEtiquette ?? false,
   provenance: o.provenance ?? "EXTRAIT",
   incomplet: o.incomplet ?? false,
 });

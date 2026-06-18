@@ -23,6 +23,7 @@ const IngredientCalculeSchema = z.object({
   pourcentageEtiquette: z.number(),
   estDemeter: z.boolean(),
   estEquitable: z.boolean(),
+  masquerEtiquette: z.boolean().default(false),
   ordreTri: z.number().int(),
 });
 

@@ -17,6 +17,7 @@ const IngredientPayload = z.object({
   estDemeter: z.boolean(),
   estEquitable: z.boolean(),
   overrideEtiquette: z.number().nullable(),
+  masquerEtiquette: z.boolean(),
 });
 
 const ValiderPayload = z.object({
@@ -52,6 +53,9 @@ export async function validerRecetteAction(input: unknown) {
   const etiquettesEffectives = data.ingredients.map(
     (i, idx) => i.overrideEtiquette ?? calc.ingredients[idx].pourcentageEtiquette
   );
+  // Hide-% flags, aligned positionally with calc.ingredients (computeRecette
+  // preserves input order, same invariant the override mapping above relies on).
+  const masques = data.ingredients.map((i) => i.masquerEtiquette);
   const total =
     Math.round(etiquettesEffectives.reduce((s, v) => s + v, 0) * 100) / 100;
   if (Math.abs(total - 100) > 1e-6) {
@@ -66,6 +70,7 @@ export async function validerRecetteAction(input: unknown) {
     utilisateurId: session.user.id,
     calc,
     etiquettesEffectives,
+    masques,
   });
 
   // Lot 5 — align the produit's declared composition with the validated recette.

@@ -28,6 +28,8 @@ export interface LigneIngredient {
   overrideEtiquette: number | null;
   estDemeter: boolean;
   estEquitable: boolean;
+  /** Marie hides this ingredient's % on the printed label (industrial secret). Display-only — the real % is still computed/stored. */
+  masquerEtiquette: boolean;
   provenance: ProvenanceLigne;
   /** true when no quantity is known (neither kg nor %). Blocks global compute. */
   incomplet: boolean;

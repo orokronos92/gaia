@@ -117,6 +117,7 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
       estDemeter: ing.estDemeter,
       estEquitable: ing.estEquitable,
       overrideEtiquette: etat.lignes[i].overrideEtiquette,
+      masquerEtiquette: etat.lignes[i].masquerEtiquette,
     }));
     await validerRecetteAction({ produitId, ficheId, pas: etat.pas, ingredients });
     return { saved: true };
