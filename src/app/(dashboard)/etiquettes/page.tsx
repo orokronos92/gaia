@@ -17,6 +17,19 @@ const columns = [
     { id: "reception", title: "Contrôle réception" },
 ]
 
+// Marie only tracks Qualité + Graphisme for now (post-demo request). The BAT and
+// réception stages still exist as label statuses; we just don't surface their
+// columns. Re-enable = add the ids back here, the grid adapts to the count.
+const VISIBLE_COLUMN_IDS: string[] = ["quality", "design"]
+
+// Tailwind needs static class names (JIT can't see grid-cols-${n}).
+const GRID_COLS: Record<number, string> = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    4: "grid-cols-4",
+}
+
 export default async function KanbanPage(
     props: {
         searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -46,6 +59,8 @@ export default async function KanbanPage(
               )
           )
         : await base;
+
+    const visibleColumns = columns.filter(col => VISIBLE_COLUMN_IDS.includes(col.id));
 
     const mappedCards = data.map(item => {
         let colId = "quality";
@@ -85,8 +100,8 @@ export default async function KanbanPage(
             </div>
 
             <div className="flex-1 min-h-0 overflow-hidden pb-4">
-                <div className="grid grid-cols-4 gap-4 h-full">
-                    {columns.map((col) => {
+                <div className={cn("grid gap-4 h-full", GRID_COLS[visibleColumns.length] ?? "grid-cols-4")}>
+                    {visibleColumns.map((col) => {
                         const colCards = mappedCards.filter(c => c.column === col.id);
                         return (
                             <div key={col.id} className="h-full min-h-0 flex flex-col gap-4 rounded-3xl bg-white/40 backdrop-blur-md border border-stone-200/50 dark:bg-stone-900/40 p-5 shadow-xl shadow-stone-200/30">
