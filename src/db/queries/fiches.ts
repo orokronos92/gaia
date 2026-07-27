@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { desc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/db";
 import {
   fichesEtiquettes,
@@ -337,10 +338,38 @@ export const getVersionsFiche = cache(
 );
 
 /**
- * Restores a version's snapshot into the LIVE fiche (label content fields only —
- * the produit is shared across fiches, so it is not overwritten). Returns the
- * fiche id + restored version number. The current state should have been saved
- * as a version first if Marie wants to keep it.
+ * After a restore, the content is back to a past state that has NOT been
+ * re-checked, so the fiche is sent back for quality review — never left as a
+ * stale "validated" (regulatory: a validated status must reflect a controlled
+ * state).
+ */
+const STATUT_APRES_RESTAURATION: StatutFiche = "QUALITY_REVIEW";
+
+/**
+ * Minimal shape guard on the version snapshot before it is spread into four
+ * table writes. A malformed / hand-edited / legacy-shaped blob fails fast with a
+ * clear error instead of an opaque Drizzle runtime error mid-transaction. Each
+ * branch is validated only as "an object" — column-level types are still the
+ * schema's responsibility.
+ */
+const SnapshotBranche = z.record(z.string(), z.unknown());
+const DonneesSnapshotSchema = z.object({
+  fiche: SnapshotBranche.optional(),
+  produit: SnapshotBranche.nullish(),
+  recette: SnapshotBranche.nullish(),
+  degustation: SnapshotBranche.nullish(),
+});
+
+/**
+ * Restores a version's snapshot into the LIVE record. The model is 1 produit =
+ * 1 fiche, so a full restore rewrites the four branches captured in the
+ * snapshot — the fiche (label content), the produit (identity/sourcing), the
+ * recette QUID + its ingredient lines (the % / kg the audit relies on), and the
+ * dégustation (organoleptic grid the fiche evolves from) — in one transaction.
+ * Business keys (codePf, codeEtiquette) and creation timestamps are kept, and
+ * the fiche is sent back to QUALITY_REVIEW (see STATUT_APRES_RESTAURATION).
+ * Snapshots predating a branch simply skip it (backward-compatible). The current
+ * state should have been saved as a version first if Marie wants to keep it.
  */
 export async function restaurerVersionFiche(
   versionId: string
@@ -351,9 +380,18 @@ export async function restaurerVersionFiche(
     });
     if (!version) throw new Error("Version introuvable");
 
-    const snap = version.donneesSnapshot as { fiche?: Record<string, unknown> };
-    const fiche = snap?.fiche ?? {};
-    // Drop structural/identity/timestamp keys; restore the label content.
+    const snap = DonneesSnapshotSchema.parse(version.donneesSnapshot);
+
+    // The live fiche is the authoritative target (its produitId may not be echoed
+    // faithfully by an old snapshot).
+    const ficheLive = await tx.query.fichesEtiquettes.findFirst({
+      where: eq(fichesEtiquettes.id, version.ficheEtiquetteId),
+    });
+    if (!ficheLive) throw new Error("Fiche introuvable");
+
+    // 1. Fiche — restore the label-content fields (drop identity/timestamp keys).
+    //    statut is NOT restored: a restore sends the fiche back for re-checking.
+    const fiche = snap.fiche ?? {};
     const {
       id: _id,
       produitId: _pid,
@@ -362,13 +400,126 @@ export async function restaurerVersionFiche(
       creePar: _cp,
       creeLe: _cl,
       misAJourLe: _mu,
-      ...contenu
+      statut: _st,
+      ...ficheContenu
     } = fiche;
-
     await tx
       .update(fichesEtiquettes)
-      .set({ ...(contenu as Record<string, unknown>), misAJourLe: new Date() })
+      .set({
+        ...(ficheContenu as Record<string, unknown>),
+        statut: STATUT_APRES_RESTAURATION,
+        misAJourLe: new Date(),
+      })
       .where(eq(fichesEtiquettes.id, version.ficheEtiquetteId));
+
+    // 2. Produit — restore identity/sourcing; keep the business key (codePf) and
+    //    creation timestamp. produits has no timestamp columns other than these.
+    if (snap.produit) {
+      const {
+        id: _prodId,
+        codePf: _cpf,
+        creeLe: _pcl,
+        misAJourLe: _pmu,
+        ...produitContenu
+      } = snap.produit;
+      await tx
+        .update(produits)
+        .set({ ...(produitContenu as Record<string, unknown>), misAJourLe: new Date() })
+        .where(eq(produits.id, ficheLive.produitId));
+    }
+
+    // 3. Recette QUID + ingredients — overwrite the live recette in place (or
+    //    recreate it if none exists), then replace its ingredient lines.
+    if (snap.recette) {
+      const { ingredients: snapIngredients, ...recetteSnap } = snap.recette;
+      const {
+        id: _rid,
+        produitId: _rpid,
+        creeLe: _rcl,
+        misAJourLe: _rmu,
+        date: rawDate,
+        ...recetteContenu
+      } = recetteSnap;
+      // JSON serialises the `date` timestamp to a string → coerce back to Date.
+      const recetteDate = rawDate ? new Date(rawDate as string) : null;
+
+      const recetteLive = await tx.query.recettes.findFirst({
+        where: eq(recettes.produitId, ficheLive.produitId),
+        orderBy: [desc(recettes.creeLe)],
+      });
+
+      let recetteCibleId: string;
+      if (recetteLive) {
+        await tx
+          .update(recettes)
+          .set({
+            ...(recetteContenu as Record<string, unknown>),
+            date: recetteDate,
+            misAJourLe: new Date(),
+          })
+          .where(eq(recettes.id, recetteLive.id));
+        recetteCibleId = recetteLive.id;
+      } else {
+        const [nouvelle] = await tx
+          .insert(recettes)
+          .values({
+            ...(recetteContenu as Record<string, unknown>),
+            date: recetteDate,
+            produitId: ficheLive.produitId,
+          } as typeof recettes.$inferInsert)
+          .returning({ id: recettes.id });
+        recetteCibleId = nouvelle.id;
+      }
+
+      // Only touch ingredient lines when the snapshot actually carries them
+      // (an empty array means "no ingredients at that time" → clear them).
+      if (Array.isArray(snapIngredients)) {
+        const lignes = snapIngredients as Record<string, unknown>[];
+        await tx
+          .delete(ingredientsRecette)
+          .where(eq(ingredientsRecette.recetteId, recetteCibleId));
+        if (lignes.length > 0) {
+          await tx.insert(ingredientsRecette).values(
+            lignes.map((ing) => {
+              const { id: _iid, recetteId: _irid, ...ingRest } = ing;
+              return {
+                ...(ingRest as Record<string, unknown>),
+                recetteId: recetteCibleId,
+              } as typeof ingredientsRecette.$inferInsert;
+            })
+          );
+        }
+      }
+    }
+
+    // 4. Dégustation — the organoleptic grid the fiche evolves from. Overwrite
+    //    the live one in place (or insert if none). No child tables; creeLe is
+    //    the only timestamp column, kept as-is.
+    if (snap.degustation) {
+      const {
+        id: _did,
+        produitId: _dpid,
+        creeLe: _dcl,
+        ...degContenu
+      } = snap.degustation;
+      const degLive = await tx.query.fichesDegustation.findFirst({
+        where: eq(fichesDegustation.produitId, ficheLive.produitId),
+        orderBy: [desc(fichesDegustation.creeLe)],
+      });
+      if (degLive) {
+        await tx
+          .update(fichesDegustation)
+          .set({ ...(degContenu as Record<string, unknown>) })
+          .where(eq(fichesDegustation.id, degLive.id));
+      } else {
+        await tx
+          .insert(fichesDegustation)
+          .values({
+            ...(degContenu as Record<string, unknown>),
+            produitId: ficheLive.produitId,
+          } as typeof fichesDegustation.$inferInsert);
+      }
+    }
 
     return {
       ficheId: version.ficheEtiquetteId,
