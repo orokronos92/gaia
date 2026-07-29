@@ -266,7 +266,7 @@ SCHÉMA JSON ATTENDU :
   "grade": "string (granulométrie) ou null",
   "volumineux": boolean ou null,
   "plusieursInfusions": boolean ou null,
-  "nomLatin": "string ou null",
+  "nomLatin": "string (nom latin binomial de l'espèce UNIQUE d'un produit mono-ingrédient, ex: 'Ilex paraguariensis', 'Camellia sinensis') ou null si le produit est un mélange de plusieurs plantes",
   "allergenesMp": "'oui' ou 'non' ou null — allergènes présents dans la matière première",
   "allegationsMp": "valeur brute du champ allégations du doc (ex: 'oui, sur le mélange final') ou null",
   "labelsMP": ["liste des labels matières premières cochés: AB, MH, WFTO, Demeter, FLO, IGP, FFL, Elephant friendly..."],
@@ -321,6 +321,7 @@ RÈGLES D'ENRICHISSEMENT :
 - "infoProducteur" / "typeProducteur" / "origineMpa": à chercher dans le bloc "Informations PMI" (champs "Info producteur", "Type de producteur", "Origine MPA" = origine de la matière première agricole)
 - "allegationsPossibles": extraire TOUTES les options du FD (section Remarque), chacune avec son libellé et nb de tasses
 - "ingredientsSuggestion": liste simplifiée avant la liste QUID (souvent libellée 'Liste d'ingrédient :')
+- "nomLatin": UNIQUEMENT le nom latin binomial d'UNE espèce quand le produit est mono-ingrédient (une seule plante). Pour un MÉLANGE de plusieurs plantes, mettre null. NE JAMAIS recopier dans ce champ la liste des ingrédients ni une énumération de noms latins entre parenthèses — même si le document présente un champ 'Nom latin' contenant une telle liste : cette liste appartient à "ingredientsSuggestion"/"ingredientsTexte".
 - "declinaisons": texte sur des déclinaisons prévues (infusette, etc.)
 - Pour les notes organoleptiques, recopier fidèlement le contenu textuel des dégustateurs
 - Si un champ n'est pas trouvé dans les documents, mettre null (jamais inventer)
