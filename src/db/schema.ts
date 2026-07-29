@@ -70,7 +70,7 @@ export const produits = pgTable("produits", {
     organismeCertificateur: varchar("organisme_certificateur", { length: 100 }),
     grade: varchar("grade", { length: 100 }),                           // granulométrie
     volumineux: boolean("volumineux"),                                  // null = non renseigné
-    nomLatin: varchar("nom_latin", { length: 255 }),
+    nomLatin: text("nom_latin"),                                        // liste latine multi-plantes possible (infusion) → text, pas de limite (évite l'overflow varchar à l'import)
     infoProducteur: text("info_producteur"),                            // infos orphelines sur le producteur
     typeProducteur: varchar("type_producteur", { length: 100 }),         // coopérative, etc.
     origineMpa: varchar("origine_mpa", { length: 255 }),                // Origine Matière Première Aromatique

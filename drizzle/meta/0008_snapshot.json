@@ -1,0 +1,1816 @@
+{
+  "id": "68354ab6-d42c-43a9-b05b-9c19edc21a0c",
+  "prevId": "992bcadf-3622-464e-b2d4-8d953ef57381",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "type_entite": {
+          "name": "type_entite",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entite_id": {
+          "name": "entite_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "utilisateur_id": {
+          "name": "utilisateur_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "changements": {
+          "name": "changements",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.commandes_impression": {
+      "name": "commandes_impression",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "version_etiquette_id": {
+          "name": "version_etiquette_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_fournisseur": {
+          "name": "code_fournisseur",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantite": {
+          "name": "quantite",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prix": {
+          "name": "prix",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_debut_analyse": {
+          "name": "date_debut_analyse",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_fin_analyse": {
+          "name": "date_fin_analyse",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_envoi_externe": {
+          "name": "date_envoi_externe",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_envoi_commande": {
+          "name": "date_envoi_commande",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_envoi_bat": {
+          "name": "date_envoi_bat",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_reception_bat": {
+          "name": "date_reception_bat",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_validation_bat": {
+          "name": "date_validation_bat",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_debut_impression": {
+          "name": "date_debut_impression",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_reception": {
+          "name": "date_reception",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "statut_reception": {
+          "name": "statut_reception",
+          "type": "statut_reception",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes_reception": {
+          "name": "notes_reception",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photos_reception_ids": {
+          "name": "photos_reception_ids",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "controle_par": {
+          "name": "controle_par",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "controle_le": {
+          "name": "controle_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "mis_a_jour_le": {
+          "name": "mis_a_jour_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "commandes_impression_version_etiquette_id_versions_etiquettes_id_fk": {
+          "name": "commandes_impression_version_etiquette_id_versions_etiquettes_id_fk",
+          "tableFrom": "commandes_impression",
+          "tableTo": "versions_etiquettes",
+          "columnsFrom": [
+            "version_etiquette_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "commandes_impression_controle_par_utilisateurs_id_fk": {
+          "name": "commandes_impression_controle_par_utilisateurs_id_fk",
+          "tableFrom": "commandes_impression",
+          "tableTo": "utilisateurs",
+          "columnsFrom": [
+            "controle_par"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "commandes_impression_version_etiquette_id_unique": {
+          "name": "commandes_impression_version_etiquette_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "version_etiquette_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.commentaires_etiquettes": {
+      "name": "commentaires_etiquettes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "fiche_etiquette_id": {
+          "name": "fiche_etiquette_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "utilisateur_id": {
+          "name": "utilisateur_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contenu": {
+          "name": "contenu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference_champ": {
+          "name": "reference_champ",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "commentaires_etiquettes_fiche_etiquette_id_fiches_etiquettes_id_fk": {
+          "name": "commentaires_etiquettes_fiche_etiquette_id_fiches_etiquettes_id_fk",
+          "tableFrom": "commentaires_etiquettes",
+          "tableTo": "fiches_etiquettes",
+          "columnsFrom": [
+            "fiche_etiquette_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "commentaires_etiquettes_utilisateur_id_utilisateurs_id_fk": {
+          "name": "commentaires_etiquettes_utilisateur_id_utilisateurs_id_fk",
+          "tableFrom": "commentaires_etiquettes",
+          "tableTo": "utilisateurs",
+          "columnsFrom": [
+            "utilisateur_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.controles_conformite": {
+      "name": "controles_conformite",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "fiche_etiquette_id": {
+          "name": "fiche_etiquette_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_etiquette_id": {
+          "name": "version_etiquette_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type_controle": {
+          "name": "type_controle",
+          "type": "type_controle",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_controle",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "details": {
+          "name": "details",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "suggestion_ia": {
+          "name": "suggestion_ia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "justification": {
+          "name": "justification",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "controle_par": {
+          "name": "controle_par",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "controle_le": {
+          "name": "controle_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "controles_conformite_fiche_etiquette_id_fiches_etiquettes_id_fk": {
+          "name": "controles_conformite_fiche_etiquette_id_fiches_etiquettes_id_fk",
+          "tableFrom": "controles_conformite",
+          "tableTo": "fiches_etiquettes",
+          "columnsFrom": [
+            "fiche_etiquette_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "controles_conformite_version_etiquette_id_versions_etiquettes_id_fk": {
+          "name": "controles_conformite_version_etiquette_id_versions_etiquettes_id_fk",
+          "tableFrom": "controles_conformite",
+          "tableTo": "versions_etiquettes",
+          "columnsFrom": [
+            "version_etiquette_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fiches_degustation": {
+      "name": "fiches_degustation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "produit_id": {
+          "name": "produit_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date_degustation": {
+          "name": "date_degustation",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "degustateur": {
+          "name": "degustateur",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "numero_de_lot": {
+          "name": "numero_de_lot",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "moment_degustation": {
+          "name": "moment_degustation",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poids_infuse": {
+          "name": "poids_infuse",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "temperature_degustation": {
+          "name": "temperature_degustation",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "temps_degustation": {
+          "name": "temps_degustation",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feuilles_seches_aspect": {
+          "name": "feuilles_seches_aspect",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feuilles_seches_couleur": {
+          "name": "feuilles_seches_couleur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feuilles_seches_senteur": {
+          "name": "feuilles_seches_senteur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feuilles_infusees_aspect": {
+          "name": "feuilles_infusees_aspect",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feuilles_infusees_couleur": {
+          "name": "feuilles_infusees_couleur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feuilles_infusees_senteur": {
+          "name": "feuilles_infusees_senteur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "infusion_aspect_couleur": {
+          "name": "infusion_aspect_couleur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "infusion_parfum": {
+          "name": "infusion_parfum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "saveur_bouche": {
+          "name": "saveur_bouche",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fichier_source_nom": {
+          "name": "fichier_source_nom",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fiches_degustation_produit_id_produits_id_fk": {
+          "name": "fiches_degustation_produit_id_produits_id_fk",
+          "tableFrom": "fiches_degustation",
+          "tableTo": "produits",
+          "columnsFrom": [
+            "produit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fiches_etiquettes": {
+      "name": "fiches_etiquettes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "produit_id": {
+          "name": "produit_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_etiquette": {
+          "name": "code_etiquette",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "denomination_legale": {
+          "name": "denomination_legale",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "texte_commercial_fr": {
+          "name": "texte_commercial_fr",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "texte_commercial_en": {
+          "name": "texte_commercial_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingredients_fr": {
+          "name": "ingredients_fr",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingredients_en": {
+          "name": "ingredients_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allergenes": {
+          "name": "allergenes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allegations_sante_fr": {
+          "name": "allegations_sante_fr",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allegations_sante_en": {
+          "name": "allegations_sante_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allegation_choisie": {
+          "name": "allegation_choisie",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nb_tasses_allegation": {
+          "name": "nb_tasses_allegation",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phrase_wfto_fr": {
+          "name": "phrase_wfto_fr",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mention_conservation": {
+          "name": "mention_conservation",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'À conserver à l''abri de l''humidité de la lumière et de la chaleur'"
+        },
+        "mention_fabricant": {
+          "name": "mention_fabricant",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'LES JARDINS DE GAÏA – Z.A. – 6, RUE DE L''ÉCLUSE – FR-67820 WITTISHEIM'"
+        },
+        "sous_designation_de": {
+          "name": "sous_designation_de",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingredients_de": {
+          "name": "ingredients_de",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sous_designation_it": {
+          "name": "sous_designation_it",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingredients_it": {
+          "name": "ingredients_it",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sous_designation_nl": {
+          "name": "sous_designation_nl",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingredients_nl": {
+          "name": "ingredients_nl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_etiquette",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DRAFT'"
+        },
+        "version_courante_id": {
+          "name": "version_courante_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_par": {
+          "name": "cree_par",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "mis_a_jour_le": {
+          "name": "mis_a_jour_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fiches_etiquettes_produit_id_produits_id_fk": {
+          "name": "fiches_etiquettes_produit_id_produits_id_fk",
+          "tableFrom": "fiches_etiquettes",
+          "tableTo": "produits",
+          "columnsFrom": [
+            "produit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "fiches_etiquettes_cree_par_utilisateurs_id_fk": {
+          "name": "fiches_etiquettes_cree_par_utilisateurs_id_fk",
+          "tableFrom": "fiches_etiquettes",
+          "tableTo": "utilisateurs",
+          "columnsFrom": [
+            "cree_par"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "fiches_etiquettes_code_etiquette_unique": {
+          "name": "fiches_etiquettes_code_etiquette_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code_etiquette"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ingredients_recette": {
+      "name": "ingredients_recette",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "recette_id": {
+          "name": "recette_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_article": {
+          "name": "code_article",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "designation": {
+          "name": "designation",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "est_demeter": {
+          "name": "est_demeter",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "est_equitable": {
+          "name": "est_equitable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "est_camellia": {
+          "name": "est_camellia",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "quantite_kg": {
+          "name": "quantite_kg",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pourcentage_brut": {
+          "name": "pourcentage_brut",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pourcentage_etiquette": {
+          "name": "pourcentage_etiquette",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "masquer_pourcentage_etiquette": {
+          "name": "masquer_pourcentage_etiquette",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ordre_tri": {
+          "name": "ordre_tri",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ingredients_recette_recette_id_recettes_id_fk": {
+          "name": "ingredients_recette_recette_id_recettes_id_fk",
+          "tableFrom": "ingredients_recette",
+          "tableTo": "recettes",
+          "columnsFrom": [
+            "recette_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.knowledge_documents": {
+      "name": "knowledge_documents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "document_name": {
+          "name": "document_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_chunk": {
+          "name": "content_chunk",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1024)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.labels_produits": {
+      "name": "labels_produits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "produit_id": {
+          "name": "produit_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type_label": {
+          "name": "type_label",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valeur": {
+          "name": "valeur",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "labels_produits_produit_id_produits_id_fk": {
+          "name": "labels_produits_produit_id_produits_id_fk",
+          "tableFrom": "labels_produits",
+          "tableTo": "produits",
+          "columnsFrom": [
+            "produit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "notification_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'INFO'"
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "link": {
+          "name": "link",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "notifications_user_id_utilisateurs_id_fk": {
+          "name": "notifications_user_id_utilisateurs_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "utilisateurs",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.produits": {
+      "name": "produits",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code_pf": {
+          "name": "code_pf",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gamme": {
+          "name": "gamme",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sous_gamme": {
+          "name": "sous_gamme",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "denomination_fr": {
+          "name": "denomination_fr",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "denomination_en": {
+          "name": "denomination_en",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sous_designation_fr": {
+          "name": "sous_designation_fr",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sous_designation_en": {
+          "name": "sous_designation_en",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type_the_fr": {
+          "name": "type_the_fr",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type_the_en": {
+          "name": "type_the_en",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origine": {
+          "name": "origine",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "producteur_jardin": {
+          "name": "producteur_jardin",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "est_aromatise": {
+          "name": "est_aromatise",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "conditionnement": {
+          "name": "conditionnement",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code_ean": {
+          "name": "code_ean",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poids_net": {
+          "name": "poids_net",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "temps_infusion": {
+          "name": "temps_infusion",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "temp_infusion": {
+          "name": "temp_infusion",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "poids_tasse": {
+          "name": "poids_tasse",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nb_tasses": {
+          "name": "nb_tasses",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plusieurs_infusions": {
+          "name": "plusieurs_infusions",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "mention_ecocert": {
+          "name": "mention_ecocert",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code_oc": {
+          "name": "code_oc",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nomenclature_pmi": {
+          "name": "nomenclature_pmi",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fournisseur": {
+          "name": "fournisseur",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "code_article_fournisseur": {
+          "name": "code_article_fournisseur",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "designation_fournisseur": {
+          "name": "designation_fournisseur",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "flo_id": {
+          "name": "flo_id",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "epoque_recolte": {
+          "name": "epoque_recolte",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "technique_recolte": {
+          "name": "technique_recolte",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organisme_certificateur": {
+          "name": "organisme_certificateur",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grade": {
+          "name": "grade",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "volumineux": {
+          "name": "volumineux",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nom_latin": {
+          "name": "nom_latin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "info_producteur": {
+          "name": "info_producteur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type_producteur": {
+          "name": "type_producteur",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origine_mpa": {
+          "name": "origine_mpa",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allergenes_mp": {
+          "name": "allergenes_mp",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allegations_mp": {
+          "name": "allegations_mp",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contient_reglisse": {
+          "name": "contient_reglisse",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "labels_mp": {
+          "name": "labels_mp",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "labels_client": {
+          "name": "labels_client",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conditionnements_options": {
+          "name": "conditionnements_options",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "declinaisons": {
+          "name": "declinaisons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ingredients_suggestion": {
+          "name": "ingredients_suggestion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allegations_possibles": {
+          "name": "allegations_possibles",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date_mise_marche": {
+          "name": "date_mise_marche",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commentaires": {
+          "name": "commentaires",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "mis_a_jour_le": {
+          "name": "mis_a_jour_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "produits_code_pf_unique": {
+          "name": "produits_code_pf_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code_pf"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.recettes": {
+      "name": "recettes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "produit_id": {
+          "name": "produit_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "developpeur": {
+          "name": "developpeur",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "saveur_origine": {
+          "name": "saveur_origine",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "labels_client": {
+          "name": "labels_client",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_recette",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DRAFT'"
+        },
+        "pourcentage_total": {
+          "name": "pourcentage_total",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fichier_source_id": {
+          "name": "fichier_source_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "mis_a_jour_le": {
+          "name": "mis_a_jour_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recettes_produit_id_produits_id_fk": {
+          "name": "recettes_produit_id_produits_id_fk",
+          "tableFrom": "recettes",
+          "tableTo": "produits",
+          "columnsFrom": [
+            "produit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.utilisateurs": {
+      "name": "utilisateurs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nom": {
+          "name": "nom",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mot_de_passe": {
+          "name": "mot_de_passe",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "role_utilisateur",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "est_actif": {
+          "name": "est_actif",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "utilisateurs_email_unique": {
+          "name": "utilisateurs_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.versions_etiquettes": {
+      "name": "versions_etiquettes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "fiche_etiquette_id": {
+          "name": "fiche_etiquette_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero_version": {
+          "name": "numero_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resume_changements": {
+          "name": "resume_changements",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donnees_snapshot": {
+          "name": "donnees_snapshot",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "statut": {
+          "name": "statut",
+          "type": "statut_etiquette",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pdf_fichier_id": {
+          "name": "pdf_fichier_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "illustrator_fichier_id": {
+          "name": "illustrator_fichier_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bat_fichier_id": {
+          "name": "bat_fichier_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_par": {
+          "name": "cree_par",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valide_par": {
+          "name": "valide_par",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valide_le": {
+          "name": "valide_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cree_le": {
+          "name": "cree_le",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "versions_etiquettes_fiche_etiquette_id_fiches_etiquettes_id_fk": {
+          "name": "versions_etiquettes_fiche_etiquette_id_fiches_etiquettes_id_fk",
+          "tableFrom": "versions_etiquettes",
+          "tableTo": "fiches_etiquettes",
+          "columnsFrom": [
+            "fiche_etiquette_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "versions_etiquettes_cree_par_utilisateurs_id_fk": {
+          "name": "versions_etiquettes_cree_par_utilisateurs_id_fk",
+          "tableFrom": "versions_etiquettes",
+          "tableTo": "utilisateurs",
+          "columnsFrom": [
+            "cree_par"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "versions_etiquettes_valide_par_utilisateurs_id_fk": {
+          "name": "versions_etiquettes_valide_par_utilisateurs_id_fk",
+          "tableFrom": "versions_etiquettes",
+          "tableTo": "utilisateurs",
+          "columnsFrom": [
+            "valide_par"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.notification_type": {
+      "name": "notification_type",
+      "schema": "public",
+      "values": [
+        "INFO",
+        "SUCCESS",
+        "WARNING",
+        "ERROR",
+        "AI"
+      ]
+    },
+    "public.role_utilisateur": {
+      "name": "role_utilisateur",
+      "schema": "public",
+      "values": [
+        "ADMIN",
+        "QUALITE",
+        "GRAPHISME",
+        "CONDITIONNEMENT",
+        "ACHATS",
+        "DIRECTION"
+      ]
+    },
+    "public.statut_controle": {
+      "name": "statut_controle",
+      "schema": "public",
+      "values": [
+        "PASS",
+        "FAIL",
+        "WARNING",
+        "PENDING",
+        "SKIPPED"
+      ]
+    },
+    "public.statut_etiquette": {
+      "name": "statut_etiquette",
+      "schema": "public",
+      "values": [
+        "DRAFT",
+        "QUALITY_REVIEW",
+        "QUALITY_VALIDATED",
+        "DESIGN_IN_PROGRESS",
+        "DESIGN_REVIEW",
+        "DESIGN_VALIDATED",
+        "SENT_TO_PRINTER",
+        "BAT_RECEIVED",
+        "BAT_VALIDATED",
+        "PRINTING",
+        "RECEIVED",
+        "RECEPTION_CONTROLLED",
+        "ACTIVE",
+        "ARCHIVED"
+      ]
+    },
+    "public.statut_reception": {
+      "name": "statut_reception",
+      "schema": "public",
+      "values": [
+        "CONFORME",
+        "NON_CONFORME_TEXTE",
+        "NON_CONFORME_COULEUR",
+        "NON_CONFORME_QUANTITE",
+        "NON_CONFORME_AUTRE"
+      ]
+    },
+    "public.statut_recette": {
+      "name": "statut_recette",
+      "schema": "public",
+      "values": [
+        "DRAFT",
+        "VALIDATED",
+        "ARCHIVED"
+      ]
+    },
+    "public.type_controle": {
+      "name": "type_controle",
+      "schema": "public",
+      "values": [
+        "DENOMINATION",
+        "QUID",
+        "ROUNDING",
+        "ALLEGATION",
+        "ALLERGEN",
+        "REGLISSE",
+        "LABEL_COHERENCE",
+        "VISUAL_COHERENCE",
+        "EAN_CODE",
+        "INFO_TRI",
+        "CHAR_SIZE",
+        "NUTRITIONAL",
+        "PDF_VS_EXCEL",
+        "BAT_VS_LABEL"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

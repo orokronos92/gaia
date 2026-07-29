@@ -1,0 +1,1 @@
+ALTER TABLE "produits" ALTER COLUMN "nom_latin" SET DATA TYPE text;

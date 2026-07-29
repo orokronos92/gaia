@@ -57,6 +57,13 @@
       "when": 1781770859589,
       "tag": "0007_quick_tenebrous",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785331995544,
+      "tag": "0008_wild_dust",
+      "breakpoints": true
     }
   ]
 }
