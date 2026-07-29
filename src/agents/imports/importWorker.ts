@@ -1,7 +1,7 @@
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 import mammoth from "mammoth";
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
@@ -9,6 +9,38 @@ import { saveRecette } from "@/db/queries/recettes";
 import { getFicheExistantePourCodePf } from "@/db/queries/produits";
 import { extraireRecetteDepuisXlsx } from "./recetteExtractor";
 import crypto from "crypto";
+
+/**
+ * Max lengths of the `produits` varchar columns, derived from the Drizzle schema
+ * (getTableColumns) — schema-driven, no hand-maintained field list. `text`
+ * columns (e.g. nom_latin) carry no length → absent here → never clamped.
+ */
+const PRODUITS_VARCHAR_LIMITS: Record<string, number> = Object.fromEntries(
+    Object.entries(getTableColumns(produits))
+        .filter(([, col]) => {
+            const c = col as { columnType?: string; length?: number };
+            return c.columnType === "PgVarchar" && typeof c.length === "number";
+        })
+        .map(([key, col]) => [key, (col as { length?: number }).length as number])
+);
+
+/**
+ * Clamps a produit value object's string fields to the schema varchar limits
+ * BEFORE the insert/upsert, so an over-long AI extraction can never again abort
+ * the whole import (SQLSTATE 22001). Last-resort truncation, but NEVER silent:
+ * each cut is logged (field, received length, max, produit ref).
+ */
+function clampProduitVarchars(values: Record<string, unknown>, ref: string): void {
+    for (const [key, max] of Object.entries(PRODUITS_VARCHAR_LIMITS)) {
+        const v = values[key];
+        if (typeof v === "string" && v.length > max) {
+            console.warn(
+                `[ImportWorker] Valeur tronquée à l'import — champ=${key} reçu=${v.length} max=${max} ref=${ref}`
+            );
+            values[key] = v.slice(0, max);
+        }
+    }
+}
 
 // Schéma de validation de la sortie Mistral — calqué EXACTEMENT sur le schéma JSON
 // décrit dans buildExtractionPrompt. Chaque champ tolère null ET l'omission (le code
@@ -462,6 +494,10 @@ ${combinedText.substring(0, 22000)}`;
             produitValues.denominationFr = "";
         }
 
+        // Garde-fou longueur : borne les varchar aux limites du schéma avant
+        // l'upsert, pour qu'une valeur IA trop longue ne casse jamais l'import.
+        clampProduitVarchars(produitValues, produitValues.codePf);
+
         const [upsertedProduit] = await db.insert(produits)
             .values({
                 id: crypto.randomUUID(),
@@ -693,6 +729,8 @@ ${combinedText.substring(0, 22000)}`;
         for (const [k, v] of Object.entries(candidat)) {
             if (v !== null && v !== undefined) set[k] = v;
         }
+        // Même garde-fou longueur sur le chemin de ré-intégration produit.
+        clampProduitVarchars(set, produitId);
         const champsProduit = Object.keys(set).length - 1;
         await db.update(produits).set(set as Partial<typeof produits.$inferInsert>).where(eq(produits.id, produitId));
 
