@@ -7,12 +7,11 @@
  * `lib/audit/visual/pictos`. Output is Zod-validated before leaving the agent.
  */
 
-import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 
 import { PICTOS_A_DETECTER, type PictoDef, type Presence } from "@/lib/audit/visual/pictos";
-
-const VISUAL_MODEL = "mistral-medium-latest";
+import { callMistral, type AgentIA, type CallMeta } from "../mistral-call";
+import { VISION_MODEL } from "../models";
 
 const PRESENCES = ["PRESENT", "ABSENT", "INCERTAIN"] as const;
 const DetectionSchema = z.object({
@@ -25,12 +24,17 @@ export interface VisualRobotResult {
 }
 
 /** One vision call over the BAT PDF asking for the presence of the given logos. */
-async function askPresence(pdfBase64: string, defs: PictoDef[], instruction: string): Promise<VisualRobotResult> {
-  const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY ?? "" });
+async function askPresence(
+  pdfBase64: string,
+  defs: PictoDef[],
+  instruction: string,
+  agent: AgentIA,
+  meta?: Omit<CallMeta, "agent">
+): Promise<VisualRobotResult> {
   const liste = defs.map((p) => `- ${p.cle} : ${p.desc}`).join("\n");
 
-  const response = await client.chat.complete({
-    model: VISUAL_MODEL,
+  const response = await callMistral({
+    model: VISION_MODEL,
     messages: [
       {
         role: "user",
@@ -42,7 +46,7 @@ async function askPresence(pdfBase64: string, defs: PictoDef[], instruction: str
     ],
     maxTokens: 600,
     temperature: 0,
-  });
+  }, { agent, ...meta });
 
   const raw = (response.choices?.[0]?.message?.content as string) ?? "";
   const clean = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -54,11 +58,16 @@ async function askPresence(pdfBase64: string, defs: PictoDef[], instruction: str
 }
 
 /** First pass: detect all checklist logos on a single BAT face. */
-export async function detectPictos(pdfBase64: string): Promise<VisualRobotResult> {
+export async function detectPictos(
+  pdfBase64: string,
+  meta?: Omit<CallMeta, "agent">
+): Promise<VisualRobotResult> {
   return askPresence(
     pdfBase64,
     PICTOS_A_DETECTER,
-    "Tu inspectes une étiquette alimentaire (le PDF joint). Pour CHAQUE logo ci-dessous, indique s'il est PRESENT, ABSENT ou INCERTAIN. N'invente rien : si tu hésites, réponds INCERTAIN."
+    "Tu inspectes une étiquette alimentaire (le PDF joint). Pour CHAQUE logo ci-dessous, indique s'il est PRESENT, ABSENT ou INCERTAIN. N'invente rien : si tu hésites, réponds INCERTAIN.",
+    "AUDIT_VISUEL",
+    meta
   );
 }
 
@@ -68,12 +77,18 @@ export async function detectPictos(pdfBase64: string): Promise<VisualRobotResult
  * ABSENT). The orchestrator reconciles this with the first pass — a split
  * opinion becomes INCERTAIN, killing the false alarm.
  */
-export async function contreExaminerPictos(pdfBase64: string, cles: string[]): Promise<VisualRobotResult> {
+export async function contreExaminerPictos(
+  pdfBase64: string,
+  cles: string[],
+  meta?: Omit<CallMeta, "agent">
+): Promise<VisualRobotResult> {
   const defs = PICTOS_A_DETECTER.filter((p) => cles.includes(p.cle));
   if (defs.length === 0) return { presences: {}, tokensUsed: 0 };
   return askPresence(
     pdfBase64,
     defs,
-    "CONTRE-EXAMEN. Une première analyse a un doute sur ces logos. Regarde TRÈS attentivement l'étiquette (le PDF joint) et cherche ACTIVEMENT chacun, même petit ou dans un coin. Conclus honnêtement PRESENT, ABSENT ou INCERTAIN."
+    "CONTRE-EXAMEN. Une première analyse a un doute sur ces logos. Regarde TRÈS attentivement l'étiquette (le PDF joint) et cherche ACTIVEMENT chacun, même petit ou dans un coin. Conclus honnêtement PRESENT, ABSENT ou INCERTAIN.",
+    "AUDIT_CONTRE_EXAMEN",
+    meta
   );
 }

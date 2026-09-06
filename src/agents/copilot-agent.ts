@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { BaseAgent } from "./BaseAgent";
 import { RAGService } from "./knowledge/RAGService";
-import { Mistral } from "@mistralai/mistralai";
 import { MistralProvider } from "./MistralProvider";
+import { callMistral } from "./mistral-call";
+import { TEXT_MODEL } from "./models";
 import {
     RecetteAgent,
     type RecetteAgentInput,
@@ -20,12 +21,8 @@ export interface CopilotOutput {
 }
 
 export class CopilotAgent extends BaseAgent {
-    private mistralClient: InstanceType<typeof Mistral>;
-
     constructor() {
         super("CopilotAgent");
-        const apiKey = process.env.MISTRAL_API_KEY ?? "";
-        this.mistralClient = new Mistral({ apiKey });
     }
 
     async execute(input: CopilotInput): Promise<CopilotOutput> {
@@ -70,12 +67,12 @@ CONSIGNES :
             { role: "user", content: input.query },
         ];
 
-        const response = await this.mistralClient.chat.complete({
-            model: "mistral-large-latest",
+        const response = await callMistral({
+            model: TEXT_MODEL,
             messages,
             maxTokens: 1000,
             temperature: 0.2,
-        });
+        }, { agent: "COPILOT_CHAT" });
 
         const responseText =
             (response.choices?.[0]?.message?.content as string) ??
@@ -152,8 +149,8 @@ Ingrédients à estimer (quantité manquante): ${input.manquants.join(", ")}
 Donne une quantité kg plausible pour CHAQUE ingrédient à estimer.`;
 
         try {
-            const response = await this.mistralClient.chat.complete({
-                model: "mistral-large-latest",
+            const response = await callMistral({
+                model: TEXT_MODEL,
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: userContent },
@@ -161,7 +158,7 @@ Donne une quantité kg plausible pour CHAQUE ingrédient à estimer.`;
                 responseFormat: { type: "json_object" },
                 maxTokens: 800,
                 temperature: 0.2,
-            });
+            }, { agent: "COPILOT_ESTIMATION" });
             const raw = response.choices?.[0]?.message?.content;
             const parsed = SuggestionSchema.parse(
                 JSON.parse(typeof raw === "string" ? raw : "{}")

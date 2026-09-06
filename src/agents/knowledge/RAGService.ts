@@ -3,6 +3,8 @@ import { knowledgeDocuments } from "@/db/schema";
 import { cosineDistance, desc, sql } from "drizzle-orm";
 import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
+import { recordUsage } from "@/db/queries/usage-ia";
+import { EMBEDDING_MODEL } from "../models";
 
 export interface SearchResult {
     content: string;
@@ -10,9 +12,8 @@ export interface SearchResult {
     similarity: number;
 }
 
-/** Mistral text-embedding model and its fixed output dimension (matches the
- *  `vector(1024)` column on `knowledge_documents`). Mistral only (CLAUDE.md §7). */
-const EMBEDDING_MODEL = "mistral-embed";
+/** Fixed embedding dimension — matches the `vector(1024)` column on
+ *  `knowledge_documents`. The model itself comes from `models.ts`. */
 const EMBEDDING_DIM = 1024;
 
 /** Minimum cosine similarity for a chunk to count as relevant (RAG lot C).
@@ -45,6 +46,16 @@ export class RAGService {
             model: EMBEDDING_MODEL,
             inputs: text,
         });
+
+        // Embeddings go through their own endpoint, so they cannot use
+        // `callMistral`; the accounting is the same, best-effort and unawaited.
+        void recordUsage({
+            agent: "RAG_EMBEDDING",
+            modele: EMBEDDING_MODEL,
+            tokensEntree: res.usage?.promptTokens ?? 0,
+            tokensSortie: res.usage?.completionTokens ?? 0,
+        });
+
         return EmbeddingSchema.parse(res.data?.[0]?.embedding);
     }
 

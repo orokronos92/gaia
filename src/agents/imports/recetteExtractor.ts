@@ -10,7 +10,6 @@
  *   - the result is persisted as a DRAFT recette; Marie validates later.
  */
 
-import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 import * as xlsx from "xlsx";
 import {
@@ -18,8 +17,9 @@ import {
   type IngredientRecetteInput,
   type RecetteCalculee,
 } from "@/lib/business-rules/recette";
+import { callMistral, type CallMeta } from "../mistral-call";
+import { TEXT_MODEL } from "../models";
 
-const RECETTE_MODEL = "mistral-large-latest";
 const PRECISION_PAR_DEFAUT = 0.5 as const;
 
 const IngredientExtrait = z.object({
@@ -33,12 +33,6 @@ export const RecetteExtractionSchema = z.object({
   ingredients: z.array(IngredientExtrait),
 });
 export type RecetteExtraction = z.infer<typeof RecetteExtractionSchema>;
-
-let _mistral: Mistral | null = null;
-function getClient(): Mistral {
-  if (!_mistral) _mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY ?? "" });
-  return _mistral;
-}
 
 /** Excel buffer → tab-separated text, one block per sheet. */
 function xlsxVersTexte(buffer: ArrayBuffer): string {
@@ -106,13 +100,14 @@ export function recetteExtraiteVersInput(
  * on a hard LLM/parse failure — the caller treats it as best-effort.
  */
 export async function extraireRecetteDepuisXlsx(
-  buffer: ArrayBuffer
+  buffer: ArrayBuffer,
+  meta?: Omit<CallMeta, "agent">
 ): Promise<RecetteCalculee | null> {
   const texte = xlsxVersTexte(buffer);
   if (texte.trim() === "") return null;
 
-  const response = await getClient().chat.complete({
-    model: RECETTE_MODEL,
+  const response = await callMistral({
+    model: TEXT_MODEL,
     messages: [
       { role: "system", content: "Tu renvoies UNIQUEMENT un objet JSON valide, sans markdown." },
       { role: "user", content: buildPrompt(texte) },
@@ -120,7 +115,7 @@ export async function extraireRecetteDepuisXlsx(
     responseFormat: { type: "json_object" },
     maxTokens: 2000,
     temperature: 0.05,
-  });
+  }, { agent: "IMPORT_RECETTE", ...meta });
 
   const raw = (response.choices?.[0]?.message?.content as string) ?? "{}";
   const extraction = RecetteExtractionSchema.parse(JSON.parse(raw));

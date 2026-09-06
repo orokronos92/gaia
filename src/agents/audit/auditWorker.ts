@@ -1,12 +1,11 @@
-import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 import { db } from "@/db";
 import { fichesEtiquettes, controlesConformite, produits } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { RAGService } from "../knowledge/RAGService";
 import { writeAuditLog } from "@/db/queries/audit-logs";
-
-const AUDIT_MODEL = "mistral-large-latest";
+import { callMistral } from "../mistral-call";
+import { TEXT_MODEL } from "../models";
 
 // Validates the LLM output before it reaches the DB (CLAUDE.md §7). typeControle
 // is restricted to the 5 checks the prompt asks for — all valid TypeControle enum
@@ -83,16 +82,11 @@ Exécute les 5 types de contrôles.`;
      * degrades honestly instead of fabricating a result.
      */
     private static async runLlmAudit(
-        prompt: string
+        prompt: string,
+        ficheId?: string
     ): Promise<{ controls: Controle[]; usage: unknown }> {
-        const apiKey = process.env.MISTRAL_API_KEY;
-        if (!apiKey) {
-            throw new Error("MISTRAL_API_KEY manquante — audit IA indisponible.");
-        }
-
-        const client = new Mistral({ apiKey });
-        const response = await client.chat.complete({
-            model: AUDIT_MODEL,
+        const response = await callMistral({
+            model: TEXT_MODEL,
             messages: [
                 {
                     role: "system",
@@ -104,7 +98,7 @@ Exécute les 5 types de contrôles.`;
             responseFormat: { type: "json_object" },
             maxTokens: 1500,
             temperature: 0.1,
-        });
+        }, { agent: "AUDIT_CONFORMITE", entiteId: ficheId });
 
         const raw = response.choices?.[0]?.message?.content;
         const parsed = AuditResponseSchema.parse(
@@ -170,7 +164,7 @@ Exécute les 5 types de contrôles.`;
         let controls: Controle[];
         let usage: unknown;
         try {
-            ({ controls, usage } = await this.runLlmAudit(prompt));
+            ({ controls, usage } = await this.runLlmAudit(prompt, ficheId));
         } catch (err) {
             const message = err instanceof Error ? err.message : "Audit IA indisponible.";
             return {
@@ -209,7 +203,7 @@ Exécute les 5 types de contrôles.`;
             entiteId: ficheId,
             action: "AUDIT_IA_TOKENS",
             utilisateurId: userId,
-            changements: { model: AUDIT_MODEL, usage },
+            changements: { model: TEXT_MODEL, usage },
         });
 
         return { ficheId, overallStatus, controls };

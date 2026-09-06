@@ -1,17 +1,22 @@
 import { Mistral } from "@mistralai/mistralai";
 import { LLMProvider, LLMResponse } from "./BaseAgent";
+import { callMistral, type AgentIA } from "./mistral-call";
+import { TEXT_MODEL } from "./models";
 
 /**
  * Mistral AI Provider — implémentation du LLMProvider pour les agents GaïaLabel.
- * Utilise mistral-large-latest pour les agents texte et mistral-medium-latest pour la vision.
+ * Les modèles viennent de `models.ts`; chaque appel est comptabilisé dans `usage_ia`.
  */
 export class MistralProvider implements LLMProvider {
     public client: InstanceType<typeof Mistral>;
     private defaultModel: string;
 
-    constructor(apiKey: string, defaultModel: string = "mistral-large-latest") {
+    private agent: AgentIA;
+
+    constructor(apiKey: string, defaultModel: string = TEXT_MODEL, agent: AgentIA = "COPILOT_ESTIMATION") {
         this.client = new Mistral({ apiKey });
         this.defaultModel = defaultModel;
+        this.agent = agent;
     }
 
     async generate(prompt: string, context?: any): Promise<LLMResponse> {
@@ -25,7 +30,7 @@ export class MistralProvider implements LLMProvider {
             userPrompt = parts[1];
         }
 
-        const response = await this.client.chat.complete({
+        const response = await callMistral({
             model: this.defaultModel,
             messages: [
                 { role: "system", content: systemPrompt },
@@ -33,7 +38,7 @@ export class MistralProvider implements LLMProvider {
             ],
             maxTokens: 4000,
             temperature: 0.1,
-        });
+        }, { agent: this.agent });
 
         const text =
             (response.choices?.[0]?.message?.content as string) ?? "";

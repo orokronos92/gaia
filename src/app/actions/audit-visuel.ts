@@ -78,10 +78,13 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     // client). The deterministic text robot consumes nothing.
     const tokens = { semantique: 0, vision: 0, contreExamen: 0 }
 
+    // Per-call cost attribution (table `usage_ia`) — who ran it, on which product.
+    const usageMeta = { entiteId: data.codePf, utilisateurId: session.user.id }
+
     // Semantic robot (LLM) — free-text elements judged by meaning (allegation…).
     let semanticChecks: BatTextCheck[] = []
     try {
-        const semantic = await auditSemantique(batText, data.input)
+        const semantic = await auditSemantique(batText, data.input, usageMeta)
         semanticChecks = semantic.checks
         tokens.semantique = semantic.tokensUsed
     } catch {
@@ -93,7 +96,7 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     const detections: Record<string, Presence>[] = []
     for (const b64 of base64s) {
         try {
-            const detected = await detectPictos(b64)
+            const detected = await detectPictos(b64, usageMeta)
             detections.push(detected.presences)
             tokens.vision += detected.tokensUsed
         } catch {
@@ -113,7 +116,7 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
             const counter: Record<string, Presence>[] = []
             for (const b64 of base64s) {
                 try {
-                    const examined = await contreExaminerPictos(b64, contested)
+                    const examined = await contreExaminerPictos(b64, contested, usageMeta)
                     counter.push(examined.presences)
                     tokens.contreExamen += examined.tokensUsed
                 } catch {

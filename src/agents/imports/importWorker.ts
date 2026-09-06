@@ -1,4 +1,3 @@
-import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 import mammoth from "mammoth";
 import { eq, getTableColumns } from "drizzle-orm";
@@ -8,6 +7,8 @@ import { RAGService } from "../knowledge/RAGService";
 import { saveRecette } from "@/db/queries/recettes";
 import { getFicheExistantePourCodePf } from "@/db/queries/produits";
 import { extraireRecetteDepuisXlsx } from "./recetteExtractor";
+import { callMistral, type CallMeta } from "../mistral-call";
+import { TEXT_MODEL } from "../models";
 import crypto from "crypto";
 
 /**
@@ -120,15 +121,6 @@ export const MistralExtractionSchema = z.object({
 }).passthrough();
 
 export type MistralExtraction = z.infer<typeof MistralExtractionSchema>;
-
-// Lazy init — évite les crashs à l'import de module dans Next.js App Router
-let _mistral: Mistral | null = null;
-function getMistralClient(): Mistral {
-    if (!_mistral) {
-        _mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY ?? "" });
-    }
-    return _mistral;
-}
 
 export interface ImportResult {
     ficheId: string;
@@ -372,8 +364,8 @@ ${combinedText.substring(0, 22000)}`;
         console.log("[ImportWorker] Appel Mistral Large pour extraction structurée...");
         const prompt = this.buildExtractionPrompt(combinedText, ragContext);
 
-        const response = await getMistralClient().chat.complete({
-            model: "mistral-large-latest",
+        const response = await callMistral({
+            model: TEXT_MODEL,
             messages: [
                 {
                     role: "system",
@@ -383,7 +375,7 @@ ${combinedText.substring(0, 22000)}`;
             ],
             maxTokens: 3000,
             temperature: 0.05,
-        });
+        }, { agent: "IMPORT_EXTRACTION", utilisateurId: userId });
 
         const rawOutput = (response.choices?.[0]?.message?.content as string) ?? "{}";
 
@@ -600,7 +592,8 @@ ${combinedText.substring(0, 22000)}`;
 
     /** Produit/dégustation extraction (Word + PDF) → validated fields. Throws on failure. */
     private static async extraireProduitDegustation(
-        docs: { docxBuffer?: ArrayBuffer; pdfBuffer?: ArrayBuffer }
+        docs: { docxBuffer?: ArrayBuffer; pdfBuffer?: ArrayBuffer },
+        meta?: Omit<CallMeta, "agent">
     ): Promise<MistralExtraction> {
         const textParts: string[] = [];
         if (docs.docxBuffer && docs.docxBuffer.byteLength > 0) {
@@ -617,15 +610,15 @@ ${combinedText.substring(0, 22000)}`;
         );
         const prompt = this.buildExtractionPrompt(combinedText, RAGService.formatContextForPrompt(ragResults));
 
-        const response = await getMistralClient().chat.complete({
-            model: "mistral-large-latest",
+        const response = await callMistral({
+            model: TEXT_MODEL,
             messages: [
                 { role: "system", content: "Tu es un extracteur JSON strict. Retourne UNIQUEMENT du JSON valide correspondant au schéma demandé. Jamais de markdown, jamais de texte hors JSON." },
                 { role: "user", content: prompt },
             ],
             maxTokens: 3000,
             temperature: 0.05,
-        });
+        }, { agent: "IMPORT_EXTRACTION", ...meta });
         const rawOutput = (response.choices?.[0]?.message?.content as string) ?? "{}";
 
         let parsedJson: unknown;
@@ -685,7 +678,7 @@ ${combinedText.substring(0, 22000)}`;
         params: { ficheId: string; produitId: string; docxBuffer?: ArrayBuffer; pdfBuffer?: ArrayBuffer; fichierNom?: string }
     ): Promise<{ champsProduit: number }> {
         const { ficheId, produitId, docxBuffer, pdfBuffer, fichierNom } = params;
-        const p = await this.extraireProduitDegustation({ docxBuffer, pdfBuffer });
+        const p = await this.extraireProduitDegustation({ docxBuffer, pdfBuffer }, { entiteId: ficheId });
         const s = (v: unknown) => this.ensureStringValue(v);
 
         const candidat: Record<string, unknown> = {

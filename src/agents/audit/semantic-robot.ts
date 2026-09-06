@@ -8,13 +8,12 @@
  * handles what the deterministic text robot cannot; its output is Zod-validated.
  */
 
-import { Mistral } from "@mistralai/mistralai";
 import { z } from "zod";
 
 import type { ControlStatus } from "@/lib/audit/types";
 import type { BatTextCheck, BatTextInput } from "@/lib/audit/visual/text-robot";
-
-const SEMANTIC_MODEL = "mistral-large-latest";
+import { callMistral, type CallMeta } from "../mistral-call";
+import { TEXT_MODEL } from "../models";
 
 const STATUTS = ["CONFORME", "DOUTE", "ABSENT"] as const;
 const SemanticSchema = z.object({
@@ -62,11 +61,14 @@ export interface SemanticResult {
 }
 
 /** Judges, per free-text fiche element, whether the BAT reflects it (by meaning). */
-export async function auditSemantique(batText: string, input: BatTextInput): Promise<SemanticResult> {
+export async function auditSemantique(
+  batText: string,
+  input: BatTextInput,
+  meta?: Omit<CallMeta, "agent">
+): Promise<SemanticResult> {
   const elements = buildElements(input);
   if (elements.length === 0) return { checks: [], tokensUsed: 0 };
 
-  const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY ?? "" });
   const liste = elements.map((e) => `- ${e.cle} (déclaré en fiche) : "${e.attendu}"`).join("\n");
   const prompt = `Voici le TEXTE d'une étiquette alimentaire (BAT) :
 """
@@ -78,13 +80,13 @@ ${liste}
 
 Réponds STRICTEMENT en JSON : {"resultats":[{"cle":"...","statut":"CONFORME|DOUTE|ABSENT","justification":"..."}]}`;
 
-  const response = await client.chat.complete({
-    model: SEMANTIC_MODEL,
+  const response = await callMistral({
+    model: TEXT_MODEL,
     messages: [{ role: "user", content: prompt }],
     responseFormat: { type: "json_object" },
     maxTokens: 700,
     temperature: 0,
-  });
+  }, { agent: "AUDIT_SEMANTIQUE", ...meta });
 
   const raw = (response.choices?.[0]?.message?.content as string) ?? "";
   const parsed = SemanticSchema.parse(JSON.parse(raw.replace(/```json/gi, "").replace(/```/g, "").trim()));
