@@ -32,7 +32,7 @@ export interface AuditVisuelTexteResult {
  * Visual audit for a single fiche. Read-only. Locates the product's BAT PDFs in
  * MinIO, reads each face once, and runs two robots on it:
  *   - text robot (deterministic): printed text ↔ fiche;
- *   - visual robot (pixtral via document_url, no PDF→PNG): logos/pictos, judged
+ *   - visual robot (vision via document_url, no PDF→PNG): logos/pictos, judged
  *     by pure code.
  * Auth + Zod first (CLAUDE.md §8). The visual robot failing (no key / API error)
  * degrades gracefully to text-only — never a fabricated verdict.

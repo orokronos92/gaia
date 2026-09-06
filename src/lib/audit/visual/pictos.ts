@@ -6,7 +6,7 @@
  * split as the rest of the audit: the LLM never judges conformity, code does.
  *
  * Validated empirically on MT265 via document_url (no PDF→PNG conversion):
- * pixtral-large reads the artwork natively and reports each logo reliably.
+ * the vision model reads the artwork natively and reports each logo reliably.
  */
 
 import type { ControlStatus } from "../types";

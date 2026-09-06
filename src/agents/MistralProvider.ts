@@ -3,7 +3,7 @@ import { LLMProvider, LLMResponse } from "./BaseAgent";
 
 /**
  * Mistral AI Provider — implémentation du LLMProvider pour les agents GaïaLabel.
- * Utilise mistral-large-latest pour les agents texte et pixtral-large-latest pour la vision.
+ * Utilise mistral-large-latest pour les agents texte et mistral-medium-latest pour la vision.
  */
 export class MistralProvider implements LLMProvider {
     public client: InstanceType<typeof Mistral>;

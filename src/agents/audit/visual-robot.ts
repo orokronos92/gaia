@@ -1,5 +1,5 @@
 /**
- * Visual robot — perception only (Mistral pixtral).
+ * Visual robot — perception only (Mistral vision).
  *
  * Sends the BAT PDF to Mistral as-is via `document_url` (no PDF→PNG conversion —
  * the model renders the artwork natively) and reports, per logo, PRESENT /
@@ -12,7 +12,7 @@ import { z } from "zod";
 
 import { PICTOS_A_DETECTER, type PictoDef, type Presence } from "@/lib/audit/visual/pictos";
 
-const VISUAL_MODEL = "pixtral-large-latest";
+const VISUAL_MODEL = "mistral-medium-latest";
 
 const PRESENCES = ["PRESENT", "ABSENT", "INCERTAIN"] as const;
 const DetectionSchema = z.object({
@@ -24,7 +24,7 @@ export interface VisualRobotResult {
   tokensUsed: number;
 }
 
-/** One pixtral call over the BAT PDF asking for the presence of the given logos. */
+/** One vision call over the BAT PDF asking for the presence of the given logos. */
 async function askPresence(pdfBase64: string, defs: PictoDef[], instruction: string): Promise<VisualRobotResult> {
   const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY ?? "" });
   const liste = defs.map((p) => `- ${p.cle} : ${p.desc}`).join("\n");
