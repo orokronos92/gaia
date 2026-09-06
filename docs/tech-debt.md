@@ -203,3 +203,73 @@ Lot 2 de la réconciliation (ajout `auth()` + `userId`). Conservé ici pour mém
 **auditer les autres routes** `src/app/api/agents/*` de la même façon.
 
 **Fichiers.** `src/app/api/agents/**/route.ts`.
+
+---
+
+## 13. 🟠 Noms de modèles Mistral hardcodés dans 8 fichiers
+
+**Constat.** Chaque agent code en dur son modèle : `copilot-agent.ts:74` et `:156`,
+`importWorker.ts:376` et `:621`, `recetteExtractor.ts:22`, `auditWorker.ts:9`,
+`semantic-robot.ts:17`, plus le défaut du constructeur `MistralProvider.ts:12`.
+Violation directe de la règle « no magic strings » du CLAUDE.md.
+
+**Impact.** Démontré en production le 2026-09-06 : Mistral a retiré `pixtral-large-latest`
+de son catalogue et le workspace était resté sur le tier gratuit (403 `tier_not_allowed`
+sur `mistral-large-latest`). Diagnostiquer puis basculer de modèle a demandé de toucher
+plusieurs fichiers au lieu d'une variable. Aucun moyen de tester un modèle moins cher,
+ni de dégrader temporairement vers `ministral-14b` si le budget mensuel est atteint.
+
+**Solution.** Un `src/agents/models.ts` exposant `TEXT_MODEL`, `VISION_MODEL`,
+`EMBEDDING_MODEL` — valeurs par défaut en constantes, surchargeables par variable
+d'environnement. Tous les agents importent depuis là. Changement mécanique, sans risque.
+
+**Fichiers.** `src/agents/copilot-agent.ts`, `src/agents/imports/importWorker.ts`,
+`src/agents/imports/recetteExtractor.ts`, `src/agents/audit/auditWorker.ts`,
+`src/agents/audit/semantic-robot.ts`, `src/agents/audit/visual-robot.ts`,
+`src/agents/MistralProvider.ts`, `src/agents/knowledge/RAGService.ts`.
+
+---
+
+## 14. 🟠 Consommation de tokens non persistée — aucun suivi de coût
+
+**Constat.** Le CLAUDE.md affirme « token usage is logged in `audit_logs` ». C'est vrai pour
+**un agent sur quatre** : seul l'audit visuel écrit ses tokens (`audit-visuel.ts:140`, dans
+`changements.tokensUsed`). Les imports, l'audit conformité et le copilot consomment sans
+rien persister, alors que `tokensUsed` remonte déjà partout (`BaseAgent.ts:190`,
+`MistralProvider.ts:41`). La table `audit_logs` (`schema.ts:262`) n'a d'ailleurs pas de
+colonne dédiée — le comptage passe par un `json` non typé, non indexable.
+
+**Impact.** ~80 % de la consommation est invisible. Impossible de répondre à « combien coûte
+un import ? » sans requêter l'API Mistral. Le workspace est plafonné à 10 $/mois : quand le
+plafond sera atteint, l'API renverra 429 et personne ne saura pourquoi l'app est cassée.
+
+**Solution.**
+1. Table dédiée `usage_ia` (agent, modèle, tokens in/out, coût estimé, entité liée,
+   utilisateur, date) plutôt que du JSON dans `audit_logs` — colonnes typées et indexables.
+2. Persister depuis un point unique : `MistralProvider.generate()` renvoie déjà
+   `promptTokens` / `completionTokens`, il suffit de les propager au lieu de les sommer.
+3. Grille tarifaire en constantes (`mistral-large` : 0,50 $/M in, 1,50 $/M out) pour
+   convertir en euros à l'écriture.
+4. Écran de suivi (voir §15).
+
+**Fichiers.** `src/db/schema.ts`, `src/agents/MistralProvider.ts`, `src/agents/BaseAgent.ts`,
+`src/app/actions/audit-visuel.ts`, `src/db/queries/` (nouveau fichier).
+
+---
+
+## 15. 🟡 Message d'erreur IA générique — trois causes indistinguables
+
+**Constat.** `AIChatAssistant.tsx:73` affiche `❌ Désolé, je rencontre un problème de
+connexion avec le Cerveau IA` quelle que soit la cause réelle : clé invalide (401),
+modèle non autorisé par le tier (403), budget mensuel épuisé ou rate limit (429),
+modèle retiré du catalogue (400 `invalid_model`).
+
+**Impact.** Vécu le 2026-09-06 : il a fallu interroger l'API en ligne de commande pour
+comprendre que le tier bloquait. Pour Marie, « budget du mois épuisé » et « bug applicatif »
+sont le même écran — elle ne peut ni agir, ni remonter une information utile.
+
+**Solution.** Mapper le code d'erreur Mistral vers un message actionnable côté serveur
+(l'API renvoie déjà `type` : `tier_not_allowed`, `rate_limited`, `invalid_model`) et le
+remonter dans la réponse de la Server Action. Ne jamais exposer la clé ni le détail brut.
+
+**Fichiers.** `src/components/features/AIChatAssistant.tsx`, `src/agents/MistralProvider.ts`.
