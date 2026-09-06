@@ -206,7 +206,7 @@ Lot 2 de la réconciliation (ajout `auth()` + `userId`). Conservé ici pour mém
 
 ---
 
-## 13. 🟠 Noms de modèles Mistral hardcodés dans 8 fichiers
+## 13. ✅ Noms de modèles Mistral hardcodés dans 8 fichiers (RÉSORBÉ 2026-09-06)
 
 **Constat.** Chaque agent code en dur son modèle : `copilot-agent.ts:74` et `:156`,
 `importWorker.ts:376` et `:621`, `recetteExtractor.ts:22`, `auditWorker.ts:9`,
@@ -219,9 +219,10 @@ sur `mistral-large-latest`). Diagnostiquer puis basculer de modèle a demandé d
 plusieurs fichiers au lieu d'une variable. Aucun moyen de tester un modèle moins cher,
 ni de dégrader temporairement vers `ministral-14b` si le budget mensuel est atteint.
 
-**Solution.** Un `src/agents/models.ts` exposant `TEXT_MODEL`, `VISION_MODEL`,
-`EMBEDDING_MODEL` — valeurs par défaut en constantes, surchargeables par variable
-d'environnement. Tous les agents importent depuis là. Changement mécanique, sans risque.
+**Résolu.** `src/agents/models.ts` expose `TEXT_MODEL`, `VISION_MODEL`, `EMBEDDING_MODEL`
+(surchargeables par env) ainsi que la grille tarifaire et `PLAFOND_MENSUEL_USD`. Les 9 sites
+d'appel passent désormais par `src/agents/mistral-call.ts`. Plus aucun nom de modèle en dur
+hors `models.ts`.
 
 **Fichiers.** `src/agents/copilot-agent.ts`, `src/agents/imports/importWorker.ts`,
 `src/agents/imports/recetteExtractor.ts`, `src/agents/audit/auditWorker.ts`,
@@ -230,7 +231,7 @@ d'environnement. Tous les agents importent depuis là. Changement mécanique, sa
 
 ---
 
-## 14. 🟠 Consommation de tokens non persistée — aucun suivi de coût
+## 14. ✅ Consommation de tokens non persistée (RÉSORBÉ 2026-09-06)
 
 **Constat.** Le CLAUDE.md affirme « token usage is logged in `audit_logs` ». C'est vrai pour
 **un agent sur quatre** : seul l'audit visuel écrit ses tokens (`audit-visuel.ts:140`, dans
@@ -243,14 +244,17 @@ colonne dédiée — le comptage passe par un `json` non typé, non indexable.
 un import ? » sans requêter l'API Mistral. Le workspace est plafonné à 10 $/mois : quand le
 plafond sera atteint, l'API renverra 429 et personne ne saura pourquoi l'app est cassée.
 
-**Solution.**
-1. Table dédiée `usage_ia` (agent, modèle, tokens in/out, coût estimé, entité liée,
-   utilisateur, date) plutôt que du JSON dans `audit_logs` — colonnes typées et indexables.
-2. Persister depuis un point unique : `MistralProvider.generate()` renvoie déjà
-   `promptTokens` / `completionTokens`, il suffit de les propager au lieu de les sommer.
-3. Grille tarifaire en constantes (`mistral-large` : 0,50 $/M in, 1,50 $/M out) pour
-   convertir en euros à l'écriture.
-4. Écran de suivi (voir §15).
+**Résolu.** Table `usage_ia` (migration `drizzle/0009_spotty_scourge.sql`), écriture
+best-effort via `src/db/queries/usage-ia.ts`, alimentée par `callMistral` (chat) et
+directement par `RAGService` (embeddings, endpoint distinct). Écran de suivi sur
+`/parametres/consommation`. Le coût n'est **pas** stocké : il est dérivé à la lecture depuis
+`TARIFS` dans `models.ts`, pour qu'un changement de tarif Mistral ne laisse pas de chiffres
+périmés en base.
+
+**Reste ouvert.** `utilisateurId` n'est renseigné que pour l'audit visuel et l'import CREATE
+(seuls endroits où la session descend jusqu'à l'agent). `entiteId` est absent de l'import
+CREATE, le `codePf` étant le *résultat* de l'extraction — le coût moyen par import se calcule
+donc sur le ré-import uniquement.
 
 **Fichiers.** `src/db/schema.ts`, `src/agents/MistralProvider.ts`, `src/agents/BaseAgent.ts`,
 `src/app/actions/audit-visuel.ts`, `src/db/queries/` (nouveau fichier).
@@ -273,3 +277,20 @@ sont le même écran — elle ne peut ni agir, ni remonter une information utile
 remonter dans la réponse de la Server Action. Ne jamais exposer la clé ni le détail brut.
 
 **Fichiers.** `src/components/features/AIChatAssistant.tsx`, `src/agents/MistralProvider.ts`.
+
+
+---
+
+## 16. 🟡 `import-agent.ts` et `pdf-comparison-agent.ts` — code mort
+
+**Constat.** Ni `ImportAgent` ni `PdfComparisonAgent` n'est référencé nulle part dans `src/`
+(vérifié 2026-09-06). Ils instancient `MistralProvider` et suivent la boucle ReAct de
+`BaseAgent`, mais aucun appelant n'existe.
+
+**Impact.** Faible, mais ils faussent toute lecture du périmètre agents : lors de la
+centralisation des modèles, ils ont dû être analysés pour rien.
+
+**Solution.** Confirmer avec Ouro qu'ils sont abandonnés, puis supprimer. Si l'un doit
+revivre, le rebrancher sur `callMistral` et lui attribuer une valeur de l'enum `agent_ia`.
+
+**Fichiers.** `src/agents/import-agent.ts`, `src/agents/pdf-comparison-agent.ts`.
