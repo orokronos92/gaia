@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector, index } from "drizzle-orm/pg-core";
 
 export const RoleUtilisateur = pgEnum("role_utilisateur", ["ADMIN", "QUALITE", "GRAPHISME", "CONDITIONNEMENT", "ACHATS", "DIRECTION"]);
 
@@ -268,6 +268,43 @@ export const auditLogs = pgTable("audit_logs", {
     changements: json("changements"),
     creeLe: timestamp("cree_le").defaultNow().notNull(),
 });
+
+/**
+ * Which agent issued an LLM call. Granular enough to answer business questions
+ * ("what does one import cost?") rather than a single opaque "MISTRAL" bucket.
+ */
+export const AgentIA = pgEnum("agent_ia", [
+    "IMPORT_EXTRACTION",
+    "IMPORT_RECETTE",
+    "AUDIT_CONFORMITE",
+    "AUDIT_SEMANTIQUE",
+    "AUDIT_VISUEL",
+    "AUDIT_CONTRE_EXAMEN",
+    "COPILOT_CHAT",
+    "COPILOT_ESTIMATION",
+    "RAG_EMBEDDING",
+]);
+
+/**
+ * One row per LLM call. Token counts are stored raw and exact; the monetary
+ * cost is NOT stored — it is derived at read time from the rate table in
+ * `src/agents/models.ts`, so a Mistral price change never leaves stale figures
+ * behind in the database.
+ */
+export const usageIa = pgTable("usage_ia", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    agent: AgentIA("agent").notNull(),
+    modele: varchar("modele", { length: 100 }).notNull(),
+    tokensEntree: integer("tokens_entree").notNull(),
+    tokensSortie: integer("tokens_sortie").notNull(),
+    /** Business entity the call related to (codePf, fiche id...), when known. */
+    entiteId: varchar("entite_id", { length: 255 }),
+    utilisateurId: uuid("utilisateur_id").references(() => utilisateurs.id),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+}, (table) => [
+    index("usage_ia_cree_le_idx").on(table.creeLe),
+    index("usage_ia_agent_idx").on(table.agent),
+]);
 
 export const knowledgeDocuments = pgTable("knowledge_documents", {
     id: uuid("id").primaryKey().defaultRandom(),

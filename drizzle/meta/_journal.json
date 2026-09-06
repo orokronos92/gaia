@@ -64,6 +64,13 @@
       "when": 1785331995544,
       "tag": "0008_wild_dust",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788713719620,
+      "tag": "0009_spotty_scourge",
+      "breakpoints": true
     }
   ]
 }
