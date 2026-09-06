@@ -57,6 +57,25 @@ ce qui est le comportement attendu. Le panneau **audit BAT**
 **Le remplacement de `pixtral-large` n'est donc validé que par un test isolé de l'API,
 pas par le vrai flux applicatif.** À faire en premier.
 
+#### ⚠️ Risque de régression sur la fiabilité du robot visuel
+
+Une décision verrouillée antérieure (mémoire `project-audit-visuel`) disait :
+
+> « Validé : pixtral-large lit les logos nativement ; **mistral-medium a halluciné un logo
+> AB** → pixtral-large est le modèle visuel. »
+
+`pixtral-large` n'existant plus, le robot visuel tourne désormais sur **le modèle même qui
+avait échoué à ce test**. Ce n'était pas un choix : il n'y avait pas d'alternative
+multimodale acceptant `document_url` sur ce compte.
+
+Conséquence : **la détection de pictos doit être revalidée avant d'être montrée au client**.
+Le garde-fou existant (contre-examen adverse : avis divergent → INCERTAIN → WARNING) limite
+les fausses alarmes mais ne protège pas contre un faux PRESENT — exactement le mode d'échec
+observé sur mistral-medium.
+
+Pistes si la fiabilité n'est pas au rendez-vous : tester `ministral-14b-latest` (vision,
+disponible sur le tier), ou passer les pictos par `mistral-ocr-latest` puis juger en code.
+
 ### 2. Lot D — messages d'erreur Mistral (§15 du registre de dette)
 
 `AIChatAssistant.tsx:73` affiche le même message générique pour quatre causes distinctes :
