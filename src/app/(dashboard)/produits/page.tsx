@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, Filter } from "lucide-react"
+import { PlusCircle } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 import { db } from "@/db"
 import { produits, fichesEtiquettes } from "@/db/schema"
 import { and, eq, ilike, or } from "drizzle-orm"
-import { PRODUIT_ACTIF } from "@/db/queries/produits"
+import { filtreCatalogue, type FiltreCatalogue } from "@/db/queries/produits"
+import { FiltreCatalogueSelect } from "./FiltreCatalogueSelect"
 import { ProductSearch } from "@/components/features/ProductSearch"
 import { ProductsTableClient } from "./ProductsTableClient"
 
@@ -18,6 +19,9 @@ export default async function ProductsPage(
 ) {
     const searchParams = await props.searchParams;
     const q = typeof searchParams?.q === 'string' ? searchParams.q : "";
+    const filtreBrut = typeof searchParams?.catalogue === 'string' ? searchParams.catalogue : "actifs";
+    const filtre: FiltreCatalogue =
+        filtreBrut === "retires" || filtreBrut === "tous" ? filtreBrut : "actifs";
 
     // Construire la requête de base
     let query = db
@@ -29,23 +33,25 @@ export default async function ProductsPage(
             gamme: produits.gamme,
             status: fichesEtiquettes.statut,
             ficheId: fichesEtiquettes.id,
+            retireLe: produits.retireLe,
         })
         .from(produits)
         .leftJoin(fichesEtiquettes, eq(produits.id, fichesEtiquettes.produitId));
 
     // Les produits archivés ne figurent plus au catalogue : ils vivent dans le
     // registre d'archives, pas ici.
+    const base = filtreCatalogue(filtre);
     query = query.where(
         q
             ? and(
-                  PRODUIT_ACTIF,
+                  base,
                   or(
                       ilike(produits.codePf, `%${q}%`),
                       ilike(produits.denominationFr, `%${q}%`),
                       ilike(produits.gamme, `%${q}%`)
                   )
               )
-            : PRODUIT_ACTIF
+            : base
     ) as any;
 
     const rawData = await query.orderBy(produits.creeLe);
@@ -68,7 +74,11 @@ export default async function ProductsPage(
     rawData.forEach(row => {
         if (row.ficheId) nbFichesParProduit.set(row.id, (nbFichesParProduit.get(row.id) ?? 0) + 1);
     });
-    const dataAvecFiches = data.map(row => ({ ...row, nbFiches: nbFichesParProduit.get(row.id) ?? 0 }));
+    const dataAvecFiches = data.map(row => ({
+        ...row,
+        nbFiches: nbFichesParProduit.get(row.id) ?? 0,
+        retire: row.retireLe !== null,
+    }));
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 h-full">
@@ -82,10 +92,7 @@ export default async function ProductsPage(
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button disabled variant="outline" className="gap-2 bg-white/60 backdrop-blur-md shadow-sm border-stone-200/50 rounded-full">
-                        <Filter className="h-4 w-4 text-stone-500" />
-                        Filtres Avancés
-                    </Button>
+                    <FiltreCatalogueSelect valeur={filtre} />
                     <Link href="/etiquettes/nouveau">
                         <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-sm shadow-emerald-700/20 text-white rounded-full px-5">
                             <PlusCircle className="h-4 w-4" />

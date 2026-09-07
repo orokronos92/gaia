@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { updateStatutEtiquetteAction } from "@/app/actions/etiquettes"
+import { LIBELLES_STATUT, STATUTS_ORDONNES } from "@/lib/etiquettes/statuts"
 
 /**
  * Manual workflow-status selector on the fiche header. Marie may set any status
@@ -13,23 +14,11 @@ import { updateStatutEtiquetteAction } from "@/app/actions/etiquettes"
  * server action, which audit-logs the change and revalidates the page.
  */
 
-/** Ordered statuses + readable French labels. Mirrors the StatutEtiquette enum. */
-const STATUTS: { value: string; label: string }[] = [
-    { value: "DRAFT", label: "Brouillon" },
-    { value: "QUALITY_REVIEW", label: "Révision Qualité" },
-    { value: "QUALITY_VALIDATED", label: "Validé Qualité" },
-    { value: "DESIGN_IN_PROGRESS", label: "Création graphique" },
-    { value: "DESIGN_REVIEW", label: "Relecture maquette" },
-    { value: "DESIGN_VALIDATED", label: "Maquette validée" },
-    { value: "SENT_TO_PRINTER", label: "Envoyé à l'imprimeur" },
-    { value: "BAT_RECEIVED", label: "BAT reçu" },
-    { value: "BAT_VALIDATED", label: "BAT validé" },
-    { value: "PRINTING", label: "En impression" },
-    { value: "RECEIVED", label: "Étiquettes reçues" },
-    { value: "RECEPTION_CONTROLLED", label: "Contrôle réception" },
-    { value: "ACTIVE", label: "Active" },
-    { value: "ARCHIVED", label: "Retirée du catalogue" },
-]
+/** Ordered statuses + readable French labels, from the shared source. */
+const STATUTS: { value: string; label: string }[] = STATUTS_ORDONNES.map((value) => ({
+    value,
+    label: LIBELLES_STATUT[value],
+}))
 
 interface StatutSelectProps {
     ficheId: string

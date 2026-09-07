@@ -80,8 +80,76 @@ export async function updateProduitChamps(
   return { avant };
 }
 
-/** Only active products belong in lists, pickers and counters. */
-export const PRODUIT_ACTIF = isNull(produits.archiveLe);
+/**
+ * Un produit « au catalogue » : ni retiré, ni supprimé. C'est ce que voient les
+ * listes, le pipeline, le sélecteur de nouvelle fiche et les compteurs.
+ */
+export const PRODUIT_ACTIF = and(isNull(produits.archiveLe), isNull(produits.retireLe))!;
+
+/** Retiré du catalogue mais toujours dans l'application — réversible. */
+export const PRODUIT_RETIRE = and(isNull(produits.archiveLe), isNotNull(produits.retireLe))!;
+
+/** Tout ce qui n'est pas supprimé, quel que soit l'état catalogue. */
+export const PRODUIT_NON_SUPPRIME = isNull(produits.archiveLe);
+
+export type FiltreCatalogue = "actifs" | "retires" | "tous";
+
+export function filtreCatalogue(filtre: FiltreCatalogue) {
+  if (filtre === "retires") return PRODUIT_RETIRE;
+  if (filtre === "tous") return PRODUIT_NON_SUPPRIME;
+  return PRODUIT_ACTIF;
+}
+
+/**
+ * Retire un produit du catalogue. Réversible d'un clic, contrairement à la
+ * suppression : le produit reste une référence de la maison, il n'est
+ * simplement plus commercialisé. Pas de saisie de code à confirmer — le geste
+ * se défait.
+ */
+export async function retirerDuCatalogue(params: {
+  produitId: string;
+  utilisateurId: string;
+  motif: string;
+}): Promise<{ codePf: string; denomination: string }> {
+  const produit = await db.query.produits.findFirst({
+    where: eq(produits.id, params.produitId),
+    columns: { codePf: true, denominationFr: true, archiveLe: true, retireLe: true },
+  });
+  if (!produit) throw new Error("Produit introuvable.");
+  if (produit.archiveLe) throw new Error("Ce produit est supprimé.");
+  if (produit.retireLe) throw new Error("Ce produit est déjà retiré du catalogue.");
+
+  await db
+    .update(produits)
+    .set({
+      retireLe: new Date(),
+      retirePar: params.utilisateurId,
+      motifRetrait: params.motif,
+      misAJourLe: new Date(),
+    })
+    .where(eq(produits.id, params.produitId));
+
+  return { codePf: produit.codePf, denomination: produit.denominationFr };
+}
+
+/** Remet un produit retiré au catalogue. Le motif du retrait reste en trace. */
+export async function remettreAuCatalogue(params: {
+  produitId: string;
+}): Promise<{ codePf: string }> {
+  const produit = await db.query.produits.findFirst({
+    where: eq(produits.id, params.produitId),
+    columns: { codePf: true, archiveLe: true },
+  });
+  if (!produit) throw new Error("Produit introuvable.");
+  if (produit.archiveLe) throw new Error("Ce produit est supprimé, il ne peut pas revenir.");
+
+  await db
+    .update(produits)
+    .set({ retireLe: null, retirePar: null, misAJourLe: new Date() })
+    .where(eq(produits.id, params.produitId));
+
+  return { codePf: produit.codePf };
+}
 
 export interface ArchiverParams {
   produitId: string;

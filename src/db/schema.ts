@@ -89,6 +89,14 @@ export const produits = pgTable("produits", {
     allegationsPossibles: json("allegations_possibles").$type<Array<{libelle: string, nbTasses: string, description?: string}>>(), // options proposées dans le FD
     dateMiseMarche: varchar("date_mise_marche", { length: 100 }),
     commentaires: text("commentaires"),
+    // ─── Retrait du catalogue ─────────────────────────────────────────────────
+    // Le produit n'est plus commercialisé mais reste une référence de la maison :
+    // il sort du catalogue, du pipeline et des compteurs, et Marie peut l'y
+    // remettre d'un clic. Le code reste réservé (l'index unique partiel ne porte
+    // que sur l'archivage), sinon un doublon pourrait naître et interdire le retour.
+    retireLe: timestamp("retire_le"),
+    retirePar: uuid("retire_par").references(() => utilisateurs.id),
+    motifRetrait: text("motif_retrait"),
     // ─── Archivage ────────────────────────────────────────────────────────────
     // Un produit n'est jamais supprimé : il est archivé. Rien n'est détruit, ses
     // fiches / recettes / documents restent attachés, et l'acte est nominatif.

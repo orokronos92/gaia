@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { SupprimerProduit } from "@/components/produits/supprimer-produit";
+import { RetraitCatalogue } from "@/components/produits/retrait-catalogue";
+import { libelleStatut } from "@/lib/etiquettes/statuts";
 
 interface ProductRow {
     id: string;
@@ -21,6 +23,7 @@ interface ProductRow {
     status: string | null;
     ficheId: string | null;
     nbFiches?: number;
+    retire?: boolean;
 }
 
 export function ProductsTableClient({ data }: { data: ProductRow[] }) {
@@ -131,7 +134,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                                     "bg-stone-100 text-stone-600"
                                         )}
                                     >
-                                        {product.status.replace(/_/g, " ")}
+                                        {libelleStatut(product.status)}
                                     </Badge>
                                 ) : (
                                     <span className="text-xs text-stone-400 italic">Aucune fiche</span>
@@ -148,6 +151,13 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                             Créer Fiche
                                         </Button>
                                     )}
+                                    <RetraitCatalogue
+                                        produitId={product.id}
+                                        codePf={product.code}
+                                        denomination={product.name}
+                                        retire={!!product.retire}
+                                        variante="ligne"
+                                    />
                                     <SupprimerProduit
                                         produitId={product.id}
                                         codePf={product.code}

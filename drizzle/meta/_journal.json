@@ -106,6 +106,13 @@
       "when": 1788793177249,
       "tag": "0014_yielding_eddie_brock",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1788796042079,
+      "tag": "0015_chilly_sebastian_shaw",
+      "breakpoints": true
     }
   ]
 }

@@ -26,6 +26,7 @@ export default async function EtiquetteDetailPage(
             codePf: produits.codePf,
             gamme: produits.gamme,
             sousGamme: produits.sousGamme,
+            retireLe: produits.retireLe,
             status: fichesEtiquettes.statut,
             date: fichesEtiquettes.misAJourLe,
             conditionnement: produits.conditionnement,

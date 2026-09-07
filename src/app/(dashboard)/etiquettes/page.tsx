@@ -16,7 +16,7 @@ const columns = [
     { id: "design", title: "En création graphique" },
     { id: "bat", title: "En attente BAT" },
     { id: "reception", title: "Contrôle réception" },
-    { id: "retire", title: "Retirées du catalogue" },
+    { id: "retire", title: "Plus produites" },
 ]
 
 /**
@@ -126,7 +126,7 @@ export default async function KanbanPage(
                         href={afficherRetirees ? "/etiquettes" : "/etiquettes?retirees=1"}
                         className="text-sm font-medium text-stone-500 hover:text-emerald-700 transition-colors whitespace-nowrap px-3"
                     >
-                        {afficherRetirees ? "Masquer les retirées" : "Voir les retirées du catalogue"}
+                        {afficherRetirees ? "Masquer les étiquettes plus produites" : "Voir les étiquettes plus produites"}
                     </Link>
                     <Link href="/etiquettes/nouveau">
                         <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-sm shadow-emerald-700/20 text-white rounded-full px-5">
