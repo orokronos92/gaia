@@ -3,7 +3,8 @@ import { fichesEtiquettes, produits, fichesDegustation } from "@/db/schema"
 import { eq, desc } from "drizzle-orm"
 import EtiquetteClient from "./EtiquetteClient"
 import { notFound } from "next/navigation"
-import { getPublicUrl, findFileKeysByPrefix } from "@/lib/utils/s3-client"
+import { getPublicUrl } from "@/lib/utils/s3-client"
+import { getFichiersProduit } from "@/db/queries/fichiers-etiquettes"
 import { getRecetteOutputForProduit } from "@/db/queries/recettes"
 import { getVersionsFiche } from "@/db/queries/fiches"
 
@@ -100,13 +101,14 @@ export default async function EtiquetteDetailPage(
     // Historique des versions (editable-fiche / versioning).
     const versions = await getVersionsFiche(id);
 
-    const codePfLower = data[0]?.codePf?.toLowerCase() || "";
-
-    // We search the Minio bucket dynamically for ALL files matching the codePf.
-    const realFileKeys = await findFileKeysByPrefix(codePfLower);
-    const pdfFiles = realFileKeys.map(key => ({
-        url: getPublicUrl(key),
-        name: key.split('/').pop() || key
+    // Label files come from the stored product ↔ file links, not from matching
+    // names against the bucket: a name match once put a neighbouring product's
+    // BAT on this page. Sources (.ai) are listed only when there is no BAT.
+    const fichiers = await getFichiersProduit(data[0].produitId);
+    const bats = fichiers.filter(f => f.type === "BAT");
+    const pdfFiles = (bats.length > 0 ? bats : fichiers).map(f => ({
+        url: getPublicUrl(f.cleS3),
+        name: f.nomFichier
     }));
 
     const labelData = {

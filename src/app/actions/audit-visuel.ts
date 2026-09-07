@@ -12,7 +12,8 @@ import { runTextRobot, type BatTextCheck } from "@/lib/audit/visual/text-robot"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
 import type { ControlStatus } from "@/lib/audit/types"
 import { extractPdfText } from "@/lib/utils/pdf-text"
-import { findBatFiles, getObjectBuffer } from "@/lib/utils/s3-client"
+import { getBatsActifsProduit } from "@/db/queries/fichiers-etiquettes"
+import { getObjectBuffer } from "@/lib/utils/s3-client"
 
 const AuditVisuelSchema = z.object({
     ficheId: z.string().uuid(),
@@ -31,8 +32,8 @@ export interface AuditVisuelTexteResult {
 }
 
 /**
- * Visual audit for a single fiche. Read-only. Locates the product's BAT PDFs in
- * MinIO, reads each face once, and runs two robots on it:
+ * Visual audit for a single fiche. Read-only. Reads the BAT files linked to the
+ * product in `fichiers_etiquettes`, one pass per face, and runs two robots:
  *   - text robot (deterministic): printed text ↔ fiche;
  *   - visual robot (vision via document_url, no PDF→PNG): logos/pictos, judged
  *     by pure code.
@@ -49,14 +50,17 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     const data = await getBatTextInputForFiche(parsed.data.ficheId)
     if (!data) return { ok: false, error: "Fiche introuvable." }
 
-    const bat = await findBatFiles(data.codePf)
-    const keys = bat.keys.filter((k) => k.toLowerCase().endsWith(".pdf"))
+    // The audit reads the stored product ↔ file links, never a name match: an
+    // audit is only worth the certainty of what it looked at.
+    const bats = await getBatsActifsProduit(data.produitId)
+    const keys = bats.map((f) => f.cleS3)
     if (keys.length === 0) {
         return {
             ok: false,
-            error: `Aucun BAT PDF trouvé dans MinIO pour le code ${data.codePf}. Vérifiez le code produit de la fiche.`,
+            error: `Aucun BAT actif associé au produit ${data.codePf}. Associez ses fichiers depuis la fiche avant de lancer l'audit.`,
         }
     }
+    const dossiers = [...new Set(bats.map((f) => f.dossier))]
 
     const faces: string[] = []
     const texts: string[] = []
@@ -144,13 +148,13 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
         entiteId: data.codePf,
         action: "AUDIT_VISUEL",
         utilisateurId: session.user.id,
-        changements: { tokensUsed, parRobot: tokens, faces, dossiers: bat.dossiers },
+        changements: { tokensUsed, parRobot: tokens, faces, dossiers },
     })
 
     return {
         ok: true,
         faces,
-        dossiers: bat.dossiers,
+        dossiers,
         overallStatus: overallStatus(checks),
         counts: countByStatus(checks),
         checks,

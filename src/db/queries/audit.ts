@@ -81,7 +81,7 @@ export const getAuditInputForFiche = cache(
 export const getBatTextInputForFiche = cache(
   async (
     ficheId: string
-  ): Promise<{ codePf: string; input: BatTextInput } | null> => {
+  ): Promise<{ produitId: string; codePf: string; input: BatTextInput } | null> => {
     const fiche = await db.query.fichesEtiquettes.findFirst({
       where: eq(fichesEtiquettes.id, ficheId),
     });
@@ -93,6 +93,7 @@ export const getBatTextInputForFiche = cache(
     if (!produit) return null;
 
     return {
+      produitId: produit.id,
       codePf: produit.codePf,
       input: {
         denomination: produit.denominationFr ?? fiche.denominationLegale,

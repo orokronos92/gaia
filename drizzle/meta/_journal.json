@@ -71,6 +71,20 @@
       "when": 1788713719620,
       "tag": "0009_spotty_scourge",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788762056741,
+      "tag": "0010_uneven_maestro",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788762308568,
+      "tag": "0011_opposite_catseye",
+      "breakpoints": true
     }
   ]
 }

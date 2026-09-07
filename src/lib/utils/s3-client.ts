@@ -41,67 +41,81 @@ async function listAllKeys(): Promise<string[]> {
     return allKeys;
 }
 
-/** Article code at the head of a folder name: "TA7372 - Malin comme un chimpanzé" → "TA7372". */
-function codeDuDossier(segment: string): string | null {
-    const match = segment.match(/^[A-Za-z]+\d+/);
-    return match ? match[0].toUpperCase() : null;
-}
-
 /**
- * A product's `codePf` carries one extra trailing digit for the packaging
- * variant, where the MinIO folder holds the base article code. Measured on the
- * live bucket (2026-09-07): 50 codes match a folder exactly, 99 match it minus
- * that digit, 3 have no folder at all.
+ * Base article code: alphabetic prefix + the first three digits.
  *
- * Whole tokens are compared on purpose. The previous implementation searched the
- * bare digits anywhere in the key, so "TA737" reached
- * "TM7372 - LIGHT MY FIRE/ETNM737V5 - Light my fire.pdf" — the BAT of an
- * unrelated product, which the audit then merged into this one's verdict.
+ * The fourth digit is a version, not a different article — JDG's own numbering.
+ * Verified on the live bucket (2026-09-07): every code that collapses to the
+ * same base belongs to the same product (TB4016/TB4017 are both White Monkey,
+ * TB4041/2/6 are all Ché Chun), and 148 of the 151 real products resolve to one
+ * folder and one only. Keeping the alphabetic prefix is what stops TA737 from
+ * reaching "TM7372 - LIGHT MY FIRE" — an unrelated product whose files the old
+ * digits-only search pulled straight into this one's audit.
+ *
+ * This assumes a three-digit base, which is the client's current convention and
+ * not a law. The resolved folder is reported to the caller so an unexpected
+ * match is visible rather than silent.
  */
-function correspondAuCode(codeDossier: string, codePf: string): boolean {
-    const code = codePf.trim().toUpperCase();
-    return codeDossier === code || codeDossier === code.slice(0, -1);
+export function codeDeBase(code: string): string | null {
+    const match = code.trim().toUpperCase().match(/^([A-Z]+)(\d{3})/);
+    return match ? `${match[1]}${match[2]}` : null;
 }
 
-export interface BatFiles {
-    /** Folders the files were read from — surfaced so the user can see the source. */
-    dossiers: string[];
-    keys: string[];
+/** Version marker carried by the file name ("ETCNA7372V5 - …" → "V5"), if any. */
+function versionDuFichier(nomFichier: string): string | null {
+    const premierJeton = nomFichier.split(/[\s\-_.]/)[0] ?? "";
+    const match = premierJeton.match(/V(\d+)$/i);
+    return match ? `V${match[1]}` : null;
+}
+
+/** One label file as found in the bucket, ready to be persisted against a product. */
+export interface FichierResolu {
+    cleS3: string;
+    dossier: string;
+    nomFichier: string;
+    /** PDFs are the BAT the audit reads; anything else (.ai) is a design source. */
+    type: "BAT" | "SOURCE";
+    version: string | null;
 }
 
 /**
- * Locates a product's label files in MinIO, matching on the folder segment only.
- * PDFs are returned when the folder has any; otherwise every file in it, so a
- * folder holding only `.ai` sources still shows up.
+ * Resolves a product's label files from the bucket by base article code.
+ *
+ * This is the bootstrap for `fichiers_etiquettes`, and the suggester for files
+ * that appear later — never the runtime source of truth. What the audit and the
+ * fiche read is the stored link, so the client reorganising its codes costs one
+ * remap instead of a permanent re-tuning of this rule.
  */
-export async function findBatFiles(codePf: string): Promise<BatFiles> {
+export async function resoudreFichiersProduit(codePf: string): Promise<FichierResolu[]> {
+    const base = codeDeBase(codePf);
+    if (!base) return [];
+
     try {
-        const dossiers = new Set<string>();
-        const trouves: string[] = [];
+        const resolus: FichierResolu[] = [];
 
         for (const key of await listAllKeys()) {
             const segments = key.split("/");
             if (segments.length < 2) continue;
 
             const dossier = segments[segments.length - 2];
-            const code = codeDuDossier(dossier);
-            if (!code || !correspondAuCode(code, codePf)) continue;
+            const nomFichier = segments[segments.length - 1];
+            const codeDossier = dossier.match(/^[A-Za-z]+\d+/)?.[0];
+            if (!codeDossier || codeDeBase(codeDossier) !== base) continue;
 
-            dossiers.add(dossier);
-            trouves.push(key);
+            resolus.push({
+                cleS3: key,
+                dossier,
+                nomFichier,
+                type: nomFichier.toLowerCase().endsWith(".pdf") ? "BAT" : "SOURCE",
+                version: versionDuFichier(nomFichier),
+            });
         }
 
-        const pdfs = trouves.filter((k) => k.toLowerCase().endsWith(".pdf"));
-        return { dossiers: [...dossiers], keys: pdfs.length > 0 ? pdfs : trouves };
+        return resolus;
     } catch (e) {
         console.error("Error scanning bucket:", e);
-        return { dossiers: [], keys: [] };
+        return [];
     }
-}
-
-/** Keys only, for callers that don't need to know which folder they came from. */
-export async function findFileKeysByPrefix(codePf: string): Promise<string[]> {
-    return (await findBatFiles(codePf)).keys;
 }
 
 /**

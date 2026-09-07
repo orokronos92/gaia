@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const RoleUtilisateur = pgEnum("role_utilisateur", ["ADMIN", "QUALITE", "GRAPHISME", "CONDITIONNEMENT", "ACHATS", "DIRECTION"]);
 
@@ -304,6 +304,49 @@ export const usageIa = pgTable("usage_ia", {
 }, (table) => [
     index("usage_ia_cree_le_idx").on(table.creeLe),
     index("usage_ia_agent_idx").on(table.agent),
+]);
+
+export const TypeFichierEtiquette = pgEnum("type_fichier_etiquette", ["BAT", "SOURCE"]);
+
+/** Whether the naming rule proposed the link, or a human established it. */
+export const OrigineAssociation = pgEnum("origine_association", ["AUTO", "MANUEL"]);
+
+/**
+ * Explicit product ↔ label-file link.
+ *
+ * The association used to be recomputed on every render by matching a codePf
+ * against MinIO object keys. That let a neighbouring product's BAT into an audit
+ * (TA737 reached TM7372's files), and no naming rule can survive the client
+ * reorganising its own codes — which they intend to do. Storing the link means
+ * remapping once, in one place, instead of re-tuning a heuristic forever.
+ *
+ * It also expresses what names cannot: which file is the approved one. A folder
+ * holds V5 and V6 side by side and nothing said which the audit should read.
+ */
+export const fichiersEtiquettes = pgTable("fichiers_etiquettes", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    produitId: uuid("produit_id").references(() => produits.id, { onDelete: 'cascade' }).notNull(),
+    /**
+     * Full MinIO object key. Not unique on its own: JDG records one article
+     * under several version codes (TB4016 and TB4017 are both White Monkey), so
+     * the same artwork legitimately backs several product rows. Uniqueness is on
+     * the pair, which is what a link actually is.
+     */
+    cleS3: varchar("cle_s3", { length: 700 }).notNull(),
+    /** Folder the file sits in — displayed so the audit's source is never implicit. */
+    dossier: varchar("dossier", { length: 255 }).notNull(),
+    nomFichier: varchar("nom_fichier", { length: 255 }).notNull(),
+    type: TypeFichierEtiquette("type").notNull(),
+    /** Version marker read from the file name ("V5"), null when it carries none. */
+    version: varchar("version", { length: 20 }),
+    /** False keeps the file listed but out of audits — an obsolete BAT. */
+    actif: boolean("actif").default(true).notNull(),
+    origine: OrigineAssociation("origine").default('AUTO').notNull(),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+    misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
+}, (table) => [
+    index("fichiers_etiquettes_produit_idx").on(table.produitId),
+    uniqueIndex("fichiers_etiquettes_produit_cle_idx").on(table.produitId, table.cleS3),
 ]);
 
 export const knowledgeDocuments = pgTable("knowledge_documents", {

@@ -1,0 +1,2 @@
+ALTER TABLE "fichiers_etiquettes" DROP CONSTRAINT "fichiers_etiquettes_cle_s3_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "fichiers_etiquettes_produit_cle_idx" ON "fichiers_etiquettes" USING btree ("produit_id","cle_s3");
