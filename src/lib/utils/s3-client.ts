@@ -61,11 +61,19 @@ export function codeDeBase(code: string): string | null {
     return match ? `${match[1]}${match[2]}` : null;
 }
 
-/** Version marker carried by the file name ("ETCNA7372V5 - …" → "V5"), if any. */
+/**
+ * Version marker carried by the file name ("ETCNA7372V5 - …" → "V5").
+ *
+ * The last V-number of the code block wins: names like
+ * "TV112_ETVN112V3 Lü Zhen…" repeat the article code first, so reading the
+ * first match returns "V112" — the code, not the version. Heuristic by nature,
+ * because the client's file naming has no enforced format.
+ */
 function versionDuFichier(nomFichier: string): string | null {
-    const premierJeton = nomFichier.split(/[\s\-_.]/)[0] ?? "";
-    const match = premierJeton.match(/V(\d+)$/i);
-    return match ? `V${match[1]}` : null;
+    const blocCode = nomFichier.split(" ")[0] ?? "";
+    const matches = [...blocCode.matchAll(/V(\d+)/gi)];
+    const dernier = matches.at(-1);
+    return dernier ? `V${dernier[1]}` : null;
 }
 
 /** One label file as found in the bucket, ready to be persisted against a product. */

@@ -6,6 +6,8 @@ import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
 import { saveRecette } from "@/db/queries/recettes";
 import { getFicheExistantePourCodePf } from "@/db/queries/produits";
+import { remplacerAssociationsAuto } from "@/db/queries/fichiers-etiquettes";
+import { resoudreFichiersProduit } from "@/lib/utils/s3-client";
 import { extraireRecetteDepuisXlsx } from "./recetteExtractor";
 import { callMistral, type CallMeta } from "../mistral-call";
 import { TEXT_MODEL } from "../models";
@@ -503,6 +505,16 @@ ${combinedText.substring(0, 22000)}`;
             .returning({ id: produits.id });
 
         const produitId = upsertedProduit.id;
+
+        // Link the product to its label files in MinIO. Best-effort: a bucket
+        // that is unreachable must never fail an import, and links a human has
+        // set are preserved by `remplacerAssociationsAuto`.
+        try {
+            const fichiers = await resoudreFichiersProduit(produitValues.codePf);
+            if (fichiers.length > 0) await remplacerAssociationsAuto(produitId, fichiers);
+        } catch {
+            // Association can be replayed later; the import itself must go through.
+        }
 
         // 6. Écriture en base — Fiche étiquette
         await db.insert(fichesEtiquettes).values({
