@@ -63,6 +63,13 @@ export default async function ProductsPage(
 
     const data = Array.from(uniqueProductsMap.values());
 
+    // Nombre de fiches par produit, pour l'avertissement de suppression.
+    const nbFichesParProduit = new Map<string, number>();
+    rawData.forEach(row => {
+        if (row.ficheId) nbFichesParProduit.set(row.id, (nbFichesParProduit.get(row.id) ?? 0) + 1);
+    });
+    const dataAvecFiches = data.map(row => ({ ...row, nbFiches: nbFichesParProduit.get(row.id) ?? 0 }));
+
     return (
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 h-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -92,7 +99,7 @@ export default async function ProductsPage(
                 <div className="p-5 border-b border-stone-200/50 flex items-center justify-between">
                     <ProductSearch />
                 </div>
-                <ProductsTableClient data={data} />
+                <ProductsTableClient data={dataAvecFiches} />
             </div>
         </div>
     )

@@ -133,12 +133,20 @@ export default async function EtiquetteDetailPage(
         }))
     );
 
+    // Le geste de suppression porte sur le PRODUIT : toutes ses fiches partent
+    // avec lui. MT265 en a 17 — l'écran doit le dire avant, pas après.
+    const fichesDuProduit = await db
+        .select({ id: fichesEtiquettes.id })
+        .from(fichesEtiquettes)
+        .where(eq(fichesEtiquettes.produitId, data[0].produitId));
+
     return (
         <EtiquetteClient
             labelData={labelData}
             recette={recette}
             versions={versions}
             documentsSource={documentsSource}
+            nbFiches={fichesDuProduit.length}
         />
     )
 }

@@ -37,7 +37,7 @@ import { choisirAllegationAction, dupliquerFicheAction, sauvegarderVersionAction
 import { useEditableSection, EditButtons, EditableText, type EditableSection } from "@/components/etiquettes/editable-section"
 import { VersionsHistorique } from "@/components/etiquettes/versions-historique"
 import { DocumentsSource, type DocumentSourceVue } from "./_components/documents-source"
-import { ArchiverProduit } from "./_components/archiver-produit"
+import { SupprimerProduit } from "@/components/produits/supprimer-produit"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -140,7 +140,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[] }) {
+export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1 }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number }) {
     // State
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
@@ -1076,10 +1076,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                     <div className="space-y-6">
                         <DocumentsSource documents={documentsSource} />
                         <VersionsHistorique versions={versions} />
-                        <ArchiverProduit
+                        <SupprimerProduit
                             produitId={labelData.produitId}
                             codePf={labelData.codePf ?? ""}
                             denomination={labelData.denominationFr ?? labelData.title ?? ""}
+                            nbFiches={nbFiches}
                         />
                     </div>
                 </TabsContent>

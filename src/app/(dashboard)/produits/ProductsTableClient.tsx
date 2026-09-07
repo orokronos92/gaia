@@ -10,6 +10,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { SupprimerProduit } from "@/components/produits/supprimer-produit";
 
 interface ProductRow {
     id: string;
@@ -19,6 +20,7 @@ interface ProductRow {
     gamme: string;
     status: string | null;
     ficheId: string | null;
+    nbFiches?: number;
 }
 
 export function ProductsTableClient({ data }: { data: ProductRow[] }) {
@@ -136,15 +138,24 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                 )}
                             </TableCell>
                             <TableCell className="text-right">
-                                {product.ficheId ? (
-                                    <Link href={`/etiquettes/${product.ficheId}`}>
-                                        <Button variant="ghost" size="sm" className="text-emerald-600 font-medium hover:text-emerald-800 hover:bg-emerald-50 rounded-full transition-colors">Consulter Fiche</Button>
-                                    </Link>
-                                ) : (
-                                    <Button variant="ghost" size="sm" className="text-stone-400 hover:text-stone-600 rounded-full cursor-not-allowed disabled">
-                                        Créer Fiche
-                                    </Button>
-                                )}
+                                <div className="flex items-center justify-end gap-1">
+                                    {product.ficheId ? (
+                                        <Link href={`/etiquettes/${product.ficheId}`}>
+                                            <Button variant="ghost" size="sm" className="text-emerald-600 font-medium hover:text-emerald-800 hover:bg-emerald-50 rounded-full transition-colors">Consulter Fiche</Button>
+                                        </Link>
+                                    ) : (
+                                        <Button variant="ghost" size="sm" className="text-stone-400 hover:text-stone-600 rounded-full cursor-not-allowed disabled">
+                                            Créer Fiche
+                                        </Button>
+                                    )}
+                                    <SupprimerProduit
+                                        produitId={product.id}
+                                        codePf={product.code}
+                                        denomination={product.name}
+                                        nbFiches={product.nbFiches}
+                                        variante="ligne"
+                                    />
+                                </div>
                             </TableCell>
                         </TableRow>
                     ))}
