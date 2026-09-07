@@ -1,4 +1,10 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import {
+    S3Client,
+    GetObjectCommand,
+    PutObjectCommand,
+    ListObjectsV2Command,
+    type ListObjectsV2CommandOutput,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3Client = new S3Client({
@@ -13,66 +19,89 @@ const s3Client = new S3Client({
 
 export const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "label-assets";
 
+/** Every object key in the bucket, following pagination. */
+async function listAllKeys(): Promise<string[]> {
+    const allKeys: string[] = [];
+    let isTruncated = true;
+    let continuationToken: string | undefined = undefined;
+
+    while (isTruncated) {
+        const response: ListObjectsV2CommandOutput = await s3Client.send(
+            new ListObjectsV2Command({ Bucket: BUCKET_NAME, ContinuationToken: continuationToken })
+        );
+
+        for (const item of response.Contents ?? []) {
+            if (item.Key) allKeys.push(item.Key);
+        }
+
+        isTruncated = response.IsTruncated ?? false;
+        continuationToken = response.NextContinuationToken;
+    }
+
+    return allKeys;
+}
+
+/** Article code at the head of a folder name: "TA7372 - Malin comme un chimpanzé" → "TA7372". */
+function codeDuDossier(segment: string): string | null {
+    const match = segment.match(/^[A-Za-z]+\d+/);
+    return match ? match[0].toUpperCase() : null;
+}
+
 /**
- * Recherche le fichier de manière insensible à la casse 
- * et retourne sa vraie clé S3 (ex: "codePf" peut retrouver "CODEPF.pdf" ou "codePf.ai")
+ * A product's `codePf` carries one extra trailing digit for the packaging
+ * variant, where the MinIO folder holds the base article code. Measured on the
+ * live bucket (2026-09-07): 50 codes match a folder exactly, 99 match it minus
+ * that digit, 3 have no folder at all.
+ *
+ * Whole tokens are compared on purpose. The previous implementation searched the
+ * bare digits anywhere in the key, so "TA737" reached
+ * "TM7372 - LIGHT MY FIRE/ETNM737V5 - Light my fire.pdf" — the BAT of an
+ * unrelated product, which the audit then merged into this one's verdict.
  */
-export async function findFileKeysByPrefix(prefix: string): Promise<string[]> {
+function correspondAuCode(codeDossier: string, codePf: string): boolean {
+    const code = codePf.trim().toUpperCase();
+    return codeDossier === code || codeDossier === code.slice(0, -1);
+}
+
+export interface BatFiles {
+    /** Folders the files were read from — surfaced so the user can see the source. */
+    dossiers: string[];
+    keys: string[];
+}
+
+/**
+ * Locates a product's label files in MinIO, matching on the folder segment only.
+ * PDFs are returned when the folder has any; otherwise every file in it, so a
+ * folder holding only `.ai` sources still shows up.
+ */
+export async function findBatFiles(codePf: string): Promise<BatFiles> {
     try {
-        let isTruncated = true;
-        let continuationToken: string | undefined = undefined;
-        let allKeys: string[] = [];
+        const dossiers = new Set<string>();
+        const trouves: string[] = [];
 
-        while (isTruncated) {
-            const command = new ListObjectsV2Command({
-                Bucket: BUCKET_NAME,
-                ContinuationToken: continuationToken,
-            });
+        for (const key of await listAllKeys()) {
+            const segments = key.split("/");
+            if (segments.length < 2) continue;
 
-            const response = await s3Client.send(command) as any;
+            const dossier = segments[segments.length - 2];
+            const code = codeDuDossier(dossier);
+            if (!code || !correspondAuCode(code, codePf)) continue;
 
-            if (response.Contents) {
-                const keys = response.Contents.map((item: any) => item.Key).filter((k: any): k is string => !!k);
-                allKeys.push(...keys);
-            }
-
-            isTruncated = response.IsTruncated ?? false;
-            continuationToken = response.NextContinuationToken;
+            dossiers.add(dossier);
+            trouves.push(key);
         }
 
-        const searchCode = prefix.toLowerCase();
-        let matchedKeys: string[] = [];
-
-        // 1. Stratégie exacte (ex: tb4041 présent tel quel + .pdf)
-        const exactMatches = allKeys.filter(k => k.toLowerCase().includes(searchCode) && k.toLowerCase().endsWith('.pdf'));
-        matchedKeys.push(...exactMatches);
-
-        // 2. Stratégie du code de base (ex: le dossier contient 404, mais la BDD a 4041)
-        const numMatch = searchCode.match(/\d{3,}/);
-        if (numMatch) {
-            const num = numMatch[0]; // ex: 4041
-            // Si c'est 4 chiffres, on tente avec les 3 premiers (ex: 404)
-            const baseNum = num.length > 3 ? num.substring(0, num.length - 1) : num;
-
-            const baseMatches = allKeys.filter(k => k.toLowerCase().includes(baseNum) && k.toLowerCase().endsWith('.pdf'));
-            baseMatches.forEach(bm => {
-                if (!matchedKeys.includes(bm)) matchedKeys.push(bm);
-            });
-        }
-
-        // 3. Fallback: n'importe quel fichier lié (AI compris) si aucun PDF trouvé
-        if (matchedKeys.length === 0) {
-            const fallbackMatches = allKeys.filter(k => k.toLowerCase().includes(searchCode));
-            if (fallbackMatches.length > 0) matchedKeys.push(...fallbackMatches);
-        }
-
-        // Remove duplicates and return
-        return Array.from(new Set(matchedKeys));
-
+        const pdfs = trouves.filter((k) => k.toLowerCase().endsWith(".pdf"));
+        return { dossiers: [...dossiers], keys: pdfs.length > 0 ? pdfs : trouves };
     } catch (e) {
         console.error("Error scanning bucket:", e);
-        return [];
+        return { dossiers: [], keys: [] };
     }
+}
+
+/** Keys only, for callers that don't need to know which folder they came from. */
+export async function findFileKeysByPrefix(codePf: string): Promise<string[]> {
+    return (await findBatFiles(codePf)).keys;
 }
 
 /**

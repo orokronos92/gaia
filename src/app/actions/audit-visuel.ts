@@ -12,7 +12,7 @@ import { runTextRobot, type BatTextCheck } from "@/lib/audit/visual/text-robot"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
 import type { ControlStatus } from "@/lib/audit/types"
 import { extractPdfText } from "@/lib/utils/pdf-text"
-import { findFileKeysByPrefix, getObjectBuffer } from "@/lib/utils/s3-client"
+import { findBatFiles, getObjectBuffer } from "@/lib/utils/s3-client"
 
 const AuditVisuelSchema = z.object({
     ficheId: z.string().uuid(),
@@ -23,6 +23,8 @@ export interface AuditVisuelTexteResult {
     error?: string
     /** File names of the BAT faces actually read. */
     faces?: string[]
+    /** MinIO folders those faces came from — the audit is only worth its source. */
+    dossiers?: string[]
     overallStatus?: ControlStatus
     counts?: Record<ControlStatus, number>
     checks?: BatTextCheck[]
@@ -47,11 +49,13 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     const data = await getBatTextInputForFiche(parsed.data.ficheId)
     if (!data) return { ok: false, error: "Fiche introuvable." }
 
-    const keys = (await findFileKeysByPrefix(data.codePf)).filter((k) =>
-        k.toLowerCase().endsWith(".pdf")
-    )
+    const bat = await findBatFiles(data.codePf)
+    const keys = bat.keys.filter((k) => k.toLowerCase().endsWith(".pdf"))
     if (keys.length === 0) {
-        return { ok: false, error: "Aucun BAT PDF trouvé pour ce produit dans MinIO." }
+        return {
+            ok: false,
+            error: `Aucun BAT PDF trouvé dans MinIO pour le code ${data.codePf}. Vérifiez le code produit de la fiche.`,
+        }
     }
 
     const faces: string[] = []
@@ -140,12 +144,13 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
         entiteId: data.codePf,
         action: "AUDIT_VISUEL",
         utilisateurId: session.user.id,
-        changements: { tokensUsed, parRobot: tokens, faces },
+        changements: { tokensUsed, parRobot: tokens, faces, dossiers: bat.dossiers },
     })
 
     return {
         ok: true,
         faces,
+        dossiers: bat.dossiers,
         overallStatus: overallStatus(checks),
         counts: countByStatus(checks),
         checks,

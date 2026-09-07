@@ -70,7 +70,11 @@ export function BatTextAuditPanel({ ficheId, result, onResultData, onResult }: B
                             {result.counts?.PASS ?? 0} conforme(s) · {result.counts?.WARNING ?? 0} à vérifier · {result.counts?.FAIL ?? 0} non conforme(s)
                         </span>
                         {result.faces && result.faces.length > 0 && (
-                            <span className="text-stone-300 font-mono ml-auto truncate">{result.faces.join(" · ")}</span>
+                            <span className="text-stone-400 ml-auto truncate" title={result.faces.join("\n")}>
+                                {result.faces.length} face{result.faces.length > 1 ? "s" : ""} lue
+                                {result.faces.length > 1 ? "s" : ""}
+                                {result.dossiers && result.dossiers.length > 0 && ` · ${result.dossiers.join(", ")}`}
+                            </span>
                         )}
                     </div>
 
