@@ -6,6 +6,7 @@ import { Loader2, Trash2, TriangleAlert } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Surcouche } from "./surcouche"
 import { archiverProduitAction } from "@/app/actions/archivage"
 
 interface SupprimerProduitProps {
@@ -180,16 +181,7 @@ export function SupprimerProduit({
     // In a table row the panel cannot expand in place without wrecking the
     // layout, so it opens as an overlay there and inline on the fiche.
     if (variante === "ligne") {
-        return (
-            <div
-                className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-stone-900/40 backdrop-blur-sm p-4 sm:p-8"
-                onClick={(e) => {
-                    if (e.target === e.currentTarget && !pending) fermer()
-                }}
-            >
-                <div className="w-full max-w-xl text-left my-auto">{panneau}</div>
-            </div>
-        )
+        return <Surcouche onFermer={() => { if (!pending) fermer() }}>{panneau}</Surcouche>
     }
 
     return panneau

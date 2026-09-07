@@ -6,6 +6,7 @@ import { ArchiveRestore, Loader2, PackageMinus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Surcouche } from "./surcouche"
 import { remettreAuCatalogueAction, retirerDuCatalogueAction } from "@/app/actions/catalogue"
 
 interface RetraitCatalogueProps {
@@ -189,16 +190,7 @@ export function RetraitCatalogue({
     )
 
     if (variante === "ligne") {
-        return (
-            <div
-                className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-stone-900/40 backdrop-blur-sm p-4 sm:p-8"
-                onClick={(e) => {
-                    if (e.target === e.currentTarget && !pending) setOuvert(false)
-                }}
-            >
-                <div className="w-full max-w-xl text-left my-auto">{panneau}</div>
-            </div>
-        )
+        return <Surcouche onFermer={() => { if (!pending) setOuvert(false) }}>{panneau}</Surcouche>
     }
 
     return panneau
