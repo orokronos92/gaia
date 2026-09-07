@@ -44,7 +44,7 @@ export function Header() {
             {/* Notification Dropdown */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="outline" className="relative ml-auto h-10 w-10 rounded-full bg-white/60 backdrop-blur-md border-stone-200/50 shadow-sm sm:ml-0 hover:bg-white">
+                    <Button size="icon" variant="outline" className="relative ml-auto h-10 w-10 rounded-full bg-white/60 backdrop-blur-md border-stone-200/50 shadow-sm hover:bg-white">
                         <Bell className="h-4 w-4 text-stone-600" />
                         {unreadCount > 0 && (
                             <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white shadow-sm shadow-orange-500/50">

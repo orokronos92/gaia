@@ -106,7 +106,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                         <TableHead className="font-medium text-stone-500 hidden md:table-cell">Famille de texte</TableHead>
                         <TableHead className="font-medium text-stone-500">Gamme Origine</TableHead>
                         <TableHead className="font-medium text-stone-500">Statut Fiche</TableHead>
-                        <TableHead className="text-right font-medium text-stone-500">Action</TableHead>
+                        <TableHead className="text-right font-medium text-stone-500 w-[380px] whitespace-nowrap">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -140,7 +140,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                     <span className="text-xs text-stone-400 italic">Aucune fiche</span>
                                 )}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right whitespace-nowrap">
                                 <div className="flex items-center justify-end gap-1">
                                     {product.ficheId ? (
                                         <Link href={`/etiquettes/${product.ficheId}`}>
