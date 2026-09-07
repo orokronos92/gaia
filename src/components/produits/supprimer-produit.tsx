@@ -115,11 +115,11 @@ export function SupprimerProduit({
     }
 
     const panneau = (
-        <div className="rounded-2xl border border-red-200 bg-red-50/60 p-5 space-y-4">
+        <div className="rounded-2xl border border-red-200 bg-red-50/60 p-6 sm:p-7 space-y-5 shadow-2xl">
             <div className="flex gap-3">
                 <TriangleAlert className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-                <div className="text-sm text-red-900 space-y-1">
-                    <p className="font-semibold">
+                <div className="text-[15px] leading-relaxed text-red-900 space-y-2">
+                    <p className="text-lg font-semibold">
                         Supprimer « {denomination} » ({codePf}) ?
                     </p>
                     <p>
@@ -137,26 +137,26 @@ export function SupprimerProduit({
 
             <div className="space-y-3">
                 <label className="block">
-                    <span className="text-xs font-medium text-stone-600">
+                    <span className="text-sm font-medium text-stone-700">
                         Motif de la suppression <span className="text-red-700">(obligatoire)</span>
                     </span>
                     <input
                         value={motif}
                         onChange={(e) => setMotif(e.target.value)}
                         placeholder="Doublon, erreur d'import, référence abandonnée…"
-                        className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm outline-none focus:border-red-400"
+                        className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-base outline-none focus:border-red-400"
                     />
                 </label>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-stone-600">
+                    <span className="text-sm font-medium text-stone-700">
                         Retapez le code produit <span className="font-mono">{codePf}</span> pour confirmer
                     </span>
                     <input
                         value={code}
                         onChange={(e) => setCode(e.target.value)}
                         placeholder={codePf}
-                        className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-mono outline-none focus:border-red-400"
+                        className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-base font-mono outline-none focus:border-red-400"
                     />
                 </label>
             </div>
@@ -166,12 +166,11 @@ export function SupprimerProduit({
                     onClick={supprimer}
                     disabled={!codeOk || !motifOk || pending}
                     className="bg-red-600 hover:bg-red-700 text-white gap-2"
-                    size="sm"
                 >
                     {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     Supprimer définitivement
                 </Button>
-                <Button variant="ghost" size="sm" onClick={fermer} disabled={pending}>
+                <Button variant="ghost" onClick={fermer} disabled={pending}>
                     Annuler
                 </Button>
             </div>
@@ -183,12 +182,12 @@ export function SupprimerProduit({
     if (variante === "ligne") {
         return (
             <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4"
+                className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-stone-900/40 backdrop-blur-sm p-4 sm:p-8"
                 onClick={(e) => {
                     if (e.target === e.currentTarget && !pending) fermer()
                 }}
             >
-                <div className="w-full max-w-lg text-left">{panneau}</div>
+                <div className="w-full max-w-xl text-left my-auto">{panneau}</div>
             </div>
         )
     }

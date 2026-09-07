@@ -141,9 +141,9 @@ export function RetraitCatalogue({
     }
 
     const panneau = (
-        <div className="rounded-2xl border border-stone-200 bg-stone-50 p-5 space-y-4">
-            <div className="text-sm text-stone-800 space-y-1">
-                <p className="font-semibold">
+        <div className="rounded-2xl border border-stone-200 bg-white p-6 sm:p-7 space-y-5 shadow-2xl">
+            <div className="text-[15px] leading-relaxed text-stone-800 space-y-2">
+                <p className="text-lg font-semibold">
                     Retirer « {denomination} » ({codePf}) du catalogue ?
                 </p>
                 <p className="text-stone-600">
@@ -154,14 +154,14 @@ export function RetraitCatalogue({
             </div>
 
             <label className="block">
-                <span className="text-xs font-medium text-stone-600">
+                <span className="text-sm font-medium text-stone-700">
                     Motif du retrait <span className="text-stone-500">(obligatoire)</span>
                 </span>
                 <input
                     value={motif}
                     onChange={(e) => setMotif(e.target.value)}
                     placeholder="Fin de commercialisation, saison terminée, remplacé par…"
-                    className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                    className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-base outline-none focus:border-emerald-400"
                 />
             </label>
 
@@ -169,7 +169,6 @@ export function RetraitCatalogue({
                 <Button
                     onClick={retirer}
                     disabled={motif.trim().length < 3 || pending}
-                    size="sm"
                     className="gap-2"
                 >
                     {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageMinus className="h-4 w-4" />}
@@ -177,7 +176,6 @@ export function RetraitCatalogue({
                 </Button>
                 <Button
                     variant="ghost"
-                    size="sm"
                     onClick={() => {
                         setOuvert(false)
                         setMotif("")
@@ -193,12 +191,12 @@ export function RetraitCatalogue({
     if (variante === "ligne") {
         return (
             <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4"
+                className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-stone-900/40 backdrop-blur-sm p-4 sm:p-8"
                 onClick={(e) => {
                     if (e.target === e.currentTarget && !pending) setOuvert(false)
                 }}
             >
-                <div className="w-full max-w-lg text-left">{panneau}</div>
+                <div className="w-full max-w-xl text-left my-auto">{panneau}</div>
             </div>
         )
     }
