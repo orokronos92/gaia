@@ -16,6 +16,8 @@ interface SupprimerProduitProps {
     nbFiches?: number
     /** "bloc" on the fiche, "ligne" for the compact action in the product table. */
     variante?: "bloc" | "ligne"
+    /** Icon only — three text buttons per table row is too heavy. */
+    compact?: boolean
     /** Where to go once the product is gone. */
     redirection?: string
 }
@@ -37,6 +39,7 @@ export function SupprimerProduit({
     denomination,
     nbFiches,
     variante = "bloc",
+    compact = false,
     redirection = "/produits",
 }: SupprimerProduitProps) {
     const router = useRouter()
@@ -72,12 +75,18 @@ export function SupprimerProduit({
             return (
                 <Button
                     variant="ghost"
-                    size="sm"
+                    size={compact ? "icon" : "sm"}
                     onClick={() => setOuvert(true)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5"
+                    title="Supprimer le produit"
+                    aria-label="Supprimer le produit"
+                    className={
+                        compact
+                            ? "h-9 w-9 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            : "text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5"
+                    }
                 >
                     <Trash2 className="h-4 w-4" />
-                    Supprimer
+                    {!compact && "Supprimer"}
                 </Button>
             )
         }

@@ -15,6 +15,8 @@ interface RetraitCatalogueProps {
     /** Already withdrawn → the control becomes "put it back". */
     retire: boolean
     variante?: "bloc" | "ligne"
+    /** Icon only — three text buttons per table row is too heavy. */
+    compact?: boolean
 }
 
 /**
@@ -29,6 +31,7 @@ export function RetraitCatalogue({
     denomination,
     retire,
     variante = "bloc",
+    compact = false,
 }: RetraitCatalogueProps) {
     const router = useRouter()
     const [ouvert, setOuvert] = useState(false)
@@ -67,13 +70,19 @@ export function RetraitCatalogue({
         const bouton = (
             <Button
                 variant={variante === "ligne" ? "ghost" : "outline"}
-                size="sm"
+                size={compact ? "icon" : "sm"}
                 onClick={remettre}
                 disabled={pending}
-                className="gap-2 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                title="Remettre au catalogue"
+                aria-label="Remettre au catalogue"
+                className={
+                    compact
+                        ? "h-9 w-9 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                        : "gap-2 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50"
+                }
             >
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArchiveRestore className="h-4 w-4" />}
-                Remettre au catalogue
+                {!compact && "Remettre au catalogue"}
             </Button>
         )
 
@@ -98,12 +107,18 @@ export function RetraitCatalogue({
             return (
                 <Button
                     variant="ghost"
-                    size="sm"
+                    size={compact ? "icon" : "sm"}
                     onClick={() => setOuvert(true)}
-                    className="text-stone-500 hover:text-stone-700 hover:bg-stone-100 gap-1.5"
+                    title="Retirer du catalogue"
+                    aria-label="Retirer du catalogue"
+                    className={
+                        compact
+                            ? "h-9 w-9 text-stone-500 hover:text-stone-700 hover:bg-stone-100"
+                            : "text-stone-500 hover:text-stone-700 hover:bg-stone-100 gap-1.5"
+                    }
                 >
                     <PackageMinus className="h-4 w-4" />
-                    Retirer
+                    {!compact && "Retirer"}
                 </Button>
             )
         }

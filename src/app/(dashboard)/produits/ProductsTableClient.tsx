@@ -92,6 +92,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                     </Button>
                 </div>
             )}
+            <div className="overflow-x-auto">
             <Table>
                 <TableHeader className="bg-stone-50/50 dark:bg-stone-800/20">
                     <TableRow className="border-stone-200/50 hover:bg-transparent">
@@ -106,7 +107,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                         <TableHead className="font-medium text-stone-500 hidden md:table-cell">Famille de texte</TableHead>
                         <TableHead className="font-medium text-stone-500">Gamme Origine</TableHead>
                         <TableHead className="font-medium text-stone-500">Statut Fiche</TableHead>
-                        <TableHead className="text-right font-medium text-stone-500 w-[380px] whitespace-nowrap">Actions</TableHead>
+                        <TableHead className="text-right font-medium text-stone-500 w-[220px] whitespace-nowrap">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -157,6 +158,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                         denomination={product.name}
                                         retire={!!product.retire}
                                         variante="ligne"
+                                        compact
                                     />
                                     <SupprimerProduit
                                         produitId={product.id}
@@ -164,6 +166,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                         denomination={product.name}
                                         nbFiches={product.nbFiches}
                                         variante="ligne"
+                                        compact
                                     />
                                 </div>
                             </TableCell>
@@ -171,6 +174,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                     ))}
                 </TableBody>
             </Table>
+            </div>
         </div>
     );
 }
