@@ -574,10 +574,18 @@ ${combinedText.substring(0, 22000)}`;
         // l'IA, % par computeRecette ; persistée en DRAFT, Marie validera.
         if (docs.xlsxBuffer && docs.xlsxBuffer.byteLength > 0) {
             try {
-                const calc = await extraireRecetteDepuisXlsx(docs.xlsxBuffer);
-                if (calc) {
-                    await saveRecette({ produitId, version: "1.0", developpeur: "Import IA", calc });
-                    console.log(`[ImportWorker] Recette structurée extraite (${calc.ingredients.length} ingrédients)`);
+                const importee = await extraireRecetteDepuisXlsx(docs.xlsxBuffer);
+                if (importee) {
+                    await saveRecette({
+                        produitId,
+                        version: importee.version ?? "1.0",
+                        developpeur: "Import IA",
+                        calc: importee.calc,
+                        descriptifModification: importee.descriptifModification,
+                        raisonModification: importee.raisonModification,
+                        incidenceEtiquetage: importee.incidenceEtiquetage,
+                    });
+                    console.log(`[ImportWorker] Recette structurée extraite (${importee.calc.ingredients.length} ingrédients)`);
                 }
             } catch (e) {
                 console.error("[ImportWorker] Extraction recette structurée échouée:", e instanceof Error ? e.message : e);

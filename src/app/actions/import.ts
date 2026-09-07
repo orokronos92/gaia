@@ -54,25 +54,37 @@ export async function reintegrerRecetteAction(formData: FormData): Promise<Reint
         ficheEtiquetteId: ficheId,
     })
 
-    let calc
+    let importee
     try {
-        calc = await extraireRecetteDepuisXlsx(buffer)
+        importee = await extraireRecetteDepuisXlsx(buffer)
     } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : "Échec de l'extraction." }
     }
-    if (!calc) return { ok: false, error: "Recette non exploitable (kg ou % manquants)." }
+    if (!importee) return { ok: false, error: "Recette non exploitable (kg ou % manquants)." }
 
-    await saveRecette({ produitId, version: "1.0", developpeur: "Ré-import IA", calc })
+    await saveRecette({
+        produitId,
+        version: importee.version ?? "1.0",
+        developpeur: "Ré-import IA",
+        calc: importee.calc,
+        descriptifModification: importee.descriptifModification,
+        raisonModification: importee.raisonModification,
+        incidenceEtiquetage: importee.incidenceEtiquetage,
+    })
     await writeAuditLog({
         typeEntite: "fiche",
         entiteId: ficheId,
         action: "RECETTE_REIMPORTEE",
         utilisateurId: session.user.id,
-        changements: { nbIngredients: calc.ingredients.length },
+        changements: {
+            nbIngredients: importee.calc.ingredients.length,
+            version: importee.version,
+            incidenceEtiquetage: importee.incidenceEtiquetage,
+        },
     })
 
     revalidatePath(`/etiquettes/${ficheId}`)
-    return { ok: true, nbIngredients: calc.ingredients.length }
+    return { ok: true, nbIngredients: importee.calc.ingredients.length }
 }
 
 /**

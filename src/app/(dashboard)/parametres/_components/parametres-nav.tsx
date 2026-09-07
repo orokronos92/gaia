@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Settings2, Shield, Bell, Database, Users, Gauge } from "lucide-react"
+import { Settings2, Shield, Bell, Database, Users, Gauge, Sprout } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 const ITEMS = [
     { href: "/parametres", label: "Général", icon: Settings2, actif: true },
     { href: "/parametres/consommation", label: "Consommation IA", icon: Gauge, actif: true },
+    { href: "/parametres/matieres", label: "Matières premières", icon: Sprout, actif: true },
     { href: "#", label: "Règles Qualité (PRO-QHS)", icon: Shield, actif: false },
     { href: "#", label: "Équipe & Rôles", icon: Users, actif: false },
     { href: "#", label: "Agents IA & Intégrations", icon: Database, actif: false },

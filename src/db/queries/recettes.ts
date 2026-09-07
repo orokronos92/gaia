@@ -1,7 +1,7 @@
 import { cache } from "react";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { recettes, ingredientsRecette, auditLogs } from "@/db/schema";
+import { recettes, ingredientsRecette, auditLogs, matieresPremieres } from "@/db/schema";
 import { evaluerDemeter, type RecetteCalculee } from "@/lib/business-rules/recette";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 
@@ -10,6 +10,36 @@ interface SaveRecetteParams {
   version: string;
   developpeur?: string;
   calc: RecetteCalculee;
+  descriptifModification?: string;
+  raisonModification?: string;
+  incidenceEtiquetage?: boolean;
+}
+
+/**
+ * Feeds the raw-material reference from what an import just revealed.
+ *
+ * Only `codeArticle` → `designationRd` is written, and never over an existing
+ * row: the legal denomination and the markers are a human's answer, and a later
+ * import must not undo it. The table therefore fills itself as products come in,
+ * and stays correct where someone has already qualified a material.
+ */
+async function alimenterMatieresPremieres(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  calc: RecetteCalculee
+): Promise<void> {
+  const lignes = calc.ingredients
+    .filter((i) => i.codeArticle.trim() !== "")
+    .map((i) => ({
+      codeArticle: i.codeArticle.trim().slice(0, 50),
+      designationRd: i.designation.slice(0, 255),
+      estDemeter: i.estDemeter,
+      estEquitable: i.estEquitable,
+    }));
+  if (lignes.length === 0) return;
+
+  await tx.insert(matieresPremieres).values(lignes).onConflictDoNothing({
+    target: matieresPremieres.codeArticle,
+  });
 }
 
 /**
@@ -21,17 +51,33 @@ export async function saveRecette({
   version,
   developpeur,
   calc,
+  descriptifModification,
+  raisonModification,
+  incidenceEtiquetage,
 }: SaveRecetteParams) {
   return db.transaction(async (tx) => {
+    // The previous version is superseded, not overwritten: comparing before and
+    // after is the only way to tell whether a substitution changes the declared
+    // list — and therefore whether the BAT still holds.
+    await tx
+      .update(recettes)
+      .set({ statut: "ARCHIVED", misAJourLe: new Date() })
+      .where(and(eq(recettes.produitId, produitId), ne(recettes.statut, "ARCHIVED")));
+
     const [recette] = await tx
       .insert(recettes)
       .values({
         produitId,
         version,
         developpeur,
+        descriptifModification,
+        raisonModification,
+        incidenceEtiquetage,
         pourcentageTotal: calc.totalPourcentageEtiquette,
       })
       .returning();
+
+    await alimenterMatieresPremieres(tx, calc);
 
     if (calc.ingredients.length > 0) {
       await tx.insert(ingredientsRecette).values(
@@ -39,6 +85,7 @@ export async function saveRecette({
           recetteId: recette.id,
           codeArticle: ing.codeArticle,
           designation: ing.designation,
+          estBio: ing.estBio,
           estDemeter: ing.estDemeter,
           estEquitable: ing.estEquitable,
           quantiteKg: ing.quantiteKg,
@@ -60,8 +107,10 @@ export async function saveRecette({
  */
 export const getRecetteOutputForProduit = cache(
   async (produitId: string): Promise<RecetteAgentOutput | null> => {
+    // La recette COURANTE : les versions remplacées passent en ARCHIVED et ne
+    // doivent plus alimenter la fiche ni l'audit.
     const recette = await db.query.recettes.findFirst({
-      where: eq(recettes.produitId, produitId),
+      where: and(eq(recettes.produitId, produitId), ne(recettes.statut, "ARCHIVED")),
       orderBy: [desc(recettes.creeLe)],
     });
     if (!recette) return null;
@@ -130,7 +179,7 @@ export async function validerRecette({
 }: ValiderRecetteParams) {
   return db.transaction(async (tx) => {
     const existante = await tx.query.recettes.findFirst({
-      where: eq(recettes.produitId, produitId),
+      where: and(eq(recettes.produitId, produitId), ne(recettes.statut, "ARCHIVED")),
       orderBy: [desc(recettes.creeLe)],
     });
 

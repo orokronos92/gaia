@@ -99,6 +99,13 @@
       "when": 1788790388939,
       "tag": "0013_slimy_marvel_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788793177249,
+      "tag": "0014_yielding_eddie_brock",
+      "breakpoints": true
     }
   ]
 }

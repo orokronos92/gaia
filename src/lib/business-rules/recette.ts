@@ -15,6 +15,12 @@ export interface IngredientRecetteInput {
   codeArticle: string;
   designation: string;
   quantiteKg: number;
+  /**
+   * Marqueur « * issu de l'agriculture biologique » de l'étiquette. Optionnel et
+   * vrai par défaut : la fiche recette ne porte aucune colonne BIO, c'est
+   * implicite chez JDG. Une source qui sait dit false explicitement.
+   */
+  estBio?: boolean;
   estDemeter: boolean;
   estEquitable: boolean;
 }
@@ -31,6 +37,7 @@ export interface IngredientCalcule {
   quantiteKg: number;
   pourcentageBrut: number; // deterministic
   pourcentageEtiquette: number; // deterministic, Σ = 100
+  estBio: boolean;
   estDemeter: boolean;
   estEquitable: boolean;
   ordreTri: number; // 1-based rank by descending raw %
@@ -215,6 +222,7 @@ export function computeRecette(input: RecetteInput): RecetteCalculee {
       quantiteKg: ing.quantiteKg,
       pourcentageBrut: arrondi3(brutsRaw[i]),
       pourcentageEtiquette: etiquettes[i],
+      estBio: ing.estBio ?? true,
       estDemeter: ing.estDemeter,
       estEquitable: ing.estEquitable,
       ordreTri: rangParIndex.get(i) as number,

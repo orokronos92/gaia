@@ -23,6 +23,8 @@ import { TEXT_MODEL } from "../models";
 const PRECISION_PAR_DEFAUT = 0.5 as const;
 
 const IngredientExtrait = z.object({
+  /** Code article JDG (HB170, TN592…) — clé de jointure du référentiel matière. */
+  codeArticle: z.string().nullable().optional(),
   designation: z.string().min(1),
   quantiteKg: z.number().nullable().optional(),
   pourcentage: z.number().nullable().optional(),
@@ -30,6 +32,11 @@ const IngredientExtrait = z.object({
   estEquitable: z.boolean().nullable().optional(),
 });
 export const RecetteExtractionSchema = z.object({
+  /** Version retenue, telle qu'écrite dans le classeur ("V.2"). */
+  version: z.string().nullable().optional(),
+  descriptifModification: z.string().nullable().optional(),
+  raisonModification: z.string().nullable().optional(),
+  incidenceEtiquetage: z.boolean().nullable().optional(),
   ingredients: z.array(IngredientExtrait),
 });
 export type RecetteExtraction = z.infer<typeof RecetteExtractionSchema>;
@@ -51,21 +58,45 @@ function xlsxVersTexte(buffer: ArrayBuffer): string {
 
 function buildPrompt(texte: string): string {
   return `Tu es un extracteur de recette pour Les Jardins de Gaïa (thés/infusions bio).
-À partir du tableau Excel ci-dessous (fiche recette R&D), extrais la liste des ingrédients.
+Le classeur ci-dessous contient PLUSIEURS onglets et PLUSIEURS tableaux. Tu dois
+d'abord identifier LA recette EN VIGUEUR, puis extraire ses ingrédients.
+
 Retourne UNIQUEMENT un objet JSON valide, sans markdown ni commentaire :
 {
+  "version": "string|null",
+  "descriptifModification": "string|null",
+  "raisonModification": "string|null",
+  "incidenceEtiquetage": true|false|null,
   "ingredients": [
-    { "designation": "string", "quantiteKg": number|null, "pourcentage": number|null, "estDemeter": boolean, "estEquitable": boolean }
+    { "codeArticle": "string|null", "designation": "string", "quantiteKg": number|null,
+      "pourcentage": number|null, "estDemeter": boolean, "estEquitable": boolean }
   ]
 }
-RÈGLES :
+
+CHOIX DE LA VERSION — la règle la plus importante :
+- Une « FICHE DE MODIFICATION DE RECETTE » (ENR-PRO-024) contient DEUX tableaux :
+  « VERSION RECETTE EN COURS : V.x » (l'ancienne) puis
+  « VERSION NOUVELLE RECETTE : V.y » (celle qui entre en vigueur).
+  → Prends TOUJOURS le tableau « VERSION NOUVELLE RECETTE ».
+- Une « FICHE DE CREATION RECETTE » (ENR-PRO-023) ne contient qu'un tableau.
+- Si le classeur a plusieurs onglets, retiens la version la PLUS RÉCENTE
+  (numéro de version le plus élevé, ou date la plus récente).
+- "version" : recopie l'étiquette de version retenue, ex. "V.2".
+
+AUTRES CHAMPS :
+- "codeArticle" : le code de la colonne CODE ARTICLE (HB170, TN592, EF231…). null si absent.
 - "quantiteKg" : la masse en kg de la colonne quantité (accepte la virgule décimale). null si absente.
 - "pourcentage" : le % de la colonne pourcentage si présent. null sinon.
-- "estDemeter" / "estEquitable" : true si l'ingrédient est marqué Demeter / équitable, sinon false.
+- "estDemeter" / "estEquitable" : true si la case DEMETER / COMMERCE ÉQUITABLE porte
+  une marque (x, X, oui…) pour CET ingrédient, sinon false.
+- "descriptifModification" / "raisonModification" : les lignes correspondantes de la
+  fiche de modification, si présentes. null sinon.
+- "incidenceEtiquetage" : true si la fiche indique que la modification a une incidence
+  sur l'ÉTIQUETAGE, false si elle indique le contraire, null si ce n'est pas renseigné.
 - N'invente JAMAIS un chiffre. Ignore les lignes de total, d'en-tête et les lignes vides.
 - Une ligne = un ingrédient réel de la recette.
 
-TABLEAU :
+CLASSEUR :
 ${texte.substring(0, 16000)}`;
 }
 
@@ -86,12 +117,28 @@ export function recetteExtraiteVersInput(
   if (!tousKg && !tousPct) return null;
 
   return lignes.map((i) => ({
-    codeArticle: "",
+    codeArticle: (i.codeArticle ?? "").trim(),
     designation: i.designation,
+    // Bio par défaut : la fiche recette ne porte aucune colonne BIO, c'est
+    // implicite chez JDG. Marie corrige ligne par ligne si besoin.
+    estBio: true,
     quantiteKg: tousKg ? (i.quantiteKg as number) : (i.pourcentage as number),
     estDemeter: !!i.estDemeter,
     estEquitable: !!i.estEquitable,
   }));
+}
+
+/**
+ * What one recette workbook yields: the computed recipe plus the change record
+ * around it. JDG's sheet is a "fiche de modification" that states its own reason
+ * and whether the change touches the label — that reasoning is worth keeping.
+ */
+export interface RecetteImportee {
+  calc: RecetteCalculee;
+  version?: string;
+  descriptifModification?: string;
+  raisonModification?: string;
+  incidenceEtiquetage?: boolean;
 }
 
 /**
@@ -102,7 +149,7 @@ export function recetteExtraiteVersInput(
 export async function extraireRecetteDepuisXlsx(
   buffer: ArrayBuffer,
   meta?: Omit<CallMeta, "agent">
-): Promise<RecetteCalculee | null> {
+): Promise<RecetteImportee | null> {
   const texte = xlsxVersTexte(buffer);
   if (texte.trim() === "") return null;
 
@@ -123,5 +170,11 @@ export async function extraireRecetteDepuisXlsx(
   const ingredients = recetteExtraiteVersInput(extraction);
   if (!ingredients) return null;
 
-  return computeRecette({ ingredients, precisionArrondi: PRECISION_PAR_DEFAUT });
+  return {
+    calc: computeRecette({ ingredients, precisionArrondi: PRECISION_PAR_DEFAUT }),
+    version: extraction.version?.trim() || undefined,
+    descriptifModification: extraction.descriptifModification?.trim() || undefined,
+    raisonModification: extraction.raisonModification?.trim() || undefined,
+    incidenceEtiquetage: extraction.incidenceEtiquetage ?? undefined,
+  };
 }

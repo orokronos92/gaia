@@ -160,6 +160,14 @@ export const recettes = pgTable("recettes", {
     labelsClient: varchar("labels_client", { length: 255 }),
     statut: StatutRecette("statut").default('DRAFT').notNull(),
     pourcentageTotal: real("pourcentage_total"),
+    // ─── Fiche de modification de recette (ENR-PRO-024) ───────────────────────
+    // Une recette n'est pas remplacée en silence : le classeur JDG porte deux
+    // tableaux (version en cours / nouvelle version) et déclare lui-même si le
+    // changement touche l'étiquetage. On conserve ce raisonnement.
+    descriptifModification: text("descriptif_modification"),
+    raisonModification: text("raison_modification"),
+    /** Ce que JDG a coché sur la fiche ; null = non renseigné, pas « non ». */
+    incidenceEtiquetage: boolean("incidence_etiquetage"),
     fichierSourceId: varchar("fichier_source_id", { length: 255 }), // Storage ref
     creeLe: timestamp("cree_le").defaultNow().notNull(),
     misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
@@ -170,6 +178,13 @@ export const ingredientsRecette = pgTable("ingredients_recette", {
     recetteId: uuid("recette_id").references(() => recettes.id, { onDelete: 'cascade' }).notNull(),
     codeArticle: varchar("code_article", { length: 50 }).notNull(),
     designation: varchar("designation", { length: 255 }).notNull(),
+    /**
+     * Marqueur « * issu de l'agriculture biologique » de l'étiquette
+     * (PRO-QHS-013 §11.1). Vrai par défaut : chez JDG tout est bio, et la fiche
+     * recette ne porte aucune colonne BIO — c'est implicite. Marie corrige au cas
+     * par cas (l'arôme figue du BAT TA7372 n'a pas d'étoile, le miel oui).
+     */
+    estBio: boolean("est_bio").default(true).notNull(),
     estDemeter: boolean("est_demeter").default(false).notNull(),
     estEquitable: boolean("est_equitable").default(false).notNull(),
     estCamellia: boolean("est_camellia").default(false).notNull(),       // Audit 1.1 — Camellia sinensis (thé). Sert l'applicabilité contientThe + le calcul ≥51%.
@@ -408,6 +423,36 @@ export const documentsImport = pgTable("documents_import", {
     index("documents_import_produit_idx").on(table.produitId),
     index("documents_import_fiche_idx").on(table.ficheEtiquetteId),
 ]);
+
+/**
+ * Référentiel matière première — la table de jointure qui manque partout.
+ *
+ * La recette dit « TN592 SORWATHE OP1 », l'étiquette dit « Thé noir* ». Rien ne
+ * reliait les deux, ce qui fait échouer le contrôle d'ingrédients de l'audit sur
+ * chaque produit, empêche de savoir si une substitution change la liste
+ * déclarée, et laisse les étoiles bio introuvables.
+ *
+ * Elle se remplit toute seule à l'import (code → désignation R&D) ; la
+ * dénomination légale et les marqueurs sont renseignés une fois par matière —
+ * en attendant l'export PMI de JDG, qui viendra la compléter.
+ */
+export const matieresPremieres = pgTable("matieres_premieres", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Code article JDG : HB170, TN592, EF231… */
+    codeArticle: varchar("code_article", { length: 50 }).notNull().unique(),
+    /** Libellé tel qu'il figure dans la fiche recette R&D. */
+    designationRd: varchar("designation_rd", { length: 255 }).notNull(),
+    /** Nom à imprimer sur l'étiquette (« Thé noir »). Null tant que non qualifié. */
+    denominationLegale: varchar("denomination_legale", { length: 255 }),
+    estBio: boolean("est_bio").default(true).notNull(),
+    estDemeter: boolean("est_demeter").default(false).notNull(),
+    estEquitable: boolean("est_equitable").default(false).notNull(),
+    /** Renseigné par une personne, par opposition aux champs devinés à l'import. */
+    qualifiePar: uuid("qualifie_par").references(() => utilisateurs.id),
+    qualifieLe: timestamp("qualifie_le"),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+    misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
+});
 
 export const knowledgeDocuments = pgTable("knowledge_documents", {
     id: uuid("id").primaryKey().defaultRandom(),

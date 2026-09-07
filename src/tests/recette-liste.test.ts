@@ -6,8 +6,9 @@ const ing = (
   pourcentageEtiquette: number,
   ordreTri: number,
   estDemeter = false,
-  estEquitable = false
-): IngredientListe => ({ designation, pourcentageEtiquette, ordreTri, estDemeter, estEquitable });
+  estEquitable = false,
+  estBio: boolean | undefined = undefined
+): IngredientListe => ({ designation, pourcentageEtiquette, ordreTri, estDemeter, estEquitable, estBio });
 
 describe("genererListeIngredients — liste déclarée déterministe", () => {
   it("ordonne par ordreTri, ajoute %, ponctue", () => {
@@ -15,16 +16,33 @@ describe("genererListeIngredients — liste déclarée déterministe", () => {
       ing("Gingembre", 15.5, 2),
       ing("Maté vert", 62, 1),
     ]);
-    expect(texte).toBe("Maté vert 62 %, Gingembre 15.5 %.");
+    expect(texte).toBe("Maté vert* 62 %, Gingembre* 15.5 %.");
   });
 
-  it("marqueurs Demeter (✱) et équitable (°)", () => {
-    expect(genererListeIngredients([ing("Maté vert", 62, 1, true, true)])).toBe("Maté vert✱° 62 %.");
+  // PRO-QHS-013 §11.1 (point de contrôle 2.4) : « * bio / ** demeter ».
+  it("bio par défaut → une étoile", () => {
+    expect(genererListeIngredients([ing("Maté vert", 62, 1)])).toBe("Maté vert* 62 %.");
+  });
+
+  it("Demeter → deux étoiles, qui remplacent l'étoile bio", () => {
+    expect(genererListeIngredients([ing("Maté vert", 62, 1, true)])).toBe("Maté vert** 62 %.");
+  });
+
+  it("non bio explicite → aucune étoile", () => {
+    expect(genererListeIngredients([ing("Arôme figue", 5, 1, false, false, false)])).toBe(
+      "Arôme figue 5 %."
+    );
+  });
+
+  // §11.1 ne définit aucun marqueur d'équitable par ingrédient, et le BAT TA7372
+  // imprime « Thé noir* » pour un ingrédient que la recette déclare équitable.
+  it("équitable n'imprime rien", () => {
+    expect(genererListeIngredients([ing("Thé noir", 38, 1, false, true)])).toBe("Thé noir* 38 %.");
   });
 
   it("applique les overrides étiquette (même ordre que les ingrédients)", () => {
     const ings = [ing("Maté", 60, 1), ing("Citron", 40, 2)];
-    expect(genererListeIngredients(ings, [55, 45])).toBe("Maté 55 %, Citron 45 %.");
+    expect(genererListeIngredients(ings, [55, 45])).toBe("Maté* 55 %, Citron* 45 %.");
   });
 
   it("liste vide → chaîne vide", () => {
@@ -34,7 +52,7 @@ describe("genererListeIngredients — liste déclarée déterministe", () => {
   it("masque le % des ingrédients choisis (nom + marqueurs gardés)", () => {
     const ings = [ing("Maté", 60, 1, true), ing("Citron", 40, 2)];
     expect(genererListeIngredients(ings, undefined, [false, true])).toBe(
-      "Maté✱ 60 %, Citron."
+      "Maté** 60 %, Citron*."
     );
   });
 
@@ -42,12 +60,12 @@ describe("genererListeIngredients — liste déclarée déterministe", () => {
     const ings = [ing("Maté", 60, 1), ing("Citron", 40, 2)];
     // Citron masqué : son override 45 n'apparaît pas ; Maté garde son override 55.
     expect(genererListeIngredients(ings, [55, 45], [false, true])).toBe(
-      "Maté 55 %, Citron."
+      "Maté* 55 %, Citron*."
     );
   });
 
   it("masques absent → comportement inchangé (tous les %)", () => {
     const ings = [ing("Maté", 60, 1), ing("Citron", 40, 2)];
-    expect(genererListeIngredients(ings)).toBe("Maté 60 %, Citron 40 %.");
+    expect(genererListeIngredients(ings)).toBe("Maté* 60 %, Citron* 40 %.");
   });
 });
