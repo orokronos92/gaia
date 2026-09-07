@@ -36,6 +36,7 @@ import { toast } from "sonner"
 import { choisirAllegationAction, dupliquerFicheAction, sauvegarderVersionAction } from "@/app/actions/etiquettes"
 import { useEditableSection, EditButtons, EditableText, type EditableSection } from "@/components/etiquettes/editable-section"
 import { VersionsHistorique } from "@/components/etiquettes/versions-historique"
+import { DocumentsSource, type DocumentSourceVue } from "./_components/documents-source"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -138,7 +139,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette, versions = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[] }) {
+export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[] }) {
     // State
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
@@ -1071,7 +1072,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [] }: {
 
                 {/* HISTORIQUE DES VERSIONS */}
                 <TabsContent value="historique" className="mt-0 focus-visible:outline-none">
-                    <VersionsHistorique versions={versions} />
+                    <div className="space-y-6">
+                        <DocumentsSource documents={documentsSource} />
+                        <VersionsHistorique versions={versions} />
+                    </div>
                 </TabsContent>
 
             </Tabs>

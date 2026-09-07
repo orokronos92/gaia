@@ -5,6 +5,7 @@ import EtiquetteClient from "./EtiquetteClient"
 import { notFound } from "next/navigation"
 import { getPublicUrl } from "@/lib/utils/s3-client"
 import { getFichiersProduit } from "@/db/queries/fichiers-etiquettes"
+import { getDocumentsProduit, getLienDocument } from "@/db/queries/documents-import"
 import { getRecetteOutputForProduit } from "@/db/queries/recettes"
 import { getVersionsFiche } from "@/db/queries/fiches"
 
@@ -118,5 +119,26 @@ export default async function EtiquetteDetailPage(
         date: data[0].date ? new Date(data[0].date).toLocaleDateString("fr-FR") : "Récent"
     };
 
-    return <EtiquetteClient labelData={labelData} recette={recette} versions={versions} />
+    // Source documents live in a private bucket: each row gets its own short-lived
+    // signed link, minted per render (the route is force-dynamic).
+    const documents = await getDocumentsProduit(data[0].produitId);
+    const documentsSource = await Promise.all(
+        documents.map(async (d) => ({
+            id: d.id,
+            nomOrigine: d.nomOrigine,
+            type: d.type,
+            tailleOctets: d.tailleOctets,
+            importeLe: d.importeLe.toLocaleDateString("fr-FR"),
+            lien: await getLienDocument(d.cleS3),
+        }))
+    );
+
+    return (
+        <EtiquetteClient
+            labelData={labelData}
+            recette={recette}
+            versions={versions}
+            documentsSource={documentsSource}
+        />
+    )
 }

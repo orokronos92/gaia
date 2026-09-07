@@ -9,6 +9,7 @@ import { saveRecette } from "@/db/queries/recettes"
 import { writeAuditLog } from "@/db/queries/audit-logs"
 import { extraireRecetteDepuisXlsx } from "@/agents/imports/recetteExtractor"
 import { ImportWorker } from "@/agents/imports/importWorker"
+import { archiverDocumentImport } from "@/db/queries/documents-import"
 
 const FicheIdSchema = z.string().uuid()
 
@@ -41,9 +42,21 @@ export async function reintegrerRecetteAction(formData: FormData): Promise<Reint
     const produitId = await getFicheProduitId(ficheId)
     if (!produitId) return { ok: false, error: "Fiche introuvable." }
 
+    const buffer = await file.arrayBuffer()
+
+    // Archived before extraction — a failed run is when the source matters most.
+    await archiverDocumentImport({
+        buffer,
+        nomOrigine: file.name,
+        type: "RECETTE_XLSX",
+        utilisateurId: session.user.id,
+        produitId,
+        ficheEtiquetteId: ficheId,
+    })
+
     let calc
     try {
-        calc = await extraireRecetteDepuisXlsx(await file.arrayBuffer())
+        calc = await extraireRecetteDepuisXlsx(buffer)
     } catch (e) {
         return { ok: false, error: e instanceof Error ? e.message : "Échec de l'extraction." }
     }
@@ -84,13 +97,23 @@ export async function reintegrerDegustationAction(formData: FormData): Promise<R
     const produitId = await getFicheProduitId(ficheId)
     if (!produitId) return { ok: false, error: "Fiche introuvable." }
 
+    const docxBuffer = await word.arrayBuffer()
+    const pdfBuffer = pdf instanceof File && pdf.size > 0 ? await pdf.arrayBuffer() : undefined
+
+    // Archived before extraction — a failed run is when the source matters most.
+    const cibles = { utilisateurId: session.user.id, produitId, ficheEtiquetteId: ficheId }
+    await archiverDocumentImport({ buffer: docxBuffer, nomOrigine: word.name, type: "DEGUSTATION_DOCX", ...cibles })
+    if (pdfBuffer && pdf instanceof File) {
+        await archiverDocumentImport({ buffer: pdfBuffer, nomOrigine: pdf.name, type: "DEGUSTATION_PDF", ...cibles })
+    }
+
     let result
     try {
         result = await ImportWorker.reintegrerDegustation({
             ficheId,
             produitId,
-            docxBuffer: await word.arrayBuffer(),
-            pdfBuffer: pdf instanceof File && pdf.size > 0 ? await pdf.arrayBuffer() : undefined,
+            docxBuffer,
+            pdfBuffer,
             fichierNom: word.name,
         })
     } catch (e) {

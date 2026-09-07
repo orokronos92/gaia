@@ -3,6 +3,8 @@ import {
     GetObjectCommand,
     PutObjectCommand,
     ListObjectsV2Command,
+    HeadBucketCommand,
+    CreateBucketCommand,
     type ListObjectsV2CommandOutput,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -18,6 +20,15 @@ const s3Client = new S3Client({
 });
 
 export const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "label-assets";
+
+/**
+ * Source documents live in their own bucket, deliberately.
+ *
+ * `label-assets` answers anonymous GETs *and* anonymous LIST — anyone knowing
+ * the endpoint can enumerate it. A recette workbook is the full formulation, so
+ * it goes somewhere that is private by birth rather than by policy patch.
+ */
+export const BUCKET_IMPORTS = process.env.MINIO_BUCKET_IMPORTS || "import-sources";
 
 /** Every object key in the bucket, following pagination. */
 async function listAllKeys(): Promise<string[]> {
@@ -129,10 +140,14 @@ export async function resoudreFichiersProduit(codePf: string): Promise<FichierRe
 /**
  * Génère une URL temporaire signée pour accéder à un fichier privé
  */
-export async function getPresignedUrl(fileKey: string, expiresInBytesSeconds = 3600): Promise<string> {
+export async function getPresignedUrl(
+    fileKey: string,
+    expiresInBytesSeconds = 3600,
+    bucket: string = BUCKET_NAME
+): Promise<string> {
     try {
         const command = new GetObjectCommand({
-            Bucket: BUCKET_NAME,
+            Bucket: bucket,
             Key: fileKey,
         });
 
@@ -150,9 +165,9 @@ export async function getPresignedUrl(fileKey: string, expiresInBytesSeconds = 3
  * Passe par l'API S3 (objet logique intègre) — ne JAMAIS lire le `part.1` sur
  * disque, qui n'est pas l'objet (header décalé, XRef invalide).
  */
-export async function getObjectBuffer(fileKey: string): Promise<Buffer> {
+export async function getObjectBuffer(fileKey: string, bucket: string = BUCKET_NAME): Promise<Buffer> {
     const command = new GetObjectCommand({
-        Bucket: BUCKET_NAME,
+        Bucket: bucket,
         Key: fileKey,
     });
 
@@ -173,17 +188,40 @@ export function getPublicUrl(fileKey: string): string {
     return `${endpoint}/${BUCKET_NAME}/${fileKey}`;
 } // utilitaire d'upload
 
-/**
- * Utilitaire d'upload (pour l'avenir)
- */
-export async function uploadFileToS3(fileBuffer: Buffer, fileName: string, mimeType: string): Promise<string> {
-    const command = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
+/** Buckets already confirmed to exist, so the check costs one call per process. */
+const bucketsVerifies = new Set<string>();
+
+/** Creates the bucket if it is missing — a fresh deployment has none. */
+async function assurerBucket(bucket: string): Promise<void> {
+    if (bucketsVerifies.has(bucket)) return;
+    try {
+        await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+    } catch {
+        // 404 (absent) or 403 (no rights to probe): try to create, ignore "already there".
+        try {
+            await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
+        } catch {
+            // Another process won the race, or we lack the right — the upload will say.
+        }
+    }
+    bucketsVerifies.add(bucket);
+}
+
+/** Stores a file and returns its key. No public policy is ever set here. */
+export async function uploadFileToS3(
+    fileBuffer: Buffer,
+    fileName: string,
+    mimeType: string,
+    bucket: string = BUCKET_NAME
+): Promise<string> {
+    await assurerBucket(bucket);
+
+    await s3Client.send(new PutObjectCommand({
+        Bucket: bucket,
         Key: fileName,
         Body: fileBuffer,
         ContentType: mimeType,
-    });
+    }));
 
-    await s3Client.send(command);
     return fileName;
 }

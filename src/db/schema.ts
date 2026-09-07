@@ -349,6 +349,43 @@ export const fichiersEtiquettes = pgTable("fichiers_etiquettes", {
     uniqueIndex("fichiers_etiquettes_produit_cle_idx").on(table.produitId, table.cleS3),
 ]);
 
+export const TypeDocumentImport = pgEnum("type_document_import", [
+    "DEGUSTATION_DOCX", "DEGUSTATION_PDF", "RECETTE_XLSX",
+]);
+
+/**
+ * Source documents an extraction was run on.
+ *
+ * They used to be read into memory and dropped — only the file *name* survived,
+ * on the dégustation row. When a value in the fiche turned out to be surprising
+ * there was nothing left to go back to: on 2026-09-07 a diagnostic stopped
+ * because the recette workbook no longer existed anywhere.
+ *
+ * Kept in a private bucket, separate from `label-assets`: a recette sheet is the
+ * full formulation (kg, suppliers, raw-material references) and `label-assets`
+ * is anonymously readable AND listable.
+ *
+ * `produitId` / `ficheEtiquetteId` are nullable because the file is stored
+ * BEFORE extraction — the product it belongs to is the extraction's result, and
+ * a failed import is precisely when the document is worth keeping.
+ */
+export const documentsImport = pgTable("documents_import", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // SET NULL, not CASCADE: the point of this table is to survive accidents.
+    // Deleting a product must not erase the trace of what produced its data.
+    produitId: uuid("produit_id").references(() => produits.id, { onDelete: 'set null' }),
+    ficheEtiquetteId: uuid("fiche_etiquette_id").references(() => fichesEtiquettes.id, { onDelete: 'set null' }),
+    cleS3: varchar("cle_s3", { length: 700 }).notNull().unique(),
+    nomOrigine: varchar("nom_origine", { length: 255 }).notNull(),
+    type: TypeDocumentImport("type").notNull(),
+    tailleOctets: integer("taille_octets").notNull(),
+    importePar: uuid("importe_par").references(() => utilisateurs.id),
+    importeLe: timestamp("importe_le").defaultNow().notNull(),
+}, (table) => [
+    index("documents_import_produit_idx").on(table.produitId),
+    index("documents_import_fiche_idx").on(table.ficheEtiquetteId),
+]);
+
 export const knowledgeDocuments = pgTable("knowledge_documents", {
     id: uuid("id").primaryKey().defaultRandom(),
     documentName: varchar("document_name", { length: 255 }).notNull(),

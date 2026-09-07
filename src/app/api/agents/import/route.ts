@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { ImportWorker } from "@/agents/imports/importWorker";
 import { auth } from "@/auth";
+import {
+    archiverDocumentImport,
+    rattacherDocumentImport,
+    type TypeDocumentImport,
+} from "@/db/queries/documents-import";
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -25,6 +30,26 @@ export async function POST(req: Request) {
         const xlsxBuffer = excelFile ? await excelFile.arrayBuffer() : undefined;
         const pdfBuffer = pdfFile ? await pdfFile.arrayBuffer() : undefined;
 
+        // Archive the sources BEFORE extracting: a failed import is exactly when
+        // the document is worth keeping. The product is unknown at this point —
+        // it is the extraction's result — so the rows are attached afterwards.
+        const aArchiver: [File | null, ArrayBuffer | undefined, TypeDocumentImport][] = [
+            [wordFile, docxBuffer, "DEGUSTATION_DOCX"],
+            [excelFile, xlsxBuffer, "RECETTE_XLSX"],
+            [pdfFile, pdfBuffer, "DEGUSTATION_PDF"],
+        ];
+        const documentIds: string[] = [];
+        for (const [fichier, buffer, type] of aArchiver) {
+            if (!fichier || !buffer) continue;
+            const id = await archiverDocumentImport({
+                buffer,
+                nomOrigine: fichier.name,
+                type,
+                utilisateurId: session.user.id,
+            });
+            if (id) documentIds.push(id);
+        }
+
         const resolutionRaw = formData.get("resolution");
         const resolution = resolutionRaw === "overwrite" || resolutionRaw === "new" ? resolutionRaw : undefined;
 
@@ -36,6 +61,13 @@ export async function POST(req: Request) {
                 conflict: true,
                 codePf: importResult.codePf,
                 ficheExistanteId: importResult.ficheExistanteId,
+            });
+        }
+
+        for (const documentId of documentIds) {
+            await rattacherDocumentImport(documentId, {
+                produitId: importResult.produitId,
+                ficheEtiquetteId: importResult.ficheId,
             });
         }
 
