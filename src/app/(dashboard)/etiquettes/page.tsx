@@ -15,12 +15,38 @@ const columns = [
     { id: "design", title: "En création graphique" },
     { id: "bat", title: "En attente BAT" },
     { id: "reception", title: "Contrôle réception" },
+    { id: "retire", title: "Retirées du catalogue" },
 ]
+
+/**
+ * Explicit status → column map. It used to be keyword matching with a default
+ * of "quality", so ACTIVE and ARCHIVED — finished work — landed in Marie's
+ * "à faire" column alongside real work in progress.
+ */
+const COLONNE_PAR_STATUT: Record<string, string> = {
+    DRAFT: "quality",
+    QUALITY_REVIEW: "quality",
+    QUALITY_VALIDATED: "quality",
+    DESIGN_IN_PROGRESS: "design",
+    DESIGN_REVIEW: "design",
+    DESIGN_VALIDATED: "design",
+    SENT_TO_PRINTER: "bat",
+    BAT_RECEIVED: "bat",
+    BAT_VALIDATED: "bat",
+    PRINTING: "reception",
+    RECEIVED: "reception",
+    RECEPTION_CONTROLLED: "reception",
+    ACTIVE: "actif",
+    ARCHIVED: "retire",
+}
 
 // Marie only tracks Qualité + Graphisme for now (post-demo request). The BAT and
 // réception stages still exist as label statuses; we just don't surface their
 // columns. Re-enable = add the ids back here, the grid adapts to the count.
 const VISIBLE_COLUMN_IDS: string[] = ["quality", "design"]
+
+/** Withdrawn labels are shown on demand only — they are not pending work. */
+const COLONNE_RETIREES = "retire"
 
 // Tailwind needs static class names (JIT can't see grid-cols-${n}).
 const GRID_COLS: Record<number, string> = {
@@ -60,13 +86,14 @@ export default async function KanbanPage(
           )
         : await base;
 
-    const visibleColumns = columns.filter(col => VISIBLE_COLUMN_IDS.includes(col.id));
+    // ?retirees=1 adds the withdrawn column so Marie can find a label and put it
+    // back in the catalogue — the status dropdown does the rest, at no cost.
+    const afficherRetirees = searchParams?.retirees === "1";
+    const idsVisibles = afficherRetirees ? [...VISIBLE_COLUMN_IDS, COLONNE_RETIREES] : VISIBLE_COLUMN_IDS;
+    const visibleColumns = columns.filter(col => idsVisibles.includes(col.id));
 
     const mappedCards = data.map(item => {
-        let colId = "quality";
-        if (item.column?.includes("DESIGN")) colId = "design";
-        if (item.column?.includes("PRINTER") || item.column?.includes("BAT")) colId = "bat";
-        if (item.column?.includes("RECE")) colId = "reception";
+        const colId = COLONNE_PAR_STATUT[item.column ?? ""] ?? "quality";
 
         return {
             id: item.id,
@@ -90,6 +117,12 @@ export default async function KanbanPage(
                 </div>
                 <div className="flex items-center gap-2">
                     <ProductSearch />
+                    <Link
+                        href={afficherRetirees ? "/etiquettes" : "/etiquettes?retirees=1"}
+                        className="text-sm font-medium text-stone-500 hover:text-emerald-700 transition-colors whitespace-nowrap px-3"
+                    >
+                        {afficherRetirees ? "Masquer les retirées" : "Voir les retirées du catalogue"}
+                    </Link>
                     <Link href="/etiquettes/nouveau">
                         <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-sm shadow-emerald-700/20 text-white rounded-full px-5">
                             <PlusCircle className="h-4 w-4" />

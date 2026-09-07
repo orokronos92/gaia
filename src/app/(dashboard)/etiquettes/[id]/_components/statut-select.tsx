@@ -28,7 +28,7 @@ const STATUTS: { value: string; label: string }[] = [
     { value: "RECEIVED", label: "Étiquettes reçues" },
     { value: "RECEPTION_CONTROLLED", label: "Contrôle réception" },
     { value: "ACTIVE", label: "Active" },
-    { value: "ARCHIVED", label: "Archivée" },
+    { value: "ARCHIVED", label: "Retirée du catalogue" },
 ]
 
 interface StatutSelectProps {
