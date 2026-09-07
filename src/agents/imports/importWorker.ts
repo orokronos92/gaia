@@ -1,6 +1,6 @@
 import { z } from "zod";
 import mammoth from "mammoth";
-import { eq, getTableColumns } from "drizzle-orm";
+import { eq, getTableColumns, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
@@ -498,8 +498,12 @@ ${combinedText.substring(0, 22000)}`;
                 id: crypto.randomUUID(),
                 ...produitValues,
             })
+            // The codePf unique index is PARTIAL (active products only), so the
+            // conflict target must carry the same predicate or PostgreSQL will
+            // not recognise it. An archived product never blocks a re-creation.
             .onConflictDoUpdate({
                 target: produits.codePf,
+                targetWhere: isNull(produits.archiveLe),
                 set: produitValues
             })
             .returning({ id: produits.id });

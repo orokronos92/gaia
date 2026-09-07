@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import {
@@ -597,4 +597,20 @@ export async function updateDossier(params: {
 
     return { degustationId: degId };
   });
+}
+
+/** Latest fiche id per product, for screens that link back to a whole fiche. */
+export async function getFicheIdParProduit(produitIds: string[]): Promise<Record<string, string>> {
+  const uniques = [...new Set(produitIds)];
+  if (uniques.length === 0) return {};
+
+  const lignes = await db
+    .select({ produitId: fichesEtiquettes.produitId, id: fichesEtiquettes.id })
+    .from(fichesEtiquettes)
+    .where(inArray(fichesEtiquettes.produitId, uniques))
+    .orderBy(desc(fichesEtiquettes.creeLe));
+
+  const parProduit: Record<string, string> = {};
+  for (const l of lignes) if (!parProduit[l.produitId]) parProduit[l.produitId] = l.id;
+  return parProduit;
 }

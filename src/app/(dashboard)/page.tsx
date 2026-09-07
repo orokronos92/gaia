@@ -1,10 +1,18 @@
 import { AlertTriangle, Clock, TrendingUp, Bell, CheckCircle2, Check } from "lucide-react"
 import { db } from "@/db"
-import { fichesEtiquettes, commandesImpression, controlesConformite } from "@/db/schema"
+import { fichesEtiquettes, commandesImpression, controlesConformite, produits } from "@/db/schema"
+import { eq } from "drizzle-orm"
+import { PRODUIT_ACTIF } from "@/db/queries/produits"
 
 export default async function DashboardPage() {
     // Fetch live data for KPIs
-    const fiches = await db.select().from(fichesEtiquettes);
+    // Les fiches d'un produit archivé sortent des compteurs, sinon les KPI mentent
+    // dès le premier archivage.
+    const fiches = await db
+        .select({ statut: fichesEtiquettes.statut })
+        .from(fichesEtiquettes)
+        .innerJoin(produits, eq(fichesEtiquettes.produitId, produits.id))
+        .where(PRODUIT_ACTIF);
     const commandes = await db.select().from(commandesImpression);
     const controles = await db.select().from(controlesConformite);
 

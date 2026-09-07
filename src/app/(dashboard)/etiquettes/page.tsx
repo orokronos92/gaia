@@ -7,7 +7,8 @@ import Link from "next/link"
 
 import { db } from "@/db"
 import { fichesEtiquettes, produits } from "@/db/schema"
-import { eq, ilike, or } from "drizzle-orm"
+import { and, eq, ilike, or } from "drizzle-orm"
+import { PRODUIT_ACTIF } from "@/db/queries/produits"
 import { ProductSearch } from "@/components/features/ProductSearch"
 
 const columns = [
@@ -73,18 +74,22 @@ export default async function KanbanPage(
             date: fichesEtiquettes.misAJourLe,
         })
         .from(fichesEtiquettes)
-        .leftJoin(produits, eq(fichesEtiquettes.produitId, produits.id));
+        .innerJoin(produits, eq(fichesEtiquettes.produitId, produits.id));
 
     // Case-insensitive substring search across code / name / gamme (mirrors the produits filter).
-    const data = q
-        ? await base.where(
-              or(
-                  ilike(produits.codePf, `%${q}%`),
-                  ilike(produits.denominationFr, `%${q}%`),
-                  ilike(produits.gamme, `%${q}%`)
+    // Une fiche dont le produit est archivé n'a plus rien à faire dans le pipeline.
+    const data = await base.where(
+        q
+            ? and(
+                  PRODUIT_ACTIF,
+                  or(
+                      ilike(produits.codePf, `%${q}%`),
+                      ilike(produits.denominationFr, `%${q}%`),
+                      ilike(produits.gamme, `%${q}%`)
+                  )
               )
-          )
-        : await base;
+            : PRODUIT_ACTIF
+    );
 
     // ?retirees=1 adds the withdrawn column so Marie can find a label and put it
     // back in the catalogue — the status dropdown does the rest, at no cost.

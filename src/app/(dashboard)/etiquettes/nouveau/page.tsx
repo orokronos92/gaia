@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { produits } from "@/db/schema";
+import { PRODUIT_ACTIF } from "@/db/queries/produits";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { createFicheEtiquette } from "@/app/actions/etiquettes";
@@ -10,7 +11,7 @@ import { ImportDossierArea } from "@/components/features/ImportDossierArea";
 
 export default async function NouveauDossierPage() {
     // Récupérer la liste des produits disponibles
-    const allProduits = await db.select().from(produits).orderBy(produits.denominationFr);
+    const allProduits = await db.select().from(produits).where(PRODUIT_ACTIF).orderBy(produits.denominationFr);
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 max-w-4xl mx-auto w-full">

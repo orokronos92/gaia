@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const RoleUtilisateur = pgEnum("role_utilisateur", ["ADMIN", "QUALITE", "GRAPHISME", "CONDITIONNEMENT", "ACHATS", "DIRECTION"]);
@@ -36,7 +37,7 @@ export const utilisateurs = pgTable("utilisateurs", {
 
 export const produits = pgTable("produits", {
     id: uuid("id").primaryKey().defaultRandom(),
-    codePf: varchar("code_pf", { length: 50 }).unique().notNull(), // ex: MT265
+    codePf: varchar("code_pf", { length: 50 }).notNull(), // ex: MT265 — unicité portée par un index PARTIEL (voir plus bas)
     gamme: varchar("gamme", { length: 100 }).notNull(),
     sousGamme: varchar("sous_gamme", { length: 100 }),
     denominationFr: varchar("denomination_fr", { length: 255 }).notNull(),
@@ -88,10 +89,32 @@ export const produits = pgTable("produits", {
     allegationsPossibles: json("allegations_possibles").$type<Array<{libelle: string, nbTasses: string, description?: string}>>(), // options proposées dans le FD
     dateMiseMarche: varchar("date_mise_marche", { length: 100 }),
     commentaires: text("commentaires"),
+    // ─── Archivage ────────────────────────────────────────────────────────────
+    // Un produit n'est jamais supprimé : il est archivé. Rien n'est détruit, ses
+    // fiches / recettes / documents restent attachés, et l'acte est nominatif.
+    // Aucun retour n'est possible depuis l'application — c'est ce qui en fait un
+    // registre et non une corbeille. Une récupération reste faisable hors app.
+    archiveLe: timestamp("archive_le"),
+    archivePar: uuid("archive_par").references(() => utilisateurs.id),
+    motifArchivage: text("motif_archivage"),
+    /** Référence citable de l'acte d'archivage, ex. "ARCH-2026-0001". */
+    refArchive: varchar("ref_archive", { length: 20 }).unique(),
     // ─── Timestamps ───────────────────────────────────────────────────────────
     creeLe: timestamp("cree_le").defaultNow().notNull(),
     misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
-});
+}, (table) => [
+    /**
+     * Unicité PARTIELLE du code produit : elle ne porte que sur les produits
+     * actifs. Sans ça, archiver TA7372 interdirait de le recréer — et le cycle
+     * « je retire, je recommence proprement » serait inutilisable.
+     * Les insertions en upsert doivent viser cet index avec le même prédicat
+     * (`targetWhere`), sinon PostgreSQL ne le reconnaît pas.
+     */
+    uniqueIndex("produits_code_pf_actif_idx")
+        .on(table.codePf)
+        .where(sql`${table.archiveLe} is null`),
+    index("produits_archive_le_idx").on(table.archiveLe),
+]);
 
 // Table des fiches de dégustation — une par session, liée au produit
 export const fichesDegustation = pgTable("fiches_degustation", {

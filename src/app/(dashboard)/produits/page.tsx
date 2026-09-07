@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 
 import { db } from "@/db"
 import { produits, fichesEtiquettes } from "@/db/schema"
-import { eq, ilike, or } from "drizzle-orm"
+import { and, eq, ilike, or } from "drizzle-orm"
+import { PRODUIT_ACTIF } from "@/db/queries/produits"
 import { ProductSearch } from "@/components/features/ProductSearch"
 import { ProductsTableClient } from "./ProductsTableClient"
 
@@ -32,16 +33,20 @@ export default async function ProductsPage(
         .from(produits)
         .leftJoin(fichesEtiquettes, eq(produits.id, fichesEtiquettes.produitId));
 
-    // Ajouter le filtre de recherche si présent
-    if (q) {
-        query = query.where(
-            or(
-                ilike(produits.codePf, `%${q}%`),
-                ilike(produits.denominationFr, `%${q}%`),
-                ilike(produits.gamme, `%${q}%`)
-            )
-        ) as any;
-    }
+    // Les produits archivés ne figurent plus au catalogue : ils vivent dans le
+    // registre d'archives, pas ici.
+    query = query.where(
+        q
+            ? and(
+                  PRODUIT_ACTIF,
+                  or(
+                      ilike(produits.codePf, `%${q}%`),
+                      ilike(produits.denominationFr, `%${q}%`),
+                      ilike(produits.gamme, `%${q}%`)
+                  )
+              )
+            : PRODUIT_ACTIF
+    ) as any;
 
     const rawData = await query.orderBy(produits.creeLe);
 

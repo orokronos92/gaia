@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, isNull, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { produits, fichesEtiquettes } from "@/db/schema";
 
@@ -10,8 +10,10 @@ import { produits, fichesEtiquettes } from "@/db/schema";
  */
 export const getFicheExistantePourCodePf = cache(
   async (codePf: string): Promise<{ produitId: string; ficheId: string | null } | null> => {
+    // Archived products do not hold their code any more: the point of archiving
+    // is that Marie can start the same reference over, cleanly.
     const produit = await db.query.produits.findFirst({
-      where: eq(produits.codePf, codePf),
+      where: and(eq(produits.codePf, codePf), isNull(produits.archiveLe)),
       columns: { id: true },
     });
     if (!produit) return null;
@@ -76,4 +78,68 @@ export async function updateProduitChamps(
     Object.keys(champs).map((k) => [k, (before as Record<string, unknown>)[k] as string | null ?? null])
   );
   return { avant };
+}
+
+/** Only active products belong in lists, pickers and counters. */
+export const PRODUIT_ACTIF = isNull(produits.archiveLe);
+
+export interface ArchiverParams {
+  produitId: string;
+  utilisateurId: string;
+  motif: string;
+  /** Code retyped by the user; checked INSIDE the transaction, before writing. */
+  codeSaisi: string;
+}
+
+/**
+ * Archives a product. Nothing is deleted: its fiches, recettes, source documents
+ * and BAT links stay attached, and the act is signed. There is deliberately no
+ * un-archive in the application — a mistake is repaired by re-creating the
+ * product, or, if it really matters, by an intervention outside the app.
+ *
+ * The archive reference is allocated inside the transaction so two simultaneous
+ * archivings can never share one.
+ */
+export async function archiverProduit(
+  params: ArchiverParams
+): Promise<{ refArchive: string; codePf: string; denomination: string }> {
+  return db.transaction(async (tx) => {
+    const produit = await tx.query.produits.findFirst({
+      where: eq(produits.id, params.produitId),
+      columns: { id: true, codePf: true, denominationFr: true, archiveLe: true },
+    });
+    if (!produit) throw new Error("Produit introuvable.");
+    if (produit.archiveLe) throw new Error("Ce produit est déjà archivé.");
+    if (produit.codePf.trim().toUpperCase() !== params.codeSaisi.trim().toUpperCase()) {
+      throw new Error("Le code saisi ne correspond pas au produit.");
+    }
+
+    const [{ total }] = await tx
+      .select({ total: count() })
+      .from(produits)
+      .where(isNotNull(produits.archiveLe));
+    const refArchive = `ARCH-${new Date().getFullYear()}-${String(total + 1).padStart(4, "0")}`;
+
+    await tx
+      .update(produits)
+      .set({
+        archiveLe: new Date(),
+        archivePar: params.utilisateurId,
+        motifArchivage: params.motif,
+        refArchive,
+        misAJourLe: new Date(),
+      })
+      .where(eq(produits.id, params.produitId));
+
+    return { refArchive, codePf: produit.codePf, denomination: produit.denominationFr };
+  });
+}
+
+/** The archive register, most recent first. */
+export async function getProduitsArchives() {
+  return db
+    .select()
+    .from(produits)
+    .where(isNotNull(produits.archiveLe))
+    .orderBy(desc(produits.archiveLe));
 }

@@ -11,7 +11,8 @@ import {
     Settings,
     Leaf,
     Bell,
-    Brain
+    Brain,
+    Archive
 } from "lucide-react"
 
 const navItems = [
@@ -20,6 +21,7 @@ const navItems = [
     { href: "/etiquettes", label: "Étiquettes", icon: Tags },
     { href: "/commandes", label: "Commandes", icon: ClipboardList },
     { href: "/connaissances", label: "Connaissances", icon: Brain },
+    { href: "/archives", label: "Archives", icon: Archive },
     { href: "/notifications", label: "Notifications", icon: Bell },
     { href: "/parametres", label: "Paramètres", icon: Settings },
 ]
