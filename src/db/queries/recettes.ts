@@ -259,3 +259,19 @@ export const getRecetteWithIngredients = cache(async (recetteId: string) => {
 
   return { ...recette, ingredients };
 });
+
+/**
+ * Une recette VALIDÉE existe-t-elle pour ce produit ?
+ *
+ * La fiche recette est le document de référence, validé pour la production par
+ * Marie et Aurélie ; la fiche dégustation n'est qu'un point de départ. Une
+ * ré-intégration de dégustation ne doit donc pas écraser une composition déjà
+ * validée — elle la signale comme un écart, et Marie tranche.
+ */
+export async function aRecetteValidee(produitId: string): Promise<boolean> {
+  const r = await db.query.recettes.findFirst({
+    where: and(eq(recettes.produitId, produitId), eq(recettes.statut, "VALIDATED")),
+    columns: { id: true },
+  });
+  return !!r;
+}

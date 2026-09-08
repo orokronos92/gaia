@@ -18,6 +18,10 @@ export interface ReintegrerResult {
     error?: string
     nbIngredients?: number
     champsProduit?: number
+    /** La liste d'ingrédients validée a été préservée : la recette fait foi. */
+    listePreservee?: boolean
+    /** Ce que la dégustation proposait, non appliqué — Marie arbitre. */
+    listeProposee?: string
 }
 
 /**
@@ -137,9 +141,17 @@ export async function reintegrerDegustationAction(formData: FormData): Promise<R
         entiteId: ficheId,
         action: "DEGUSTATION_REIMPORTEE",
         utilisateurId: session.user.id,
-        changements: { champsProduit: result.champsProduit },
+        changements: {
+            champsProduit: result.champsProduit,
+            listePreservee: result.listePreservee,
+        },
     })
 
     revalidatePath(`/etiquettes/${ficheId}`)
-    return { ok: true, champsProduit: result.champsProduit }
+    return {
+        ok: true,
+        champsProduit: result.champsProduit,
+        listePreservee: result.listePreservee,
+        listeProposee: result.listeProposee,
+    }
 }

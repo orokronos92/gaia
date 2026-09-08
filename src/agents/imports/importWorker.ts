@@ -4,7 +4,7 @@ import { eq, getTableColumns, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { produits, fichesEtiquettes, fichesDegustation } from "@/db/schema";
 import { RAGService } from "../knowledge/RAGService";
-import { saveRecette } from "@/db/queries/recettes";
+import { aRecetteValidee, saveRecette } from "@/db/queries/recettes";
 import { getFicheExistantePourCodePf } from "@/db/queries/produits";
 import { remplacerAssociationsAuto } from "@/db/queries/fichiers-etiquettes";
 import { resoudreFichiersProduit } from "@/lib/utils/s3-client";
@@ -700,7 +700,13 @@ ${combinedText.substring(0, 22000)}`;
      */
     public static async reintegrerDegustation(
         params: { ficheId: string; produitId: string; docxBuffer?: ArrayBuffer; pdfBuffer?: ArrayBuffer; fichierNom?: string }
-    ): Promise<{ champsProduit: number }> {
+    ): Promise<{
+        champsProduit: number;
+        /** Vrai si la liste d'ingrédients validée a été préservée (recette = référence). */
+        listePreservee: boolean;
+        /** Ce que la dégustation proposait, non appliqué — pour que Marie arbitre. */
+        listeProposee?: string;
+    }> {
         const { ficheId, produitId, docxBuffer, pdfBuffer, fichierNom } = params;
         const p = await this.extraireProduitDegustation({ docxBuffer, pdfBuffer }, { entiteId: ficheId });
         const s = (v: unknown) => this.ensureStringValue(v);
@@ -753,8 +759,19 @@ ${combinedText.substring(0, 22000)}`;
         await db.update(produits).set(set as Partial<typeof produits.$inferInsert>).where(eq(produits.id, produitId));
 
         // Fiche : champs texte (overwrite-non-null).
+        //
+        // Exception sur la liste d'ingrédients : la fiche recette est le document
+        // de référence validé pour la production, la fiche dégustation un simple
+        // point de départ. Écraser une composition validée par le texte
+        // provisoire d'une dégustation ferait perdre le travail de Marie sans
+        // rien dire — et la FD peut être bien plus ancienne que la recette.
+        // On préserve, on renvoie la proposition, Marie tranche.
+        const recetteValidee = await aRecetteValidee(produitId);
+        const listeProposee = p.ingredientsTexte ? String(p.ingredientsTexte) : null;
+        const listePreservee = recetteValidee && !!listeProposee;
+
         const ficheSet: Record<string, unknown> = { misAJourLe: new Date() };
-        if (p.ingredientsTexte) ficheSet.ingredientsFr = p.ingredientsTexte;
+        if (listeProposee && !recetteValidee) ficheSet.ingredientsFr = listeProposee;
         if (p.allergenes) ficheSet.allergenes = p.allergenes;
         const alleg = Array.isArray(p.allegationsPossibles) && p.allegationsPossibles.length > 0
             ? p.allegationsPossibles.map((a) => `${a.libelle} (${a.nbTasses})`).join(" | ")
@@ -767,6 +784,10 @@ ${combinedText.substring(0, 22000)}`;
         await db.delete(fichesDegustation).where(eq(fichesDegustation.produitId, produitId));
         if (degt) await db.insert(fichesDegustation).values({ id: crypto.randomUUID(), ...degt });
 
-        return { champsProduit };
+        return {
+            champsProduit,
+            listePreservee,
+            listeProposee: listePreservee ? listeProposee : undefined,
+        };
     }
 }

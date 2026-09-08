@@ -46,7 +46,21 @@ export function ReintegrerDocumentMenu({ ficheId }: ReintegrerDocumentMenuProps)
             startTransition(async () => {
                 const r = await action(fd)
                 if (r.ok) {
-                    toast.success(ok(r), { description: "À valider par Marie." })
+                    // La recette validée fait foi : on le dit, avec ce que la
+                    // dégustation proposait, pour que la décision reste à Marie.
+                    if (r.listePreservee) {
+                        toast.warning(ok(r), {
+                            description:
+                                "Liste d'ingrédients conservée : une recette validée fait foi. " +
+                                "La dégustation proposait « " +
+                                (r.listeProposee ?? "").slice(0, 120) +
+                                (r.listeProposee && r.listeProposee.length > 120 ? "… »" : " »") +
+                                " — à arbitrer depuis l'onglet Recette.",
+                            duration: 12000,
+                        })
+                    } else {
+                        toast.success(ok(r), { description: "À valider par Marie." })
+                    }
                     router.refresh()
                 } else {
                     toast.error("Échec de la ré-intégration.", { description: r.error })
