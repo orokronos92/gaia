@@ -23,6 +23,11 @@ const Schema = z.object({
   champs: z.record(z.string(), z.string().nullable()),
 });
 
+/** Violation de contrainte d'unicité Postgres (23505), quel que soit le driver. */
+function estCollisionUnicite(e: unknown): boolean {
+  return typeof e === "object" && e !== null && "code" in e && (e as { code: unknown }).code === "23505";
+}
+
 const WHITELIST: Record<"fiche" | "produit" | "degustation", Set<string>> = {
   fiche: new Set(CHAMPS_FICHE_EDITABLES),
   produit: new Set(CHAMPS_PRODUIT_EDITABLES),
@@ -69,7 +74,19 @@ export async function updateChampsAction(input: unknown) {
 
   if (data.table === "fiche") {
     if (!data.id) throw new Error("Identifiant fiche manquant.");
-    ({ avant } = await updateFicheEtiquetteChamps(data.id, champs));
+    // `codeEtiquette` est unique en base : deux fiches ne peuvent pas porter le
+    // même. Sans traduction, Marie reçoit le message brut de Postgres et ne sait
+    // pas que le code est déjà pris ailleurs.
+    try {
+      ({ avant } = await updateFicheEtiquetteChamps(data.id, champs));
+    } catch (e) {
+      if (estCollisionUnicite(e) && "codeEtiquette" in champs) {
+        throw new Error(
+          `Le code étiquette « ${champs.codeEtiquette} » est déjà porté par une autre fiche.`
+        );
+      }
+      throw e;
+    }
     entiteId = data.id;
   } else if (data.table === "produit") {
     if (!data.id) throw new Error("Identifiant produit manquant.");

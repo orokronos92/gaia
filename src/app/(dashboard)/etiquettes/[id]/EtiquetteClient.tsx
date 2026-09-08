@@ -180,6 +180,16 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         champs: { codePf: labelData.codePf },
     })
 
+    // Editable label code — fiche field. Il identifie le BAT (ETCRA2372V6) et
+    // n'était affiché nulle part : les 178 fiches du catalogue sont vides, donc
+    // le point 15.1 réclame une saisie que l'écran ne permettait pas.
+    const codeEtiquetteSection = useEditableSection({
+        table: "fiche",
+        entityId: labelData.id,
+        ficheId: labelData.id,
+        champs: { codeEtiquette: labelData.code },
+    })
+
     // Editable commercial texts (fiche fields).
     const textesSection = useEditableSection({
         table: "fiche",
@@ -386,6 +396,29 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                             </span>
                         )}
                         <EditButtons section={dossierSection} />
+                        <ChevronRight className="h-3 w-3" />
+                        {codeEtiquetteSection.editing ? (
+                            <span className="inline-flex items-center gap-1.5">
+                                <span className="text-stone-500">Code étiquette :</span>
+                                <input
+                                    type="text"
+                                    value={codeEtiquetteSection.draft.codeEtiquette ?? ""}
+                                    onChange={(e) => codeEtiquetteSection.setField("codeEtiquette", e.target.value.toUpperCase())}
+                                    placeholder="ex. ETCRA2372V6"
+                                    className="bg-white rounded-md border border-stone-300 px-2 py-0.5 text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-300 w-52 font-mono"
+                                />
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1.5 bg-stone-100 px-2 py-0.5 rounded-md">
+                                <span className="text-stone-500">Code étiquette :</span>
+                                {labelData.code ? (
+                                    <span className="font-mono font-semibold text-stone-700">{labelData.code}</span>
+                                ) : (
+                                    <span className="italic text-stone-400">non renseigné</span>
+                                )}
+                            </span>
+                        )}
+                        <EditButtons section={codeEtiquetteSection} />
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
                         {titreSection.editing ? (

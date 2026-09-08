@@ -21,8 +21,15 @@ import type { AnalyseBat } from "@/lib/utils/pdf-bat";
 
 /** Une valeur lue sur le BAT, proposée à l'enregistrement. */
 export interface Proposition {
-  /** Champ visé, tel que la liste blanche du produit le nomme. */
-  champ: "poidsNet";
+  /**
+   * Où la valeur s'écrit. Le poids net appartient au produit — le changer
+   * change toutes ses fiches ; le code étiquette appartient à la fiche, et
+   * c'est bien ce qu'on veut : deux conditionnements d'un même thé ne portent
+   * pas le même code.
+   */
+  table: "produit" | "fiche";
+  /** Champ visé, tel que la liste blanche de sa table le nomme. */
+  champ: "poidsNet" | "codeEtiquette";
   valeur: string;
   /** D'où elle vient — Marie doit pouvoir vérifier avant de cliquer. */
   source: string;
@@ -36,6 +43,16 @@ function commeMasse(texte: string): string | null {
   if (!m) return null;
   return `${m[1].replace(".", ",")} ${m[2]}`;
 }
+
+/**
+ * Un code étiquette imprimé : `ETCRA2372V6`, `ETTUTO3542`, `ETHN4400V6`.
+ *
+ * La forme vient du catalogue, pas d'une intuition : `ET`, la famille en
+ * lettres, le numéro d'article, et la version quand elle est portée. Elle est
+ * assez typée pour qu'aucun autre mot d'une étiquette ne lui ressemble — un
+ * balayage des 290 BAT du catalogue n'en a sorti que des codes.
+ */
+const CODE_ETIQUETTE = /^ET[A-Z]{2,6}\d{3,5}(?:V\d{1,2})?$/;
 
 /**
  * Le poids net imprimé, s'il ne fait aucun doute.
@@ -68,11 +85,83 @@ export function proposerPoidsNet(
   if (trouvees.size !== 1) return null;
   const valeur = [...trouvees][0];
   return {
+    table: "produit",
     champ: "poidsNet",
     valeur,
     source: `lu sur le BAT : « poids net ${valeur} »`,
     reperes,
   };
+}
+
+/** Ce que la lecture des codes imprimés a donné, y compris quand elle échoue. */
+type LectureCode =
+  | { propose: Proposition & { reperes: RepereBat[] } }
+  | { propose: null; motif: string };
+
+/**
+ * Le code étiquette imprimé, s'il n'y en a qu'un.
+ *
+ * Mesuré sur les 146 produits qui ont des BAT : 95 n'en impriment qu'un — c'est
+ * le code de la contre-étiquette dans 78 cas, celui de la face unique dans les
+ * autres, et c'est bien celui que le point 15.1 demande. Restent 41 produits
+ * dont les BAT sont entièrement vectorisés (aucun mot à lire) et 10 dont le
+ * dossier couvre plusieurs conditionnements, donc plusieurs codes.
+ *
+ * Dans ces deux derniers cas on ne propose rien. Le nom du fichier porte bien
+ * un code, mais c'est une métadonnée de rangement, pas la mention imprimée que
+ * le contrôle vise — et sur un dossier partagé il en porte deux ou trois. On le
+ * cite alors dans le constat : Marie a la valeur sous les yeux, elle reste
+ * celle qui décide de l'écrire.
+ */
+export function lireCodeEtiquette(
+  analyses: AnalyseBat[],
+  noms?: string[]
+): LectureCode {
+  const trouves = new Map<string, RepereBat>();
+
+  for (const [face, page] of facesBat(analyses).entries()) {
+    for (const mot of page.mots) {
+      const code = mot.texte.trim().toUpperCase();
+      if (!CODE_ETIQUETTE.test(code)) continue;
+      if (!trouves.has(code)) trouves.set(code, repereMot(mot, page, face, `Code étiquette ${code}`));
+    }
+  }
+
+  if (trouves.size === 1) {
+    const [valeur, repere] = [...trouves][0];
+    return {
+      propose: {
+        table: "fiche",
+        champ: "codeEtiquette",
+        valeur,
+        source: `lu sur le BAT : « ${valeur} »`,
+        reperes: [repere],
+      },
+    };
+  }
+
+  if (trouves.size > 1) {
+    return {
+      propose: null,
+      motif: `Plusieurs codes étiquette imprimés sur les faces analysées (${[...trouves.keys()].join(", ")}) — le dossier de BAT couvre plusieurs conditionnements. À trancher sur le BAT.`,
+    };
+  }
+
+  const desFichiers = [...new Set((noms ?? []).map(codeDuNomDeFichier).filter((c): c is string => c !== null))];
+  return {
+    propose: null,
+    motif:
+      desFichiers.length > 0
+        ? `Aucun code étiquette lisible sur les faces analysées (BAT vectorisé). Les fichiers s'appellent ${desFichiers.join(", ")} — à reporter sur la fiche après vérification.`
+        : "Aucun code étiquette lisible sur les faces analysées (BAT vectorisé).",
+  };
+}
+
+/** Le code que porte le nom d'un fichier de BAT, quand il en porte un. */
+function codeDuNomDeFichier(nom: string): string | null {
+  const base = nom.split("/").pop() ?? nom;
+  const m = /^(ET[A-Z]{2,6}\d{3,5}(?:V\d{1,2})?)/.exec(base.toUpperCase());
+  return m ? m[1] : null;
 }
 
 /**
@@ -81,26 +170,61 @@ export function proposerPoidsNet(
  * Émis seulement si la fiche ne porte pas déjà la donnée : quand elle la porte,
  * c'est la comparaison BAT ↔ fiche qui a du sens, pas une proposition.
  */
+export interface EntreePropositions {
+  poidsNet?: string | null;
+  codeEtiquette?: string | null;
+}
+
 export function controlerPropositions(
   analyses: AnalyseBat[],
-  entree: { poidsNet?: string | null }
+  entree: EntreePropositions,
+  noms?: string[]
 ): BatTextCheck[] {
-  if (entree.poidsNet?.trim()) return [];
+  const checks: BatTextCheck[] = [];
 
-  const proposition = proposerPoidsNet(analyses);
-  if (!proposition) return [];
+  if (!entree.poidsNet?.trim()) {
+    const proposition = proposerPoidsNet(analyses);
+    if (proposition) {
+      checks.push({
+        id: "PROP_POIDS_NET",
+        origine: "texte",
+        rubrique: "Quantité nette",
+        libelle: "Quantité nette absente de la fiche",
+        statut: "WARNING",
+        manqueSurLaFiche: "la quantité nette",
+        justification: `La fiche ne porte pas de quantité nette, mais le BAT l'imprime — ${proposition.source}. À enregistrer sur la fiche, qui reste la référence.`,
+        checklistId: "6.1",
+        proposition,
+        reperes: proposition.reperes,
+      });
+    }
+  }
 
-  return [
-    {
-      id: "PROP_POIDS_NET",
-      origine: "texte",
-      rubrique: "Quantité nette",
-      libelle: "Quantité nette absente de la fiche",
-      statut: "WARNING",
-      justification: `La fiche ne porte pas de quantité nette, mais le BAT l'imprime — ${proposition.source}. À enregistrer sur la fiche, qui reste la référence.`,
-      checklistId: "6.1",
-      proposition,
-      reperes: proposition.reperes,
-    },
-  ];
+  // Aucune des 178 fiches ne porte de code étiquette : le point 15.1 réclame
+  // une saisie à l'échelle du catalogue, alors que la mention est imprimée sur
+  // la contre-étiquette et lisible par le code.
+  if (!entree.codeEtiquette?.trim()) {
+    const base = {
+      id: "PROP_CODE_ETIQUETTE",
+      origine: "texte" as const,
+      rubrique: "Code étiquette",
+      libelle: "Code étiquette absent de la fiche",
+      statut: "WARNING" as const,
+      manqueSurLaFiche: "le code étiquette",
+      checklistId: "15.1",
+    };
+    const lecture = lireCodeEtiquette(analyses, noms);
+    checks.push(
+      lecture.propose
+        ? {
+            ...base,
+            justification: `La fiche ne porte pas de code étiquette, mais le BAT l'imprime — ${lecture.propose.source}. À enregistrer sur la fiche, qui reste la référence.`,
+            proposition: lecture.propose,
+            reperes: lecture.propose.reperes,
+          }
+        : { ...base, justification: `La fiche ne porte pas de code étiquette. ${lecture.motif}` }
+    );
+  }
+
+  return checks;
 }

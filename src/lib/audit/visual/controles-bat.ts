@@ -14,12 +14,12 @@ import { controlerEurofeuille, mesurerEurofeuille } from "./eurofeuille";
 import { facesBat } from "./mesure-mentions";
 import { controlerMentions, type EntreeMentions } from "./mentions-etiquette";
 import { controlerPositions } from "./positions";
-import { controlerPropositions } from "./propositions";
+import { controlerPropositions, type EntreePropositions } from "./propositions";
 import { controlerStyle, type EntreeStyle } from "./style-typo";
 import type { BatTextCheck } from "./text-robot";
 import { controlerTypographie, type EntreeTypo } from "./typographie";
 
-export type EntreeBat = EntreeTypo & EntreeStyle & EntreeMentions;
+export type EntreeBat = EntreeTypo & EntreeStyle & EntreeMentions & EntreePropositions;
 
 /** Une face lue en profondeur, avec le nom sous lequel Marie la connaît. */
 export interface FaceBat {
@@ -41,7 +41,7 @@ export function controlerBat(faces: FaceBat[], entree: EntreeBat): BatTextCheck[
     ...controlerStyle(analyses, entree),
     ...controlerPositions(analyses, entree, noms, eurofeuilles),
     controlerEurofeuille(eurofeuilles, pages),
-    ...controlerPropositions(analyses, entree),
+    ...controlerPropositions(analyses, entree, noms),
     ...controlerMentions(analyses, entree),
   ];
 }

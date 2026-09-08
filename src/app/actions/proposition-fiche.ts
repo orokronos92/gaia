@@ -6,6 +6,7 @@ import { z } from "zod"
 import { auth } from "@/auth"
 import { writeAuditLog } from "@/db/queries/audit-logs"
 import { getBatTextInputForFiche } from "@/db/queries/audit"
+import { updateFicheEtiquetteChamps } from "@/db/queries/fiches"
 import { updateProduitChamps } from "@/db/queries/produits"
 import { chargerChecklist } from "./_checklist"
 
@@ -47,15 +48,29 @@ export async function appliquerPropositionAction(raw: unknown): Promise<Proposit
     const data = await getBatTextInputForFiche(ficheId)
     if (!data) return { ok: false, error: "Fiche introuvable." }
 
-    const { champ, valeur } = point.proposition
-    const { avant } = await updateProduitChamps(data.produitId, { [champ]: valeur })
+    // Le poids net vit sur le produit et vaut pour toutes ses fiches ; le code
+    // étiquette vit sur la fiche, et lui seul. Écrire les deux au même endroit
+    // donnerait le même code à tous les conditionnements d'un thé.
+    const { table, champ, valeur } = point.proposition
+    let avant: Record<string, string | null>
+    try {
+        ;({ avant } =
+            table === "fiche"
+                ? await updateFicheEtiquetteChamps(ficheId, { [champ]: valeur })
+                : await updateProduitChamps(data.produitId, { [champ]: valeur }))
+    } catch (e) {
+        if (typeof e === "object" && e !== null && "code" in e && (e as { code: unknown }).code === "23505") {
+            return { ok: false, error: `« ${valeur} » est déjà enregistré sur une autre fiche.` }
+        }
+        throw e
+    }
 
     await writeAuditLog({
-        typeEntite: "produit",
-        entiteId: data.codePf,
+        typeEntite: table === "fiche" ? "fiche_etiquette" : "produit",
+        entiteId: table === "fiche" ? ficheId : data.codePf,
         action: "PROPOSITION_BAT_APPLIQUEE",
         utilisateurId: session.user.id,
-        changements: { champ, avant: avant[champ] ?? null, apres: valeur, source: point.proposition.source },
+        changements: { table, champ, avant: avant[champ] ?? null, apres: valeur, source: point.proposition.source },
     })
 
     revalidatePath(`/etiquettes/${ficheId}`)

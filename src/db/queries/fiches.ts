@@ -22,6 +22,10 @@ export type StatutFiche = (typeof StatutEtiquette.enumValues)[number];
  * not listed here is rejected by the Server Action — no mass assignment.
  */
 export const CHAMPS_FICHE_EDITABLES = [
+  // Le code étiquette porte l'identité du BAT (ETCRA2372V6). Il appartient à la
+  // fiche et non au produit : deux conditionnements d'un même thé ont chacun le
+  // leur. La colonne est `unique` — l'appelant doit traduire la collision.
+  "codeEtiquette",
   "texteCommercialFr",
   "ingredientsFr",
   "allergenes",
