@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, AlertTriangle, XCircle, MinusCircle, Cpu, ScanText } from "lucide-react"
+import { Cpu, ScanText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ControlStatus } from "@/lib/audit/types"
 
@@ -10,20 +10,25 @@ export interface SousResultatAudit {
     counts?: Record<ControlStatus, number>
 }
 
-const STYLE: Record<ControlStatus, { label: string; box: string; tone: string; icon: typeof CheckCircle2 }> = {
-    PASS: { label: "Conforme", box: "bg-emerald-50/60 border-emerald-200", tone: "text-emerald-700", icon: CheckCircle2 },
-    WARNING: { label: "Vérifications requises", box: "bg-orange-50/60 border-orange-200", tone: "text-orange-700", icon: AlertTriangle },
-    FAIL: { label: "Non conforme", box: "bg-red-50/60 border-red-200", tone: "text-red-700", icon: XCircle },
-    NA: { label: "Non applicable", box: "bg-stone-50 border-stone-200", tone: "text-stone-500", icon: MinusCircle },
-}
-
-const RANK: Record<ControlStatus, number> = { FAIL: 3, WARNING: 2, PASS: 1, NA: 0 }
-
-/** Worst-wins across the lanes actually run; null when nothing has run yet. */
-function pire(...statuses: (ControlStatus | undefined)[]): ControlStatus | null {
-    const present = statuses.filter(Boolean) as ControlStatus[]
-    if (present.length === 0) return null
-    return present.reduce((a, b) => (RANK[b] > RANK[a] ? b : a))
+/**
+ * Ce bandeau ne rend plus de verdict.
+ *
+ * Il en rendait un — « conformité globale », le pire statut brut des deux
+ * voies — et il contredisait celui de la checklist juste en dessous : une fois
+ * la dérogation assumée et les alertes levées, la Qualité lisait « non
+ * conforme » à dix pixels au-dessus de « conforme sous dérogation ». Les deux
+ * calculs étaient justes, mais répondaient à deux questions différentes ; en
+ * tête d'écran, seule compte celle du travail restant, et c'est la checklist
+ * qui y répond.
+ *
+ * Ce qui reste ici est la seule chose qu'aucun autre endroit ne porte depuis la
+ * fusion des voies : **quelle voie a tourné**, et ce qu'elle a compté.
+ */
+const STYLE: Record<ControlStatus, { label: string; tone: string }> = {
+    PASS: { label: "Conforme", tone: "text-emerald-700" },
+    WARNING: { label: "Vérifications requises", tone: "text-orange-700" },
+    FAIL: { label: "Non conforme", tone: "text-red-700" },
+    NA: { label: "Non applicable", tone: "text-stone-500" },
 }
 
 function Ligne({ icon: Icon, libelle, res }: { icon: typeof Cpu; libelle: string; res: SousResultatAudit | null }) {
@@ -52,22 +57,14 @@ interface AuditSyntheseProps {
 }
 
 export function AuditSynthese({ donnees, visuel }: AuditSyntheseProps) {
-    const global = pire(donnees?.overallStatus, visuel?.overallStatus)
-    if (!global) return null
-
-    const style = STYLE[global]
-    const Icon = style.icon
+    // Tant qu'aucune voie n'a tourné, la checklist dit déjà « contrôle non
+    // lancé » : un second encart vide ne ferait que répéter.
+    if (!donnees?.overallStatus && !visuel?.overallStatus) return null
 
     return (
-        <div className={cn("rounded-3xl border-2 p-5 shadow-sm", style.box)}>
-            <div className="flex items-center gap-4">
-                <Icon className={cn("h-10 w-10 shrink-0", style.tone)} />
-                <div>
-                    <p className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Conformité globale</p>
-                    <h3 className={cn("font-black text-2xl uppercase tracking-tight", style.tone)}>{style.label}</h3>
-                </div>
-            </div>
-            <div className="mt-3 pt-3 border-t border-stone-200/60 divide-y divide-stone-100">
+        <div className="rounded-2xl border border-stone-200 bg-white/60 px-5 py-3 shadow-sm">
+            <p className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Voies de contrôle</p>
+            <div className="mt-1 divide-y divide-stone-100">
                 <Ligne icon={Cpu} libelle="Données fiche" res={donnees} />
                 <Ligne icon={ScanText} libelle="Étiquettes (BAT)" res={visuel} />
             </div>
