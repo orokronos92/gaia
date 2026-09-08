@@ -1,10 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ImageOff, Loader2, Maximize2, Minus, Plus } from "lucide-react"
+import { ImageOff, Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { RepereBat } from "@/lib/audit/visual/reperes"
+import { BatBarre } from "./bat-barre"
+import { traitDe, usePreferencesBat } from "./bat-preferences"
+import { Zone, type ZoneBat } from "./bat-zone"
 
 export interface FaceBatAffichable {
     /** Clé de stockage — le rendu la vérifie avant de servir quoi que ce soit. */
@@ -18,13 +21,15 @@ interface BatVisionneuseProps {
     faceActive?: number
     onFaceChange?: (index: number) => void
     /** Zones à montrer, en fractions de la face. Le serveur les a déjà converties. */
-    reperes?: RepereBat[]
+    reperes?: ZoneBat[]
     /**
      * Toutes les zones encore ouvertes, dessinées en trait pâle dès l'ouverture.
      * Sans elles, l'étiquette reste muette jusqu'au premier clic, et rien ne dit
      * à Marie qu'il y a quelque chose à y voir.
      */
-    reperesFaibles?: RepereBat[]
+    reperesFaibles?: ZoneBat[]
+    /** Marie clique un cadre : le chemin liste → BAT existait, l'inverse non. */
+    onZoneClic?: (pointId: string) => void
     /**
      * Compteur de demandes de cadrage. Recliquer la même ligne renvoie les
      * mêmes zones : sans ce jeton, rien ne distingue « Marie redemande à voir »
@@ -49,7 +54,7 @@ const ZOOM_PAS = 0.5
  * navigateur, et surtout une image qui partage **exactement** le repère de nos
  * mesures. C'est ce qui permettra d'y surligner un mot au bon endroit.
  */
-export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reperesFaibles, demandeCadrage }: BatVisionneuseProps) {
+export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reperesFaibles, onZoneClic, demandeCadrage }: BatVisionneuseProps) {
     const [interne, setInterne] = useState(0)
     const vue = useRef<HTMLDivElement>(null)
     const plan = useRef<HTMLDivElement>(null)
@@ -58,6 +63,11 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
     const [chargement, setChargement] = useState(true)
     const [erreur, setErreur] = useState(false)
     const glisse = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null)
+    // Un déplacement du plan ne doit pas se terminer en clic sur la zone qui se
+    // trouvait sous le doigt à l'arrivée.
+    const deplace = useRef(false)
+    const { couleur, setCouleur, cadres, setCadres } = usePreferencesBat()
+    const trait = traitDe(couleur)
 
     const index = faceActive ?? interne
     const face = faces[index]
@@ -205,6 +215,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
                         zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-default"
                     )}
                     onPointerDown={(e) => {
+                        deplace.current = false
                         if (zoom <= 1) return
                         glisse.current = { x: e.clientX, y: e.clientY, ox: origine.x, oy: origine.y }
                         e.currentTarget.setPointerCapture(e.pointerId)
@@ -212,6 +223,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
                     onPointerMove={(e) => {
                         const g = glisse.current
                         if (!g) return
+                        if (Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) > 4) deplace.current = true
                         setOrigine({ x: g.ox + (e.clientX - g.x), y: g.oy + (e.clientY - g.y) })
                     }}
                     onPointerUp={() => {
@@ -259,80 +271,46 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
                                 }}
                                 className="max-h-[clamp(18rem,42vh,26rem)] w-auto select-none object-contain xl:max-h-[clamp(24rem,66vh,44rem)]"
                             />
-                            {faibles.map((r, i) => (
-                                <div
+                            {cadres && faibles.map((r, i) => (
+                                <Zone
                                     key={`faible-${i}`}
-                                    style={{
-                                        left: `${r.x * 100}%`,
-                                        top: `${r.y * 100}%`,
-                                        width: `${r.largeur * 100}%`,
-                                        height: `${r.hauteur * 100}%`,
-                                    }}
-                                    title={r.libelle}
-                                    className="pointer-events-none absolute rounded-[2px] bg-amber-300/10 ring-1 ring-amber-400/60"
+                                    zone={r}
+                                    zoom={zoom}
+                                    trait={trait}
+                                    active={false}
+                                    onClic={onZoneClic ? (id) => { if (!deplace.current) onZoneClic(id) } : undefined}
                                 />
                             ))}
-                            {surLaFace.map((r, i) => (
-                                <div
+                            {cadres && surLaFace.map((r, i) => (
+                                <Zone
                                     key={`${r.libelle ?? "zone"}-${i}`}
-                                    style={{
-                                        left: `${r.x * 100}%`,
-                                        top: `${r.y * 100}%`,
-                                        width: `${r.largeur * 100}%`,
-                                        height: `${r.hauteur * 100}%`,
-                                    }}
-                                    className="pointer-events-none absolute rounded-[2px] ring-2 ring-amber-400 ring-offset-1 ring-offset-amber-100/40"
-                                >
-                                    {r.libelle && (
-                                        <span
-                                            style={{ fontSize: `${Math.max(4, 9 / zoom)}px` }}
-                                            className="absolute -top-[1.4em] left-0 whitespace-nowrap rounded bg-amber-400 px-1 font-bold text-amber-950"
-                                        >
-                                            {r.libelle}
-                                        </span>
-                                    )}
-                                </div>
+                                    zone={r}
+                                    zoom={zoom}
+                                    trait={trait}
+                                    active
+                                    onClic={onZoneClic ? (id) => { if (!deplace.current) onZoneClic(id) } : undefined}
+                                />
                             ))}
                         </div>
                     )}
                 </div>
 
-                <div className="flex items-center justify-between gap-2 border-t border-stone-200 bg-white px-3 py-2">
-                    <p className="truncate text-[11px] text-stone-400" title={face.nom}>
-                        {face.nom}
-                    </p>
-                    <div className="flex shrink-0 items-center gap-1">
-                        <button
-                            onClick={() => zoomer(-ZOOM_PAS)}
-                            disabled={zoom <= ZOOM_MIN}
-                            className="rounded-lg border border-stone-200 p-1 text-stone-500 transition-colors hover:bg-stone-50 disabled:opacity-40"
-                            aria-label="Réduire"
-                        >
-                            <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-10 text-center text-[11px] font-semibold text-stone-500">
-                            {zoom.toFixed(1)}×
-                        </span>
-                        <button
-                            onClick={() => zoomer(ZOOM_PAS)}
-                            disabled={zoom >= ZOOM_MAX}
-                            className="rounded-lg border border-stone-200 p-1 text-stone-500 transition-colors hover:bg-stone-50 disabled:opacity-40"
-                            aria-label="Agrandir"
-                        >
-                            <Plus className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                            onClick={() => {
-                                setZoom(1)
-                                setOrigine({ x: 0, y: 0 })
-                            }}
-                            className="rounded-lg border border-stone-200 p-1 text-stone-500 transition-colors hover:bg-stone-50"
-                            aria-label="Réinitialiser le cadrage"
-                        >
-                            <Maximize2 className="h-3.5 w-3.5" />
-                        </button>
-                    </div>
-                </div>
+                <BatBarre
+                    nomFace={face.nom}
+                    zoom={zoom}
+                    zoomMin={ZOOM_MIN}
+                    zoomMax={ZOOM_MAX}
+                    onZoom={(sens) => zoomer(sens * ZOOM_PAS)}
+                    onReinitialiser={() => {
+                        setZoom(1)
+                        setOrigine({ x: 0, y: 0 })
+                    }}
+                    cadres={cadres}
+                    onCadres={setCadres}
+                    nbZones={faibles.length + surLaFace.length}
+                    couleur={couleur}
+                    onCouleur={setCouleur}
+                />
             </div>
         </div>
     )

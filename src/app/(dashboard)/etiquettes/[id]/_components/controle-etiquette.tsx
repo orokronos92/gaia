@@ -13,6 +13,7 @@ import { DeterministicAuditPanel } from "./deterministic-audit-panel"
 import type { SousResultatAudit } from "./audit-synthese"
 import type { ControlResult } from "@/lib/audit/types"
 import type { RepereBat } from "@/lib/audit/visual/reperes"
+import type { ZoneBat } from "./bat-zone"
 
 interface ControleEtiquetteProps {
     ficheId: string
@@ -53,12 +54,14 @@ export function ControleEtiquette({
 }: ControleEtiquetteProps) {
     const [pending, startTransition] = useTransition()
     const [faceActive, setFaceActive] = useState(0)
-    const [montre, setMontre] = useState<{ point: string; reperes: RepereBat[]; demande: number } | null>(null)
+    const [montre, setMontre] = useState<{ point: string; reperes: ZoneBat[]; demande: number } | null>(null)
 
     // Montrer un point, c'est d'abord aller sur la bonne face : sinon Marie
     // cherche sur l'étiquette qu'elle a sous les yeux ce qui est sur l'autre.
     const voir = (r: ControlResult) => {
-        const reperes = (r.reperes ?? []) as RepereBat[]
+        // Chaque zone garde le point dont elle vient : c'est ce qui permet de
+        // repartir du cadre vers sa ligne, et pas seulement l'inverse.
+        const reperes: ZoneBat[] = ((r.reperes ?? []) as RepereBat[]).map((z) => ({ ...z, pointId: r.id }))
         if (reperes.length === 0) return
         setFaceActive(reperes[0].face)
         // Le compteur monte même quand on reclique la même ligne : c'est ce qui
@@ -85,9 +88,23 @@ export function ControleEtiquette({
     // en trait pâle. Marie voit ce qui reste à regarder sans avoir à cliquer
     // ligne par ligne pour le découvrir. Les points clos n'y figurent pas — les
     // afficher tous rendrait l'image illisible et viderait le mot « anomalie ».
-    const zonesOuvertes: RepereBat[] = (detData?.results ?? [])
+    const zonesOuvertes: ZoneBat[] = (detData?.results ?? [])
         .filter((r) => r.statut !== "NA" && (r.action ?? "VERIFIER") !== "RIEN")
-        .flatMap((r) => (r.reperes ?? []) as RepereBat[])
+        .flatMap((r) => ((r.reperes ?? []) as RepereBat[]).map((z) => ({ ...z, pointId: r.id })))
+
+    /**
+     * Cliquer un cadre sur le BAT, c'est demander « de quoi parle-t-il ? ».
+     *
+     * Le cadre pâle autour du mot « malin » n'annonçait rien : la ligne 14.1 y
+     * répondait, dix écrans plus bas dans la liste, sans qu'aucun chemin n'y
+     * mène. Il remonte donc à sa ligne, la met en avant et l'amène sous les yeux.
+     */
+    const remonterAuPoint = (pointId: string) => {
+        const r = (detData?.results ?? []).find((x) => x.id === pointId)
+        if (!r) return
+        voir(r)
+        document.getElementById(`controle-${pointId}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
 
     // Ce que l'IA a apporté et qui ne se rattache à aucun point : la divergence
     // « miel bio » / « miel » en est l'exemple type — exactement ce que la
@@ -174,6 +191,7 @@ export function ControleEtiquette({
                             }}
                             reperes={montre?.reperes}
                             demandeCadrage={montre?.demande}
+                            onZoneClic={remonterAuPoint}
                         />
                     </div>
                 </div>

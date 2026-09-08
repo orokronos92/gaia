@@ -148,6 +148,7 @@ function Ligne({
     const situable = Boolean(onVoir && r.reperes && r.reperes.length > 0)
     return (
         <div
+            id={`controle-${r.id}`}
             onClick={situable ? () => onVoir!(r) : undefined}
             className={cn(
                 "flex gap-3 p-4 bg-white border rounded-2xl shadow-sm transition-colors",
