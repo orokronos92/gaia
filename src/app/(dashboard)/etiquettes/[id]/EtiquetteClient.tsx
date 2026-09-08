@@ -960,18 +960,41 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                     <div className="space-y-6">
                         <DocumentsSource documents={documentsSource} />
                         <VersionsHistorique versions={versions} />
-                        <RetraitCatalogue
-                            produitId={labelData.produitId}
-                            codePf={labelData.codePf ?? ""}
-                            denomination={labelData.denominationFr ?? labelData.title ?? ""}
-                            retire={!!labelData.retireLe}
-                        />
-                        <SupprimerProduit
-                            produitId={labelData.produitId}
-                            codePf={labelData.codePf ?? ""}
-                            denomination={labelData.denominationFr ?? labelData.title ?? ""}
-                            nbFiches={nbFiches}
-                        />
+                        {/* Un produit supprimé garde sa fiche consultable, mais
+                            plus aucune action : proposer « Supprimer » sur ce
+                            qui est déjà supprimé ne peut mener qu'à une erreur. */}
+                        {labelData.archiveLe ? (
+                            <div className="rounded-2xl border border-stone-300 bg-stone-50 p-5">
+                                <h3 className="text-sm font-bold text-stone-700">
+                                    Produit supprimé de l&apos;application
+                                </h3>
+                                <p className="mt-1 text-xs text-stone-500">
+                                    Supprimé le{" "}
+                                    {new Date(labelData.archiveLe).toLocaleDateString("fr-FR")}
+                                    {labelData.refArchive && (
+                                        <> — conservé aux archives sous <span className="font-mono">{labelData.refArchive}</span></>
+                                    )}
+                                    {labelData.motifArchivage && <> · motif : « {labelData.motifArchivage} »</>}
+                                    . Cette fiche reste consultable ; elle ne peut plus être modifiée
+                                    depuis le catalogue.
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <RetraitCatalogue
+                                    produitId={labelData.produitId}
+                                    codePf={labelData.codePf ?? ""}
+                                    denomination={labelData.denominationFr ?? labelData.title ?? ""}
+                                    retire={!!labelData.retireLe}
+                                />
+                                <SupprimerProduit
+                                    produitId={labelData.produitId}
+                                    codePf={labelData.codePf ?? ""}
+                                    denomination={labelData.denominationFr ?? labelData.title ?? ""}
+                                    nbFiches={nbFiches}
+                                />
+                            </>
+                        )}
                     </div>
                 </TabsContent>
 

@@ -27,6 +27,11 @@ export default async function EtiquetteDetailPage(
             gamme: produits.gamme,
             sousGamme: produits.sousGamme,
             retireLe: produits.retireLe,
+            // Une fiche dont le produit est supprimé reste consultable — c'est
+            // volontaire — mais l'écran doit le dire et ne plus proposer d'agir.
+            archiveLe: produits.archiveLe,
+            refArchive: produits.refArchive,
+            motifArchivage: produits.motifArchivage,
             status: fichesEtiquettes.statut,
             date: fichesEtiquettes.misAJourLe,
             conditionnement: produits.conditionnement,
