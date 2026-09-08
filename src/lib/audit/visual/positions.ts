@@ -20,6 +20,7 @@
  */
 
 import type { AnalyseBat, MotBat } from "@/lib/utils/pdf-bat";
+import type { MesureEurofeuille } from "./eurofeuille";
 import { normCmp, pagesDeMots } from "./mesure-mentions";
 import type { BatTextCheck } from "./text-robot";
 
@@ -154,7 +155,9 @@ export function controlerChampVisuel(
  */
 export function controlerOrigineSousCodeOc(
   analyses: AnalyseBat[],
-  noms?: string[]
+  noms?: string[],
+  /** Eurofeuille mesurée face par face, dans le même ordre que `analyses`. */
+  eurofeuilles?: (MesureEurofeuille | null)[]
 ): BatTextCheck {
   const base = {
     id: "POS_ORIGINE_SOUS_OC",
@@ -197,6 +200,11 @@ export function controlerOrigineSousCodeOc(
   const dessous = origine.y > code.y;
   const ecart = Math.abs(origine.y - code.y) * PT_EN_MM;
 
+  // L'Eurofeuille au-dessus des deux (§11.1). Sa boîte vient du tracé, en repère
+  // PDF (origine en bas) ; les mots viennent de poppler (origine en haut). On
+  // ramène le logo dans le repère des mots avant de comparer quoi que ce soit.
+  const surmonte = surmonteLeCode(analyses, face, code, eurofeuilles);
+
   if (!dessous) {
     return {
       ...base,
@@ -207,12 +215,58 @@ export function controlerOrigineSousCodeOc(
     };
   }
 
+  const debut = `Sur ${nommer(face, noms)}, la mention d'origine est ${ecart.toFixed(1)} mm sous FR-BIO-01 : conforme au §6.`;
+
+  if (surmonte === null) {
+    return {
+      ...base,
+      statut: "WARNING",
+      justification: `${debut} L'Eurofeuille n'ayant pas été reconnue sur cette face, sa position au-dessus des deux mentions (§11.1) reste à confirmer à l'œil.`,
+    };
+  }
+
+  if (!surmonte.auDessus) {
+    return {
+      ...base,
+      statut: "FAIL",
+      justification: `${debut} Mais l'Eurofeuille ne surmonte pas le code : son bord inférieur est ${surmonte.ecartMm.toFixed(
+        1
+      )} mm SOUS FR-BIO-01, alors que §11.1 la veut au-dessus.`,
+    };
+  }
+
   return {
     ...base,
-    statut: "WARNING",
-    justification: `Sur ${nommer(face, noms)}, la mention d'origine est ${ecart.toFixed(
+    statut: "PASS",
+    justification: `${debut} L'Eurofeuille la surmonte de ${surmonte.ecartMm.toFixed(
       1
-    )} mm sous FR-BIO-01 : conforme au §6. Reste à confirmer que l'Eurofeuille les surmonte dans le même champ visuel (§11.1), un logo n'étant pas lisible dans le texte du PDF.`,
+    )} mm sur la même face : même champ visuel, ordre conforme au §11.1.`,
+  };
+}
+
+/**
+ * L'Eurofeuille surmonte-t-elle le code OC, sur la face qui les porte ?
+ *
+ * Renvoie `null` si le logo n'a pas été reconnu sur cette face : ne pas
+ * reconnaître un dessin n'est pas la preuve qu'il n'y est pas.
+ */
+function surmonteLeCode(
+  analyses: AnalyseBat[],
+  face: number,
+  code: MotBat,
+  eurofeuilles?: (MesureEurofeuille | null)[]
+): { auDessus: boolean; ecartMm: number } | null {
+  const logo = eurofeuilles?.[face];
+  if (!logo) return null;
+
+  const hauteurPage = analyses.flatMap((a) => a.pages)[face]?.hauteurPt;
+  if (!hauteurPage) return null;
+
+  // Bord inférieur du logo, ramené dans le repère descendant de poppler.
+  const basDuLogo = hauteurPage - logo.y0;
+  return {
+    auDessus: basDuLogo <= code.y,
+    ecartMm: Math.abs(code.y - basDuLogo) * PT_EN_MM,
   };
 }
 
@@ -220,11 +274,12 @@ export function controlerOrigineSousCodeOc(
 export function controlerPositions(
   analyses: AnalyseBat[],
   entree: { denomination?: string | null; poidsNet?: string | null },
-  noms?: string[]
+  noms?: string[],
+  eurofeuilles?: (MesureEurofeuille | null)[]
 ): BatTextCheck[] {
   return [
     controlerChampVisuel(analyses, entree, noms, "1.4"),
     controlerChampVisuel(analyses, entree, noms, "6.2"),
-    controlerOrigineSousCodeOc(analyses, noms),
+    controlerOrigineSousCodeOc(analyses, noms, eurofeuilles),
   ].filter((c): c is BatTextCheck => c !== null);
 }

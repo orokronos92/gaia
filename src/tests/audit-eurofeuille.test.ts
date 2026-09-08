@@ -77,6 +77,10 @@ describe("verdict du point 13.1", () => {
   const mesure = (largeurMm: number): MesureEurofeuille => ({
     largeurMm,
     hauteurMm: Number((largeurMm / 1.5).toFixed(2)),
+    x0: 0,
+    y0: 0,
+    x1: largeurMm,
+    y1: largeurMm / 1.5,
   });
 
   it("valide un logo au-dessus du minimum", () => {
@@ -85,17 +89,24 @@ describe("verdict du point 13.1", () => {
     expect(c.checklistId).toBe("13.1");
   });
 
-  it("signale sans condamner un logo à la taille de la dérogation", () => {
+  it("signale sans condamner un logo à la taille dérogatoire exacte", () => {
     // Le manuel autorise 9 × 6 mm pour les « très petits emballages » sans
     // chiffrer « très petit » : le contrôle nomme la dérogation, il ne tranche pas.
-    const c = controlerEurofeuille([mesure(12.78)]);
+    const c = controlerEurofeuille([mesure(9)]);
     expect(c.statut).toBe("WARNING");
-    expect(c.justification).toContain("dérogation");
+    expect(c.justification).toContain("dérogatoire");
+  });
+
+  it("refuse un logo standard dessiné trop petit", () => {
+    // 12,78 mm n'est ni le minimum ni la taille dérogatoire : la dérogation est
+    // une taille précise, pas un plancher au-dessus duquel tout est permis.
+    const c = controlerEurofeuille([mesure(12.78)]);
+    expect(c.statut).toBe("FAIL");
+    expect(c.justification).toContain("dessiné trop petit");
   });
 
   it("refuse un logo sous toute taille admise", () => {
-    const c = controlerEurofeuille([mesure(8)]);
-    expect(c.statut).toBe("FAIL");
+    expect(controlerEurofeuille([mesure(8)]).statut).toBe("FAIL");
   });
 
   it("retient la plus grande occurrence entre les faces", () => {

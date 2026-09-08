@@ -27,10 +27,14 @@ export function controlerBat(faces: FaceBat[], entree: EntreeBat): BatTextCheck[
   if (faces.length === 0) return [];
   const analyses = faces.map((f) => f.analyse);
   const noms = faces.map((f) => f.nom);
+  // L'Eurofeuille est mesurée une fois : elle sert son propre point (13.1) et
+  // donne au §11.1 la position qui manquait au contrôle d'origine (8.1).
+  const eurofeuilles = analyses.map((a) => mesurerEurofeuille(a.traces));
+
   return [
     ...controlerTypographie(analyses, entree),
     ...controlerStyle(analyses, entree),
-    ...controlerPositions(analyses, entree, noms),
-    controlerEurofeuille(analyses.map((a) => mesurerEurofeuille(a.traces))),
+    ...controlerPositions(analyses, entree, noms, eurofeuilles),
+    controlerEurofeuille(eurofeuilles),
   ];
 }

@@ -119,8 +119,13 @@ export const getBatTextInputForFiche = cache(
     // La certification Demeter se lit sur les lignes de la recette, jamais sur
     // le produit : c'est un ingrédient qui la porte, et c'est elle qui impose le
     // gras italique du mot « demeter » sur l'étiquette (PRO-QHS-013 §11.1).
+    // La recette COURANTE, au sens du reste de l'application : la plus récente
+    // non archivée. Prendre « la première venue » faisait lire une version
+    // remplacée — TA737 a deux brouillons qui ne s'accordent pas sur Demeter, et
+    // l'audit tombait sur l'un ou l'autre selon l'ordre rendu par la base.
     const recette = await db.query.recettes.findFirst({
-      where: eq(recettes.produitId, produit.id),
+      where: and(eq(recettes.produitId, produit.id), ne(recettes.statut, "ARCHIVED")),
+      orderBy: [desc(recettes.creeLe)],
     });
     const lignes = recette
       ? await db.query.ingredientsRecette.findMany({

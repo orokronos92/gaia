@@ -44,12 +44,31 @@ const RATIO_MAX = 1.55;
 
 /** Dimensions minimales du champ vert (manuel Eurofeuille). */
 export const EUROFEUILLE_MIN = { largeurMm: 13.5, hauteurMm: 9 };
-/** Dérogation « très petits emballages » du même manuel. */
+/**
+ * Dérogation « très petits emballages » du même manuel.
+ *
+ * C'est une **taille précise**, pas un plancher : le manuel autorise le logo à
+ * 9 × 6 mm sur les très petits emballages, il n'autorise pas n'importe quelle
+ * taille comprise entre 9 × 6 et 13,5 × 9. Un logo à 12,8 × 8,5 mm n'est donc
+ * pas « une dérogation » : c'est le logo standard dessiné 5 % trop petit.
+ */
 export const EUROFEUILLE_DEROGATION = { largeurMm: 9, hauteurMm: 6 };
+
+/** Tolérance d'identification de la taille dérogatoire, en millimètres. */
+const TOLERANCE_DEROGATION = 0.3;
 
 export interface MesureEurofeuille {
   largeurMm: number;
   hauteurMm: number;
+  /**
+   * Boîte du champ vert, en points, repère PDF (origine en bas à gauche).
+   * §11.1 exige le logo dans le même champ visuel que le code OC et l'origine,
+   * et §6 les veut sous lui : sans sa position, ces points restaient à l'œil.
+   */
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
 }
 
 const estFeuillage = (t: TraceVectoriel) =>
@@ -81,6 +100,10 @@ export function mesurerEurofeuille(traces: TraceVectoriel[]): MesureEurofeuille 
   return {
     largeurMm: Number(((champ.x1 - champ.x0) * PT_EN_MM).toFixed(2)),
     hauteurMm: Number(((champ.y1 - champ.y0) * PT_EN_MM).toFixed(2)),
+    x0: champ.x0,
+    y0: champ.y0,
+    x1: champ.x1,
+    y1: champ.y1,
   };
 }
 
@@ -123,23 +146,25 @@ export function controlerEurofeuille(mesures: (MesureEurofeuille | null)[]): Bat
     };
   }
 
-  if (
-    logo.largeurMm >= EUROFEUILLE_DEROGATION.largeurMm &&
-    logo.hauteurMm >= EUROFEUILLE_DEROGATION.hauteurMm
-  ) {
-    // Le manuel autorise 9 × 6 mm pour les « très petits emballages » sans
-    // chiffrer ce qu'est un très petit emballage. On ne tranche donc pas à sa
-    // place : on nomme la dérogation et on demande qu'elle soit assumée.
+  const dansLaDerogation =
+    Math.abs(logo.largeurMm - EUROFEUILLE_DEROGATION.largeurMm) <= TOLERANCE_DEROGATION &&
+    Math.abs(logo.hauteurMm - EUROFEUILLE_DEROGATION.hauteurMm) <= TOLERANCE_DEROGATION;
+
+  if (dansLaDerogation) {
+    // Le logo est à la taille dérogatoire exacte. Le manuel l'autorise pour les
+    // « très petits emballages » sans chiffrer ce qu'est un très petit
+    // emballage : on ne tranche pas à sa place, on nomme la dérogation et on
+    // demande qu'elle soit assumée.
     return {
       ...base,
       statut: "WARNING",
-      justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — sous le minimum ${EUROFEUILLE_MIN.largeurMm} × ${EUROFEUILLE_MIN.hauteurMm} mm, mais au-dessus de la dérogation « très petits emballages » (${EUROFEUILLE_DEROGATION.largeurMm} × ${EUROFEUILLE_DEROGATION.hauteurMm} mm). Le manuel ne chiffre pas « très petit » : à assumer explicitement.`,
+      justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — c'est exactement la taille dérogatoire « très petits emballages ». Le manuel ne chiffre pas « très petit » : à assumer explicitement.`,
     };
   }
 
   return {
     ...base,
     statut: "FAIL",
-    justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — sous la dérogation ${EUROFEUILLE_DEROGATION.largeurMm} × ${EUROFEUILLE_DEROGATION.hauteurMm} mm, donc sous toute taille admise.`,
+    justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — sous le minimum ${EUROFEUILLE_MIN.largeurMm} × ${EUROFEUILLE_MIN.hauteurMm} mm, et ce n'est pas la taille dérogatoire ${EUROFEUILLE_DEROGATION.largeurMm} × ${EUROFEUILLE_DEROGATION.hauteurMm} mm : c'est le logo standard dessiné trop petit.`,
   };
 }
