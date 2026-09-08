@@ -53,7 +53,7 @@ export function ControleEtiquette({
 }: ControleEtiquetteProps) {
     const [pending, startTransition] = useTransition()
     const [faceActive, setFaceActive] = useState(0)
-    const [montre, setMontre] = useState<{ point: string; reperes: RepereBat[] } | null>(null)
+    const [montre, setMontre] = useState<{ point: string; reperes: RepereBat[]; demande: number } | null>(null)
 
     // Montrer un point, c'est d'abord aller sur la bonne face : sinon Marie
     // cherche sur l'étiquette qu'elle a sous les yeux ce qui est sur l'autre.
@@ -61,7 +61,9 @@ export function ControleEtiquette({
         const reperes = (r.reperes ?? []) as RepereBat[]
         if (reperes.length === 0) return
         setFaceActive(reperes[0].face)
-        setMontre({ point: r.id, reperes })
+        // Le compteur monte même quand on reclique la même ligne : c'est ce qui
+        // permet de revenir sur la zone après avoir dézoomé pour voir autour.
+        setMontre((m) => ({ point: r.id, reperes, demande: (m?.demande ?? 0) + 1 }))
     }
 
     // L'analyse IA n'a de sens que posée sur une liste : sans contrôle préalable,
@@ -171,6 +173,7 @@ export function ControleEtiquette({
                                 setMontre(null)
                             }}
                             reperes={montre?.reperes}
+                            demandeCadrage={montre?.demande}
                         />
                     </div>
                 </div>

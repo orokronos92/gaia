@@ -25,6 +25,12 @@ interface BatVisionneuseProps {
      * à Marie qu'il y a quelque chose à y voir.
      */
     reperesFaibles?: RepereBat[]
+    /**
+     * Compteur de demandes de cadrage. Recliquer la même ligne renvoie les
+     * mêmes zones : sans ce jeton, rien ne distingue « Marie redemande à voir »
+     * de « rien n'a bougé », et le volet reste là où elle l'avait laissé.
+     */
+    demandeCadrage?: number
 }
 
 const ZOOM_MIN = 1
@@ -43,7 +49,7 @@ const ZOOM_PAS = 0.5
  * navigateur, et surtout une image qui partage **exactement** le repère de nos
  * mesures. C'est ce qui permettra d'y surligner un mot au bon endroit.
  */
-export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reperesFaibles }: BatVisionneuseProps) {
+export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reperesFaibles, demandeCadrage }: BatVisionneuseProps) {
     const [interne, setInterne] = useState(0)
     const vue = useRef<HTMLDivElement>(null)
     const plan = useRef<HTMLDivElement>(null)
@@ -55,6 +61,16 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
 
     const index = faceActive ?? interne
     const face = faces[index]
+    /**
+     * La face dont l'image est effectivement affichée.
+     *
+     * Passé 2×, la visionneuse redemande un rendu plus fin : l'image se
+     * remonte, et son `onLoad` repartait cadrer les repères. Redescendre sous
+     * 2× repassait en 200 dpi, rechargeait, recadrait — le zoom se rétablissait
+     * tout seul et ne redescendait plus jamais sous le grossissement calculé.
+     * Le cadrage automatique n'appartient qu'à l'arrivée d'une NOUVELLE face.
+     */
+    const faceChargee = useRef<string | null>(null)
     const surLaFace = (reperes ?? []).filter((r) => r.face === index)
     // Une zone déjà mise en avant ne se redessine pas en pâle par-dessous.
     const enAvant = new Set(surLaFace.map((r) => `${r.x},${r.y},${r.largeur},${r.hauteur}`))
@@ -119,6 +135,8 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
     const cles = surLaFace.map((r) => `${r.x},${r.y},${r.largeur},${r.hauteur}`).join("|")
     useEffect(() => {
         if (cles === "") return
+        // `demandeCadrage` n'est pas lu ici : il n'est en dépendance que pour
+        // relancer le cadrage quand Marie reclique la ligne déjà montrée.
         const t = requestAnimationFrame(() =>
             cadrer(cles.split("|").map((c) => {
                 const [x, y, largeur, hauteur] = c.split(",").map(Number)
@@ -126,7 +144,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
             }))
         )
         return () => cancelAnimationFrame(t)
-    }, [cles, cadrer])
+    }, [cles, demandeCadrage, cadrer])
 
     const choisir = (i: number) => {
         setInterne(i)
@@ -229,7 +247,11 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
                                 draggable={false}
                                 onLoad={() => {
                                     setChargement(false)
-                                    if (surLaFace.length > 0) requestAnimationFrame(() => cadrer(surLaFace))
+                                    const nouvelleFace = faceChargee.current !== face.cleS3
+                                    faceChargee.current = face.cleS3
+                                    if (nouvelleFace && surLaFace.length > 0) {
+                                        requestAnimationFrame(() => cadrer(surLaFace))
+                                    }
                                 }}
                                 onError={() => {
                                     setChargement(false)
