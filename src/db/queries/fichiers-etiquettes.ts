@@ -82,3 +82,19 @@ export async function remplacerAssociationsAuto(
         return { inseres: aInserer.length, conserves: manuels.length };
     });
 }
+
+/**
+ * Ce fichier existe-t-il vraiment dans le référentiel ?
+ *
+ * Le rendu d'une face reçoit une clé S3 du navigateur. Sans cette vérification,
+ * l'URL deviendrait un moyen de lire n'importe quel objet du bucket : on
+ * n'accepte que les clés que l'application a elle-même enregistrées.
+ */
+export async function fichierEtiquetteExiste(cleS3: string): Promise<boolean> {
+    const [ligne] = await db
+        .select({ id: fichiersEtiquettes.id })
+        .from(fichiersEtiquettes)
+        .where(eq(fichiersEtiquettes.cleS3, cleS3))
+        .limit(1);
+    return ligne !== undefined;
+}

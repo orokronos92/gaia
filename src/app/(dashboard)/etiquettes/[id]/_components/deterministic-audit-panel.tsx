@@ -36,6 +36,8 @@ const VERDICT: Record<VerdictChecklist, { title: string; box: string; tone: stri
 
 interface DeterministicAuditPanelProps {
     ficheId: string
+    /** Boutons rendus à côté du sien — l'analyse IA vit dans le même en-tête. */
+    actions?: React.ReactNode
     /** Résultats de l'audit BAT, s'il a été lancé — ils remplissent la liste. */
     batChecks?: BatTextCheck[]
     /** Controlled result, lifted to the fiche so it survives tab switches. */
@@ -44,7 +46,7 @@ interface DeterministicAuditPanelProps {
     onResult?: (r: SousResultatAudit) => void
 }
 
-export function DeterministicAuditPanel({ ficheId, batChecks, data, onData, onResult }: DeterministicAuditPanelProps) {
+export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onData, onResult }: DeterministicAuditPanelProps) {
     const [pending, startTransition] = useTransition()
 
     const run = () => {
@@ -83,6 +85,8 @@ export function DeterministicAuditPanel({ ficheId, batChecks, data, onData, onRe
                         et ce qui vous reste à faire.
                     </CardDescription>
                 </div>
+                <div className="flex items-center gap-2">
+                {actions}
                 <Button
                     onClick={run}
                     disabled={pending}
@@ -91,6 +95,7 @@ export function DeterministicAuditPanel({ ficheId, batChecks, data, onData, onRe
                     {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Cpu className="mr-2 h-4 w-4" />}
                     Lancer
                 </Button>
+                </div>
             </CardHeader>
             <CardContent className="p-6 sm:p-8">
                 {!data && !pending && (

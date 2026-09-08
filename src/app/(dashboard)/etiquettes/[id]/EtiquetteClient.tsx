@@ -2,11 +2,9 @@
 
 import { useRef, useState } from "react"
 import {
-    FileText,
     CheckCircle2,
     AlertTriangle,
     Bot,
-    FileCheck2,
     ChevronRight,
     Loader2,
     Clock,
@@ -41,7 +39,7 @@ import { SupprimerProduit } from "@/components/produits/supprimer-produit"
 import { RetraitCatalogue } from "@/components/produits/retrait-catalogue"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { RecettePanel } from "@/components/recette/RecettePanel"
@@ -50,8 +48,7 @@ import { StatutSelect } from "./_components/statut-select"
 import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
 import { EmptyState } from "@/components/atoms/empty-state"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
-import { DeterministicAuditPanel } from "./_components/deterministic-audit-panel"
-import { BatTextAuditPanel } from "./_components/bat-text-audit-panel"
+import { ControleEtiquette } from "./_components/controle-etiquette"
 import type { AuditDeterministeResult } from "@/app/actions/audit"
 import type { AuditVisuelTexteResult } from "@/app/actions/audit-visuel"
 import { AuditSynthese, type SousResultatAudit } from "./_components/audit-synthese"
@@ -347,7 +344,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
     );
 
     // Fichiers BAT uploadés par Fabrice depuis Minio
-    const pdfFiles: { url: string; name: string }[] = labelData.pdfFiles || [];
+    const pdfFiles: { url: string; name: string; cleS3: string }[] = labelData.pdfFiles || [];
 
     // Pré-remplissage calculatrice (SPEC-03b §2) : on privilégie la liste QUID si
     // elle porte des %, sinon la liste extraite simplifiée (désignations seules).
@@ -355,12 +352,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         ? labelData.ingredientsFr
         : labelData.ingredientsSuggestion;
 
-
-    const [activeBatFile, setActiveBatFile] = useState<{ url: string; name: string } | null>(null);
-
-    const selectBatFile = (file: { url: string; name: string }) => {
-        setActiveBatFile(file);
-    };
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 max-w-[1600px] mx-auto pb-20">
@@ -469,9 +460,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                     <TabsTrigger value="audit" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
                         <Bot className="w-4 h-4 mr-2" /> Audit IA
                     </TabsTrigger>
-                    <TabsTrigger value="pdf" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
-                        <FileCheck2 className="w-4 h-4 mr-2" /> BAT & Fichiers
-                    </TabsTrigger>
+
                     <TabsTrigger value="historique" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
                         <History className="w-4 h-4 mr-2" /> Historique
                         {versions.length > 0 && <span className="ml-2 text-[10px] bg-stone-200 text-stone-600 rounded-full px-1.5 py-0.5">{versions.length}</span>}
@@ -950,129 +939,23 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                 <TabsContent value="audit" className="mt-0 focus-visible:outline-none">
                   <div className="space-y-6">
                     <AuditSynthese donnees={syntheseDet} visuel={syntheseVis} />
-                    <DeterministicAuditPanel ficheId={labelData.id} batChecks={auditVisData?.checks} data={auditDetData} onData={setAuditDetData} onResult={setSyntheseDet} />
+                    {/* Un seul écran : la liste, l'étiquette à côté, et l'IA en
+                        bouton plutôt qu'en second onglet qui disait la même chose. */}
+                    <ControleEtiquette
+                      ficheId={labelData.id}
+                      faces={pdfFiles
+                        .filter((f) => /\.pdf$/i.test(f.name))
+                        .map((f) => ({ cleS3: f.cleS3, nom: f.name }))}
+                      detData={auditDetData}
+                      onDetData={setAuditDetData}
+                      onDetResult={setSyntheseDet}
+                      visData={auditVisData}
+                      onVisData={setAuditVisData}
+                      onVisResult={setSyntheseVis}
+                    />
                   </div>
                 </TabsContent>
 
-                {/* 3. BAT — Viewer intégré */}
-                <TabsContent value="pdf" className="mt-0 focus-visible:outline-none">
-                    <div className="mb-6">
-                        <BatTextAuditPanel ficheId={labelData.id} result={auditVisData} onResultData={setAuditVisData} onResult={setSyntheseVis} />
-                    </div>
-                    {pdfFiles.length === 0 ? (
-                        <Card className="border border-stone-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
-                            <CardContent className="p-16 flex flex-col items-center justify-center text-center">
-                                <FileCheck2 className="h-16 w-16 text-stone-200 mb-5 stroke-[1.5]" />
-                                <p className="text-stone-600 font-semibold text-lg">Aucun BAT reçu pour ce produit</p>
-                                <p className="text-stone-400 text-sm mt-2 max-w-sm">
-                                    Les fichiers BAT de Fabrice apparaissent ici automatiquement dès qu&apos;ils sont déposés dans Minio
-                                    (dossier : <span className="font-mono text-emerald-600">{labelData.codePf?.toLowerCase()}</span>).
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-
-                            {/* Colonne gauche : sélecteur de fichiers */}
-                            <div className="xl:col-span-3 space-y-3">
-                                <div className="text-[11px] font-bold text-stone-400 uppercase tracking-widest px-1 mb-2">Fichiers BAT reçus</div>
-                                {pdfFiles.map((file: { url: string; name: string }, idx: number) => {
-                                    const isActive = (activeBatFile?.url ?? pdfFiles[0]?.url) === file.url;
-                                    const isAi = file.name.toLowerCase().endsWith('.ai');
-                                    const isPdf = file.name.toLowerCase().endsWith('.pdf');
-                                    return (
-                                        <button
-                                            key={idx}
-                                            onClick={() => selectBatFile(file)}
-                                            className={cn(
-                                                "w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all",
-                                                isActive
-                                                    ? "bg-emerald-50 border-emerald-300 shadow-sm"
-                                                    : "bg-white border-stone-200 hover:border-emerald-200 hover:bg-stone-50"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 border font-bold text-[11px]",
-                                                isAi ? "bg-orange-50 border-orange-200 text-orange-600" :
-                                                isPdf ? "bg-red-50 border-red-200 text-red-600" :
-                                                        "bg-stone-50 border-stone-200 text-stone-500"
-                                            )}>
-                                                {isAi ? "AI" : isPdf ? "PDF" : "FILE"}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className={cn(
-                                                    "text-xs font-semibold truncate",
-                                                    isActive ? "text-emerald-800" : "text-stone-700"
-                                                )}>{file.name}</p>
-                                                <p className="text-[10px] text-stone-400 mt-0.5">Minio • BAT</p>
-                                            </div>
-                                            {isActive && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Colonne droite : viewer embarqué + résultat IA */}
-                            <div className="xl:col-span-9 space-y-4">
-                                {(() => {
-                                    const activeFile = activeBatFile ?? pdfFiles[0];
-                                    if (!activeFile) return null;
-                                    const isPdf = activeFile.name.toLowerCase().endsWith('.pdf');
-                                    const isImage = /\.(png|jpg|jpeg|webp)$/i.test(activeFile.name);
-
-                                    return (
-                                        <Card className="border border-stone-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
-                                            <CardHeader className="pb-3 border-b border-stone-100 bg-stone-50/50 flex flex-row items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <FileCheck2 className="h-4 w-4 text-emerald-600" />
-                                                    <span className="text-sm font-semibold text-stone-800">{activeFile.name}</span>
-                                                </div>
-                                                <a
-                                                    href={activeFile.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 transition-colors"
-                                                >
-                                                    <FileText className="h-3.5 w-3.5" />
-                                                    Ouvrir dans un onglet
-                                                </a>
-                                            </CardHeader>
-                                            <CardContent className="p-0">
-                                                {isPdf ? (
-                                                    <iframe
-                                                        src={activeFile.url}
-                                                        className="w-full border-0"
-                                                        style={{ height: '700px' }}
-                                                        title={activeFile.name}
-                                                    />
-                                                ) : isImage ? (
-                                                    <div className="p-6 flex items-center justify-center bg-stone-50 min-h-[400px]">
-                                                        <img
-                                                            src={activeFile.url}
-                                                            alt={activeFile.name}
-                                                            className="max-w-full max-h-[650px] object-contain rounded-xl shadow-md"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center justify-center h-48 text-center p-8">
-                                                        <FileCheck2 className="h-10 w-10 text-stone-300 mb-3" />
-                                                        <p className="text-stone-500 font-medium text-sm">Prévisualisation non disponible pour ce format</p>
-                                                        <a href={activeFile.url} target="_blank" rel="noopener noreferrer"
-                                                            className="mt-3 text-emerald-600 font-semibold text-sm hover:underline">
-                                                            Télécharger le fichier
-                                                        </a>
-                                                    </div>
-                                                )}
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-                    )}
-                </TabsContent>
-
-                {/* HISTORIQUE DES VERSIONS */}
                 <TabsContent value="historique" className="mt-0 focus-visible:outline-none">
                     <div className="space-y-6">
                         <DocumentsSource documents={documentsSource} />

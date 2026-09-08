@@ -110,6 +110,9 @@ export default async function EtiquetteDetailPage(
     const bats = fichiers.filter(f => f.type === "BAT");
     const pdfFiles = (bats.length > 0 ? bats : fichiers).map(f => ({
         url: getPublicUrl(f.cleS3),
+        // La visionneuse rend la face côté serveur : il lui faut la clé, pas
+        // une URL publique, et la route vérifie que cette clé est bien connue.
+        cleS3: f.cleS3,
         name: f.nomFichier
     }));
 
