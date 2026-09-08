@@ -12,6 +12,7 @@ import {
   utilisateurs,
   StatutEtiquette,
 } from "@/db/schema";
+import { PRODUIT_ACTIF } from "./produits";
 
 /** Workflow status union, derived from the Drizzle enum (single source of truth). */
 export type StatutFiche = (typeof StatutEtiquette.enumValues)[number];
@@ -614,3 +615,24 @@ export async function getFicheIdParProduit(produitIds: string[]): Promise<Record
   for (const l of lignes) if (!parProduit[l.produitId]) parProduit[l.produitId] = l.id;
   return parProduit;
 }
+
+/**
+ * Les fiches auxquelles un BAT peut être confronté, pour l'écran de contrôle
+ * graphisme. Seuls les produits encore au catalogue : contrôler un BAT contre
+ * une fiche retirée n'aurait pas de sens, et allongerait la liste pour rien.
+ */
+export const listerFichesPourControle = cache(
+  async (): Promise<{ ficheId: string; codePf: string; denomination: string }[]> => {
+    const lignes = await db
+      .select({
+        ficheId: fichesEtiquettes.id,
+        codePf: produits.codePf,
+        denomination: produits.denominationFr,
+      })
+      .from(fichesEtiquettes)
+      .innerJoin(produits, eq(fichesEtiquettes.produitId, produits.id))
+      .where(PRODUIT_ACTIF)
+      .orderBy(produits.codePf);
+    return lignes;
+  }
+);

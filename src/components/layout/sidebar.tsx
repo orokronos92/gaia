@@ -12,7 +12,8 @@ import {
     Leaf,
     Bell,
     Brain,
-    Archive
+    Archive,
+    PenTool
 } from "lucide-react"
 
 const navItems = [
@@ -21,6 +22,9 @@ const navItems = [
     { href: "/etiquettes", label: "Étiquettes", icon: Tags },
     { href: "/commandes", label: "Commandes", icon: ClipboardList },
     { href: "/connaissances", label: "Connaissances", icon: Brain },
+    // Emplacement provisoire : le graphisme aura son propre espace, mais
+    // l'auto-contrôle n'a d'intérêt que s'il est utilisable tout de suite.
+    { href: "/controle-graphisme", label: "Contrôle graphisme", icon: PenTool },
     { href: "/archives", label: "Archives", icon: Archive },
     { href: "/notifications", label: "Notifications", icon: Bell },
     { href: "/parametres", label: "Paramètres", icon: Settings },
