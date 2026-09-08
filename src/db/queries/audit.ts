@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { fichesEtiquettes, produits, recettes, ingredientsRecette } from "@/db/schema";
 import type { AuditInput } from "@/lib/audit/types";
@@ -37,6 +37,22 @@ export const getAuditInputForFiche = cache(
         })
       : [];
 
+    // L'unicité d'un GTIN ne se lit pas sur une fiche isolée. La voie
+    // déterministe devant rester pure, la requête fournit la réponse : les
+    // autres produits ACTIFS portant le même Gencode.
+    const eanPartagePar = produit.codeEan
+      ? (
+          await db.query.produits.findMany({
+            where: and(
+              eq(produits.codeEan, produit.codeEan),
+              ne(produits.id, produit.id),
+              isNull(produits.archiveLe)
+            ),
+            columns: { codePf: true },
+          })
+        ).map((p) => p.codePf)
+      : [];
+
     return {
       fiche: {
         ingredientsFr: fiche.ingredientsFr,
@@ -48,6 +64,7 @@ export const getAuditInputForFiche = cache(
         denominationLegale: fiche.denominationLegale,
       },
       produit: {
+        codePf: produit.codePf,
         typeTheFr: produit.typeTheFr,
         denominationFr: produit.denominationFr,
         estAromatise: produit.estAromatise,
@@ -56,6 +73,7 @@ export const getAuditInputForFiche = cache(
         contientReglisse: produit.contientReglisse,
         allergenesMp: produit.allergenesMp,
         codeEan: produit.codeEan,
+        eanPartagePar,
       },
       ingredients: lignes.map((l) => ({
         codeArticle: l.codeArticle,

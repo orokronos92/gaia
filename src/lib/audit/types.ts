@@ -41,6 +41,9 @@ export const CONTROL_SECTIONS = [
   "LABELS",
   "TYPOGRAPHIE",
   "CODE_ETIQUETTE",
+  // Hors PRO-QHS-013 : structure du code article et du GENCODE, définie par
+  // MOP-PRO-029. Ce sont des contrôles sur la FICHE, pas sur l'étiquette.
+  "CODE_ARTICLE",
 ] as const;
 export const ControlSectionSchema = z.enum(CONTROL_SECTIONS);
 export type ControlSection = z.infer<typeof ControlSectionSchema>;
@@ -87,6 +90,10 @@ export const CONTROL_TYPES = [
   "POINT_VERT_ABSENT",
   "TYPO_HAUTEUR_X",
   "CODE_ETIQUETTE",
+  "CODE_CONDITIONNEMENT",
+  "CODE_POIDS_COHERENT",
+  "GENCODE_COHERENT",
+  "GENCODE_UNICITE",
 ] as const;
 export const ControlTypeSchema = z.enum(CONTROL_TYPES);
 export type ControlType = z.infer<typeof ControlTypeSchema>;
@@ -173,6 +180,8 @@ export interface AuditFicheData {
 }
 
 export interface AuditProduitData {
+  /** Code article JDG (MOP-PRO-029 §2.1) — identité du produit. */
+  codePf?: string | null;
   typeTheFr?: string | null;
   denominationFr?: string | null;
   estAromatise?: boolean;
@@ -181,6 +190,12 @@ export interface AuditProduitData {
   contientReglisse?: boolean;
   allergenesMp?: string | null;
   codeEan?: string | null;
+  /**
+   * Autres codes produit portant le MÊME EAN. Calculé par la couche requête :
+   * l'unicité d'un GTIN ne se vérifie pas sur une fiche isolée, et la voie
+   * déterministe doit rester pure et sans accès base.
+   */
+  eanPartagePar?: string[];
 }
 
 export interface AuditInput {

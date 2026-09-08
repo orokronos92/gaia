@@ -15,6 +15,12 @@ import {
   type ControlResult,
   type DeterministicVerdict,
 } from "../types";
+import {
+  checkCodeConditionnement,
+  checkCodePoidsCoherent,
+  checkGencodeCoherent,
+  checkGencodeUnicite,
+} from "./code-article";
 import { checkIngrMono, checkIngrOrdreDecroissant } from "./ingredients";
 import {
   checkCodeEtiquette,
@@ -46,6 +52,12 @@ const CHECKS: Record<string, CheckFn> = {
   // Vision-eligible (visual robot), out of the deterministic lane. See
   // control-checklist.ts.
   "15.1": checkCodeEtiquette,
+  // 16.x — code article et Gencode (MOP-PRO-029). Contrôles sur la fiche : le
+  // code-barres IMPRIMÉ sur le BAT reste le point 10.1, manuel.
+  "16.1": checkCodeConditionnement,
+  "16.2": checkCodePoidsCoherent,
+  "16.3": checkGencodeCoherent,
+  "16.4": checkGencodeUnicite,
 };
 
 function evaluate(control: ControlPoint, input: AuditInput, ctx: AuditContext): ControlResult {

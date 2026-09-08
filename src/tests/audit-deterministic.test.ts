@@ -45,14 +45,15 @@ const INGREDIENTS_TEXTE =
   "maté vert* 62%, gingembre* 15,5%, guarana* 6%, hibiscus* 6%, menthe poivrée*, huile essentielle d'orange sanguine* 4%, ginseng* 2%, stevia*";
 
 describe("Voie A déterministe — golden MT265", () => {
-  it("couvre les 12 points déterministes et valide chaque verdict (Zod)", () => {
+  // 12 points PRO-QHS-013 + 4 points MOP-PRO-029 (code article et Gencode).
+  it("couvre les 16 points déterministes et valide chaque verdict (Zod)", () => {
     const input: AuditInput = {
       fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
       produit: { typeTheFr: "Mélange de plantes", estAromatise: true },
       ingredients: buildIngredients(),
     };
     const r = auditDeterministic(input);
-    expect(r).toHaveLength(12);
+    expect(r).toHaveLength(16);
     // Every verdict carries a justification and a valid status.
     for (const c of r) {
       expect(c.mode).toBe("deterministic");

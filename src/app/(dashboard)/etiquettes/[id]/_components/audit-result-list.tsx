@@ -23,6 +23,7 @@ const SECTION_LABELS: Record<(typeof CONTROL_SECTIONS)[number], string> = {
     LABELS: "Labels",
     TYPOGRAPHIE: "Typographie",
     CODE_ETIQUETTE: "Code étiquette",
+    CODE_ARTICLE: "Code article & Gencode",
 }
 
 const STATUS_STYLE: Record<ControlStatus, { label: string; chip: string; icon: typeof CheckCircle2; tone: string }> = {

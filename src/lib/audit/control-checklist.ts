@@ -170,8 +170,8 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     // raw codeEan). The printed barcode/gencode is read on the BAT — vision-
     // eligible (visual robot), confirmed by Marie.
     id: "10.1", ordre: 26, section: "GENCODE", typeControle: "GENCODE_STRUCTURE", mode: "manual",
-    libelle: "Structure Gencode conforme (35 / 8281 / famille / code article / conditionnement / clé) ?",
-    reference: "PRO-QHS-013 §8 ; annexe 4 ; MOP-PRO-029",
+    libelle: "Code-barres IMPRIMÉ sur le BAT identique au Gencode déclaré en fiche ?",
+    reference: "PRO-QHS-013 §8 ; annexe 4 ; MOP-PRO-029 §3",
   },
   // 11. E MÉTROLOGIQUE
   {
@@ -225,6 +225,36 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     id: "15.1", ordre: 35, section: "CODE_ETIQUETTE", typeControle: "CODE_ETIQUETTE", mode: "deterministic",
     libelle: "Code étiquette présent sur la contre-étiquette ?",
     reference: "PRO-QHS-013 §13",
+  },
+  // ─── 16. CODE ARTICLE & GENCODE — MOP-PRO-029, hors PRO-QHS-013 ────────────
+  // Ces points portent sur la FICHE, pas sur l'étiquette : ils vérifient que le
+  // code produit, le poids net et le code-barres déclarés racontent la même
+  // histoire. Le point 10.1, lui, compare le code-barres IMPRIMÉ à celui-ci.
+  {
+    id: "16.1", ordre: 36, section: "CODE_ARTICLE", typeControle: "CODE_CONDITIONNEMENT", mode: "deterministic",
+    libelle: "Le code produit porte-t-il un chiffre de conditionnement (1 à 7) ?",
+    reference: "MOP-PRO-029 §2.1.3",
+  },
+  {
+    id: "16.2", ordre: 37, section: "CODE_ARTICLE", typeControle: "CODE_POIDS_COHERENT", mode: "deterministic",
+    libelle: "Le chiffre de conditionnement correspond-il au poids net déclaré ?",
+    reference: "MOP-PRO-029 §2.1.3",
+  },
+  // Le contrôle « tranche du numéro d'article ↔ type de produit » (§2.1.2) n'est
+  // PAS livré : mesuré sur le catalogue, la table ne décrit que les recettes
+  // maison — TA 6xx/7xx concordent, mais TV 1xx/4xx/6xx/7xx sont tous des thés
+  // verts d'origine et TN 2xx à 5xx tous des thés noirs. Son périmètre exact est
+  // une question pour JDG ; en attendant, le livrer produirait 119 avertissements
+  // sur 172 fiches, ce qui apprend à ne plus les lire.
+  {
+    id: "16.3", ordre: 38, section: "CODE_ARTICLE", typeControle: "GENCODE_COHERENT", mode: "deterministic",
+    libelle: "Le Gencode déclaré décode-t-il le même article et le même conditionnement, avec une clé valide ?",
+    reference: "MOP-PRO-029 §3",
+  },
+  {
+    id: "16.4", ordre: 39, section: "CODE_ARTICLE", typeControle: "GENCODE_UNICITE", mode: "deterministic",
+    libelle: "Le Gencode est-il porté par ce seul produit ?",
+    reference: "MOP-PRO-029 §3 ; GS1",
   },
 ];
 
