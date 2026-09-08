@@ -10,11 +10,19 @@ import { useSyncExternalStore } from "react"
  * rouge sur une contre-étiquette bordeaux. Aucun choix par défaut n'est bon
  * partout, donc le choix lui revient — et il la suit d'une fiche à l'autre.
  */
+/**
+ * Quatre teintes franches — un cerne se repère de loin ou ne sert à rien.
+ *
+ * `texte` n'est pas décoratif : le libellé s'écrit SUR la couleur, et du blanc
+ * sur du jaune vif ne se lit pas (1,4:1). Chaque teinte porte donc l'encre qui
+ * tient dessus — blanc sur le rouge, encre sombre sur les trois autres, où le
+ * contraste passe de 2,2:1 à plus de 8:1.
+ */
 export const COULEURS_REPERE = [
-    { id: "rouge", libelle: "Rouge", trait: "#dc2626" },
-    { id: "cyan", libelle: "Cyan", trait: "#0891b2" },
-    { id: "magenta", libelle: "Magenta", trait: "#c026d3" },
-    { id: "vert", libelle: "Vert", trait: "#4d7c0f" },
+    { id: "rouge", libelle: "Rouge", trait: "#f01414", texte: "#ffffff" },
+    { id: "orange", libelle: "Orange", trait: "#ff8800", texte: "#1c1917" },
+    { id: "jaune", libelle: "Jaune", trait: "#ffd400", texte: "#1c1917" },
+    { id: "vert", libelle: "Vert", trait: "#00c853", texte: "#1c1917" },
 ] as const
 
 export type CouleurRepere = (typeof COULEURS_REPERE)[number]["id"]
@@ -25,8 +33,10 @@ const COULEUR_DEFAUT: CouleurRepere = "rouge"
 const CLE_COULEUR = "gaialabel.bat.couleur"
 const CLE_CADRES = "gaialabel.bat.cadres"
 
-export function traitDe(couleur: CouleurRepere): string {
-    return (COULEURS_REPERE.find((c) => c.id === couleur) ?? COULEURS_REPERE[0]).trait
+/** Le trait et l'encre qui se lit dessus, toujours pris ensemble. */
+export function teinteDe(couleur: CouleurRepere): { trait: string; texte: string } {
+    const c = COULEURS_REPERE.find((x) => x.id === couleur) ?? COULEURS_REPERE[0]
+    return { trait: c.trait, texte: c.texte }
 }
 
 /**

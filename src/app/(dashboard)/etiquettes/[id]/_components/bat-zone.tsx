@@ -10,6 +10,8 @@ interface ZoneProps {
     /** Grossissement courant du plan — le trait doit s'en défendre (cf. infra). */
     zoom: number
     trait: string
+    /** Encre du libellé — le blanc ne tient pas sur un jaune vif. */
+    encre: string
     /** La zone du point cliqué, par opposition à celles restées en attente. */
     active: boolean
     onClic?: (pointId: string) => void
@@ -30,7 +32,7 @@ interface ZoneProps {
  * blanc posé derrière la couleur garantit le contraste quel que soit le fond,
  * comme le pointillé d'un logiciel de mise en page.
  */
-export function Zone({ zone, zoom, trait, active, onClic }: ZoneProps) {
+export function Zone({ zone, zoom, trait, encre, active, onClic }: ZoneProps) {
     const e = Math.max(0.4, (active ? 1.5 : 1) / zoom)
     const cliquable = Boolean(onClic && zone.pointId)
 
@@ -56,12 +58,13 @@ export function Zone({ zone, zoom, trait, active, onClic }: ZoneProps) {
                     style={{
                         fontSize: `${Math.max(3.5, 9 / zoom)}px`,
                         backgroundColor: trait,
+                        color: encre,
                         padding: `${0.6 / zoom}px ${1.6 / zoom}px`,
                         borderRadius: `${1.5 / zoom}px`,
                         top: `-${1.5 / zoom}px`,
                         transform: "translateY(-100%)",
                     }}
-                    className="pointer-events-none absolute left-0 whitespace-nowrap font-bold text-white"
+                    className="pointer-events-none absolute left-0 whitespace-nowrap font-bold"
                 >
                     {zone.libelle}
                 </span>

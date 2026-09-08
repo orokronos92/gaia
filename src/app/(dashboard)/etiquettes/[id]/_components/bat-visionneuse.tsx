@@ -6,7 +6,7 @@ import { ImageOff, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { RepereBat } from "@/lib/audit/visual/reperes"
 import { BatBarre } from "./bat-barre"
-import { traitDe, usePreferencesBat } from "./bat-preferences"
+import { teinteDe, usePreferencesBat } from "./bat-preferences"
 import { Zone, type ZoneBat } from "./bat-zone"
 
 export interface FaceBatAffichable {
@@ -67,7 +67,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
     // trouvait sous le doigt à l'arrivée.
     const deplace = useRef(false)
     const { couleur, setCouleur, cadres, setCadres } = usePreferencesBat()
-    const trait = traitDe(couleur)
+    const { trait, texte: encre } = teinteDe(couleur)
 
     const index = faceActive ?? interne
     const face = faces[index]
@@ -277,6 +277,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
                                     zone={r}
                                     zoom={zoom}
                                     trait={trait}
+                                    encre={encre}
                                     active={false}
                                     onClic={onZoneClic ? (id) => { if (!deplace.current) onZoneClic(id) } : undefined}
                                 />
@@ -287,6 +288,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
                                     zone={r}
                                     zoom={zoom}
                                     trait={trait}
+                                    encre={encre}
                                     active
                                     onClic={onZoneClic ? (id) => { if (!deplace.current) onZoneClic(id) } : undefined}
                                 />

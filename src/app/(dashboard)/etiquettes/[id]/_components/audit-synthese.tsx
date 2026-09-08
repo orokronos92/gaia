@@ -31,17 +31,37 @@ const STYLE: Record<ControlStatus, { label: string; tone: string }> = {
     NA: { label: "Non applicable", tone: "text-stone-500" },
 }
 
+/**
+ * Ce que chaque chiffre compte, écrit en toutes lettres.
+ *
+ * « 14 ✓ · 17 ⚠ · 1 ✕ » demandait de connaître la convention pour être lu, et
+ * personne ne la connaît de tête. Un compte de contrôles se dit avec le mot du
+ * métier ; les sans-objet comptent aussi, sinon la somme ne tombe jamais sur le
+ * nombre de points de la checklist et le lecteur se demande ce qui manque.
+ */
+const COMPTES: { cle: ControlStatus; mot: (n: number) => string; tone: string }[] = [
+    { cle: "PASS", mot: (n) => (n > 1 ? "conformes" : "conforme"), tone: "text-emerald-700" },
+    { cle: "WARNING", mot: () => "à vérifier", tone: "text-orange-700" },
+    { cle: "FAIL", mot: (n) => (n > 1 ? "non conformes" : "non conforme"), tone: "text-red-700" },
+    { cle: "NA", mot: () => "sans objet", tone: "text-stone-400" },
+]
+
 function Ligne({ icon: Icon, libelle, res }: { icon: typeof Cpu; libelle: string; res: SousResultatAudit | null }) {
     const style = res?.overallStatus ? STYLE[res.overallStatus] : null
+    const counts = res?.counts
     return (
-        <div className="flex items-center gap-3 py-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5">
             <Icon className="h-4 w-4 text-stone-400 shrink-0" />
             <span className="text-sm font-semibold text-stone-700 w-32 shrink-0">{libelle}</span>
-            {style && res?.counts ? (
+            {style && counts ? (
                 <>
                     <span className={cn("text-xs font-bold uppercase", style.tone)}>{style.label}</span>
-                    <span className="text-xs text-stone-400 ml-auto">
-                        {res.counts.PASS} ✓ · {res.counts.WARNING} ⚠ · {res.counts.FAIL} ✕
+                    <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm">
+                        {COMPTES.filter((c) => counts[c.cle] > 0).map((c) => (
+                            <span key={c.cle} className={c.tone}>
+                                <span className="font-bold">{counts[c.cle]}</span> {c.mot(counts[c.cle])}
+                            </span>
+                        ))}
                     </span>
                 </>
             ) : (
