@@ -83,6 +83,12 @@ C'est aussi ce que dit votre procédure — *« aux Jardins de Gaïa nous utilis
 mention pour tous les produits qui contiennent de la réglisse »*. Confirmez-vous
 que la simplification est volontaire ?
 
+### 🟠 M8. Un code fabricant erroné dans un Gencode
+
+`TA6692` porte l'EAN `3585810866925`, dont le code fabricant se lit **8581** au
+lieu de **8281**. Un chiffre inversé, mais le code-barres désigne alors une autre
+entreprise.
+
 ### 🟡 M6. Deux produits portent le même nom commercial
 
 `TH5296` et `TU5226` s'appellent tous deux « La tisane de Noël ». Voulu ?
@@ -241,6 +247,26 @@ conditionnement(1) + clé`. Un second format, plus ancien, porte l'article sur
 Mesuré sur 150 EAN : **86 % concordent** avec le code produit. Le second format
 est-il officiel, ou en voie d'extinction ?
 
+### 🟠 I4. Le périmètre de la table §2.1.2 (tranches du numéro d'article)
+
+§2.1.2 associe une tranche de numéro à un type de produit (100 = tisane, 700 =
+thé noir aromatisé…). Confrontée au catalogue, elle ne tient que pour le préfixe
+**TA** :
+
+```
+TA 6xx → Thé vert aromatisé / parfumé              ✅ conforme au §2.1.2
+TA 7xx → Thé noir aromatisé / parfumé              ✅
+TV 1xx, 4xx, 6xx, 7xx → tous « Thé vert d'origine »  ✗ le numéro ne code rien
+TN 2xx, 3xx, 4xx, 5xx → tous « Thé noir d'origine »  ✗
+```
+
+La table décrit-elle uniquement les **recettes maison** (nature 6 dans PMI), les
+thés d'origine achetés-revendus recevant un numéro simplement séquentiel ?
+
+*Nous avons écrit puis retiré le contrôle correspondant : appliqué à tout le
+catalogue il produisait 119 avertissements sur 172 fiches. Nous le livrerons dès
+que son périmètre sera connu.*
+
 ### 🟡 I3. La famille du thé dans le GENCODE
 
 TA7372 porte la famille `04` = « Thé noir parfumé + Aromatisé », alors que la base
@@ -272,6 +298,9 @@ Pour équilibrer : ces questions existent parce que l'application les a trouvée
 
 - **181 événements** tracés depuis le 8 juin, tous nominatifs.
 - **604 liens** produit ↔ fichier enregistrés, là où l'association était devinée.
+- **Quatre contrôles de cohérence** du code article et du Gencode, adossés à
+  MOP-PRO-029, chacun citant son paragraphe. Ils ont trouvé douze
+  non-conformités que rien ne vérifiait — dont les deux codes-barres partagés.
 - Les documents source d'un import sont désormais **conservés** — un import raté
   reste rejouable.
 - Le coût d'un import complet, mesuré : **0,006 $**.
