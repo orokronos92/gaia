@@ -194,14 +194,48 @@ TUTJ0706 TUTJ0706 Gyokuro          le code est écrit deux fois
 - Cinq produits n'ont que des fichiers Illustrator, aucun PDF : `TH5296`,
   `TU5226`, `TU2092`, `TR2472`, `TB720`.
 
-### 🟡 F5. Deux mentions introuvables sur le BAT de TA7372
+### 🔴 F5. Deux mentions obligatoires introuvables sur tout le catalogue
 
-Ni la mention de conservation ni l'adresse fabricant n'apparaissent dans le texte
-des deux faces analysées. Trois explications possibles, très différentes :
+**C'est la question la plus lourde de cette liste.** Elle était ouverte sur le
+seul TA7372 ; la mesure sur l'ensemble du référentiel montre qu'elle ne lui est
+pas propre.
 
-- elles sont là et notre extraction les a manquées ;
-- elles n'y sont pas — non-conformité réelle ;
-- elles sont sur une **troisième face** que nous n'avons pas.
+Lecture du texte des **258 BAT** du dossier `RÉFÉRENCES ÉTIQUETTES`, soit
+**139 produits** :
+
+| Mention | Exigée par | Retrouvée sur |
+|---|---|---|
+| **Conditions de conservation** | PRO-QHS-013 §5 | **0 / 139 produits** |
+| **Adresse du fabricant** | PRO-QHS-013 §7 | **5 / 139 produits** |
+
+Vérification indépendante à la main sur les **147 contre-étiquettes** : cinq
+seulement contiennent « conserv », « abri » ou « Wittisheim ».
+
+Ce n'est pas un défaut de lecture : sur le même corpus, le mot « ingrédients »
+sort à 97/139, `FR-BIO-01` à 102/139 et la mention bio à 94/139. Une
+contre-étiquette type se lit :
+
+> *…récit produit… 2g / 5-7 min / 95 °C / 50 TASSES · **INGRÉDIENT**
+> Honeybush\*. \*Issu de l'agriculture biologique. · ETCHB1702V5 ·
+> poids net 100g*
+
+Ni conservation, ni adresse.
+
+**Deux explications, aux conséquences très différentes :**
+
+1. **Le dossier ne contient qu'une partie des faces.** Il manquerait une
+   troisième face, ou ces mentions figurent sur le sachet et non sur
+   l'étiquette. Dans ce cas nos contrôles 7.2 et 9.1 remonteront une alerte
+   perpétuelle sur du conforme, et il faut nous fournir les faces manquantes.
+2. **Elles ne sont réellement pas imprimées.** C'est alors une non-conformité à
+   l'échelle du catalogue, plus lourde que les dix-sept Eurofeuilles de F6.
+
+**À demander à Marie :** le dossier de référence contient-il *toutes* les faces
+d'un produit ? Où figure la mention « À conserver à l'abri de l'humidité, de la
+lumière et de la chaleur » ? Et l'adresse de Wittisheim ?
+
+Tant que ce n'est pas tranché, l'application ne peut pas savoir si elle regarde
+une étiquette incomplète ou un dossier incomplet.
 
 ### 🔴 F6. Dix-sept Eurofeuilles sous le minimum légal
 
