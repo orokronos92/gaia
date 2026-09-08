@@ -84,8 +84,10 @@ export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onD
                         Contrôle de la fiche
                     </CardTitle>
                     <CardDescription className="ml-10">
-                        Les 39 points de PRO-QHS-013 et MOP-PRO-029 — ce qui est vérifié par calcul,
-                        et ce qui vous reste à faire.
+                        Les 39 points de PRO-QHS-013 et MOP-PRO-029. <strong>Contrôler</strong> mesure
+                        tout ce qui se mesure, BAT compris — gratuit et immédiat.{" "}
+                        <strong>Analyse IA</strong> ajoute la reconnaissance des logos et le jugement
+                        de l&apos;allégation, et consomme des jetons.
                     </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
@@ -96,7 +98,7 @@ export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onD
                     className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 rounded-xl font-bold px-6"
                 >
                     {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Cpu className="mr-2 h-4 w-4" />}
-                    Lancer
+                    {data?.ok ? "Recontrôler" : "Contrôler"}
                 </Button>
                 </div>
             </CardHeader>

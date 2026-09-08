@@ -52,7 +52,10 @@ export function ValidationLigne({ ficheId, r, onChange }: ValidationLigneProps) 
 
     if (close) {
         return (
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+            <div
+                onClick={(e) => e.stopPropagation()}
+                className="mt-2 flex flex-wrap items-center gap-2 text-[11px]"
+            >
                 <span
                     className={cn(
                         "inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 font-semibold",
@@ -84,7 +87,9 @@ export function ValidationLigne({ ficheId, r, onChange }: ValidationLigneProps) 
     }
 
     return (
-        <div className="mt-2 space-y-2">
+        // La ligne entière sert à montrer la zone sur le BAT : les gestes de
+        // décision ne doivent pas la déclencher au passage.
+        <div onClick={(e) => e.stopPropagation()} className="mt-2 space-y-2">
             {/* Ce que le BAT porte et que la fiche ignore : un clic, pas une
                 recopie automatique — la fiche doit rester la référence. */}
             {r.proposition && (

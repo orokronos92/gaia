@@ -137,11 +137,14 @@ function Ligne({
 }) {
     const style = styleDe(r)
     const Icon = style.icon
+    const situable = Boolean(onVoir && r.reperes && r.reperes.length > 0)
     return (
         <div
+            onClick={situable ? () => onVoir!(r) : undefined}
             className={cn(
                 "flex gap-3 p-4 bg-white border rounded-2xl shadow-sm transition-colors",
                 vu ? "border-amber-300 ring-2 ring-amber-200" : "border-stone-200/70",
+                situable && !vu && "cursor-pointer hover:border-amber-200 hover:bg-amber-50/30",
                 r.statut === "NA" && "opacity-60"
             )}
         >
@@ -151,12 +154,27 @@ function Ligne({
                     <span className="text-sm font-semibold text-stone-800 leading-snug">
                         {point?.libelle ?? r.typeControle}
                     </span>
-                    <Badge
-                        variant="outline"
-                        className={cn("text-[10px] px-2 py-0 font-bold uppercase shrink-0", style.chip)}
-                    >
-                        {style.label}
-                    </Badge>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                        {/* Le contrôle sait où il a mesuré : la cible se voit, à
+                            côté du verdict, et non enterrée dans les métadonnées. */}
+                        {situable && (
+                            <span
+                                className={cn(
+                                    "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                    vu ? "bg-amber-400 text-amber-950" : "bg-amber-50 text-amber-700"
+                                )}
+                            >
+                                <Crosshair className="h-3 w-3" />
+                                {vu ? "montré" : "sur le BAT"}
+                            </span>
+                        )}
+                        <Badge
+                            variant="outline"
+                            className={cn("text-[10px] px-2 py-0 font-bold uppercase", style.chip)}
+                        >
+                            {style.label}
+                        </Badge>
+                    </div>
                 </div>
                 {r.justification && (
                     <p className="text-xs text-stone-500 mt-1.5 leading-relaxed">{r.justification}</p>
@@ -177,21 +195,6 @@ function Ligne({
                         <span className="text-[10px] text-stone-400">
                             {r.mode === "manual" ? "contrôle visuel" : "à évaluer"}
                         </span>
-                    )}
-                    {/* Le contrôle sait où il a mesuré : autant le montrer. */}
-                    {onVoir && r.reperes && r.reperes.length > 0 && (
-                        <button
-                            onClick={() => onVoir(r)}
-                            className={cn(
-                                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors",
-                                vu
-                                    ? "bg-amber-100 text-amber-800"
-                                    : "text-stone-400 hover:bg-amber-50 hover:text-amber-700"
-                            )}
-                        >
-                            <Crosshair className="h-3 w-3" />
-                            Voir sur le BAT
-                        </button>
                     )}
                 </div>
                 {/* Un point non applicable n'appelle aucune décision. */}

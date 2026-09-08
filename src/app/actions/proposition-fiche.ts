@@ -38,8 +38,8 @@ export async function appliquerPropositionAction(raw: unknown): Promise<Proposit
     if (!parsed.success) return { ok: false, error: "Entrée invalide." }
     const { ficheId, pointId } = parsed.data
 
-    const checklist = await chargerChecklist(ficheId)
-    const point = checklist?.find((c) => c.id === pointId)
+    const charge = await chargerChecklist(ficheId)
+    const point = charge?.resultats.find((c) => c.id === pointId)
     if (!point?.proposition) {
         return { ok: false, error: "Plus aucune valeur à proposer sur ce point." }
     }

@@ -45,10 +45,10 @@ export async function validerPointAction(raw: unknown): Promise<ValidationResult
     const { ficheId, pointId, decision } = parsed.data
     const justification = parsed.data.justification?.trim() || null
 
-    const checklist = await chargerChecklist(ficheId)
-    if (!checklist) return { ok: false, error: "Fiche introuvable." }
+    const charge = await chargerChecklist(ficheId)
+    if (!charge) return { ok: false, error: "Fiche introuvable." }
 
-    const point = checklist.find((c) => c.id === pointId)
+    const point = charge.resultats.find((c) => c.id === pointId)
     if (!point) return { ok: false, error: "Ce point ne s'applique pas à cette fiche." }
 
     const refus = refusMotif(decision, point.statut, justification)

@@ -19,6 +19,12 @@ interface BatVisionneuseProps {
     onFaceChange?: (index: number) => void
     /** Zones à montrer, en fractions de la face. Le serveur les a déjà converties. */
     reperes?: RepereBat[]
+    /**
+     * Toutes les zones encore ouvertes, dessinées en trait pâle dès l'ouverture.
+     * Sans elles, l'étiquette reste muette jusqu'au premier clic, et rien ne dit
+     * à Marie qu'il y a quelque chose à y voir.
+     */
+    reperesFaibles?: RepereBat[]
 }
 
 const ZOOM_MIN = 1
@@ -37,7 +43,7 @@ const ZOOM_PAS = 0.5
  * navigateur, et surtout une image qui partage **exactement** le repère de nos
  * mesures. C'est ce qui permettra d'y surligner un mot au bon endroit.
  */
-export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes }: BatVisionneuseProps) {
+export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reperesFaibles }: BatVisionneuseProps) {
     const [interne, setInterne] = useState(0)
     const vue = useRef<HTMLDivElement>(null)
     const plan = useRef<HTMLDivElement>(null)
@@ -50,6 +56,12 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes }: Bat
     const index = faceActive ?? interne
     const face = faces[index]
     const surLaFace = (reperes ?? []).filter((r) => r.face === index)
+    // Une zone déjà mise en avant ne se redessine pas en pâle par-dessous.
+    const enAvant = new Set(surLaFace.map((r) => `${r.x},${r.y},${r.largeur},${r.hauteur}`))
+    const faibles = (reperesFaibles ?? []).filter(
+        (r) => r.face === index && !enAvant.has(`${r.x},${r.y},${r.largeur},${r.hauteur}`)
+    )
+    const compte = (i: number) => (reperesFaibles ?? []).filter((r) => r.face === i).length
 
     // Changer de face remet la loupe à zéro : garder un cadrage d'une face à
     // l'autre montrerait un coin arbitraire de la suivante. L'ajustement se
@@ -157,6 +169,11 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes }: Bat
                             )}
                         >
                             {f.nom.replace(/\.(pdf|ai)$/i, "")}
+                            {compte(i) > 0 && (
+                                <span className="ml-1.5 rounded bg-amber-100 px-1 text-[10px] font-bold text-amber-800">
+                                    {compte(i)}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -166,7 +183,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes }: Bat
                 <div
                     ref={vue}
                     className={cn(
-                        "relative flex h-[68vh] items-start justify-center overflow-hidden",
+                        "relative flex h-[clamp(18rem,42vh,26rem)] items-start justify-center overflow-hidden xl:h-[clamp(24rem,66vh,44rem)]",
                         zoom > 1 ? "cursor-grab active:cursor-grabbing" : "cursor-default"
                     )}
                     onPointerDown={(e) => {
@@ -218,8 +235,21 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes }: Bat
                                     setChargement(false)
                                     setErreur(true)
                                 }}
-                                className="max-h-[68vh] w-auto select-none object-contain"
+                                className="max-h-[clamp(18rem,42vh,26rem)] w-auto select-none object-contain xl:max-h-[clamp(24rem,66vh,44rem)]"
                             />
+                            {faibles.map((r, i) => (
+                                <div
+                                    key={`faible-${i}`}
+                                    style={{
+                                        left: `${r.x * 100}%`,
+                                        top: `${r.y * 100}%`,
+                                        width: `${r.largeur * 100}%`,
+                                        height: `${r.hauteur * 100}%`,
+                                    }}
+                                    title={r.libelle}
+                                    className="pointer-events-none absolute rounded-[2px] bg-amber-300/10 ring-1 ring-amber-400/60"
+                                />
+                            ))}
                             {surLaFace.map((r, i) => (
                                 <div
                                     key={`${r.libelle ?? "zone"}-${i}`}
