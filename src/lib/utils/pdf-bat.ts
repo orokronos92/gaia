@@ -25,21 +25,22 @@ import { mkdtemp, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 import { promisify } from "util";
-import { inflateSync } from "zlib";
+
+import {
+  lireMetriques,
+  lireObjets,
+  lirePosesTexte,
+  lireRessources,
+  type MetriquePolice,
+  type PoseTexte,
+} from "./pdf-objets";
+
+export type { MetriquePolice, PoseTexte } from "./pdf-objets";
 
 const executer = promisify(execFile);
 
 /** 1 point PostScript = 1/72 pouce. */
 const PT_EN_MM = 25.4 / 72;
-
-export interface MetriquePolice {
-  /** Nom sans le préfixe de sous-ensemble Illustrator (« GLHMDQ+ »). */
-  nom: string;
-  /** Hauteur de x en millièmes de cadratin, telle que déclarée par le PDF. */
-  xHeight: number;
-  /** Hauteur de capitale, quand la police la déclare. */
-  capHeight: number | null;
-}
 
 export interface MotBat {
   texte: string;
@@ -68,152 +69,6 @@ export interface AnalyseBat {
   polices: Record<string, MetriquePolice>;
   /** Texte complet, pages séparées par une ligne vide. */
   texte: string;
-}
-
-/** Retire le préfixe de sous-ensemble « ABCDEF+ » posé par Illustrator. */
-function nomPolice(brut: string): string {
-  return brut.replace(/^[A-Z]{6}\+/, "");
-}
-
-/**
- * Corps et police posés par le flux de contenu.
- *
- * Illustrator écrit `/T1_1 1 Tf` puis `7 0 0 7 x y Tm` : la taille vaut 1 et
- * l'échelle réelle est portée par la matrice. On multiplie les deux, et on
- * retient la position pour rattacher le style au mot correspondant.
- */
-interface PoseTexte {
-  ressource: string;
-  corpsPt: number;
-  x: number;
-  y: number;
-  /** Rotation en degrés. Le code étiquette JDG est posé à 90°. */
-  rotation: number;
-}
-
-type Matrice = [number, number, number, number, number, number];
-
-const IDENTITE: Matrice = [1, 0, 0, 1, 0, 0];
-
-/** Produit matriciel PDF : m1 × m2. */
-function multiplier(m1: Matrice, m2: Matrice): Matrice {
-  const [a1, b1, c1, d1, e1, f1] = m1;
-  const [a2, b2, c2, d2, e2, f2] = m2;
-  return [
-    a1 * a2 + b1 * c2,
-    a1 * b2 + b1 * d2,
-    c1 * a2 + d1 * c2,
-    c1 * b2 + d1 * d2,
-    e1 * a2 + f1 * c2 + e2,
-    e1 * b2 + f1 * d2 + f2,
-  ];
-}
-
-/**
- * Interprète l'état de texte du flux de contenu.
- *
- * Un paragraphe ne repose pas un `Tm` à chaque ligne : il en pose un au début
- * puis avance avec `Td`, `TD` ou `T*`. Chercher les `Tm` au motif ne voyait donc
- * qu'une ligne sur trois. Il faut suivre l'état comme le ferait un moteur de
- * rendu — matrice de texte, matrice de ligne, interligne — et n'émettre une pose
- * qu'au moment où du texte est réellement montré.
- */
-function lirePosesTexte(pdf: Buffer): PoseTexte[] {
-  const poses: PoseTexte[] = [];
-  const brut = pdf.toString("latin1");
-  const marqueur = /stream\r?\n/g;
-  let m: RegExpExecArray | null;
-
-  while ((m = marqueur.exec(brut)) !== null) {
-    const debut = m.index + m[0].length;
-    const fin = pdf.indexOf("endstream", debut);
-    if (fin < 0) continue;
-
-    let contenu: string;
-    try {
-      contenu = inflateSync(pdf.subarray(debut, fin)).toString("latin1");
-    } catch {
-      continue; // flux non compressé, image ou police — pas du contenu de page
-    }
-    if (!contenu.includes(" Tf")) continue;
-
-    let tm: Matrice = IDENTITE;
-    let tlm: Matrice = IDENTITE;
-    let interligne = 0;
-    let ressource: string | null = null;
-    let taille = 1;
-
-    const N = "(-?[\\d.]+)";
-    const operateurs = new RegExp(
-      [
-        `\\/(\\S+)\\s+${N}\\s+Tf`,                                   // 1,2   police
-        `${N}\\s+${N}\\s+${N}\\s+${N}\\s+${N}\\s+${N}\\s+Tm`,    // 3..8  matrice
-        `${N}\\s+${N}\\s+(TD|Td)`,                                       // 9,10,11 déplacement
-        `${N}\\s+TL`,                                                      // 12    interligne
-        `(T\\*)`,                                                          // 13    ligne suivante
-        `(BT|ET)`,                                                           // 14    bloc de texte
-        `(Tj|TJ|'|")`,                                                       // 15    texte montré
-      ].join("|"),
-      "g"
-    );
-
-    let o: RegExpExecArray | null;
-    while ((o = operateurs.exec(contenu)) !== null) {
-      if (o[1] !== undefined) {
-        ressource = o[1];
-        taille = Number(o[2]);
-      } else if (o[3] !== undefined) {
-        tm = tlm = [Number(o[3]), Number(o[4]), Number(o[5]), Number(o[6]), Number(o[7]), Number(o[8])];
-      } else if (o[9] !== undefined) {
-        const tx = Number(o[9]);
-        const ty = Number(o[10]);
-        if (o[11] === "TD") interligne = -ty;
-        tlm = multiplier([1, 0, 0, 1, tx, ty], tlm);
-        tm = tlm;
-      } else if (o[12] !== undefined) {
-        interligne = Number(o[12]);
-      } else if (o[13] !== undefined) {
-        tlm = multiplier([1, 0, 0, 1, 0, -interligne], tlm);
-        tm = tlm;
-      } else if (o[14] !== undefined) {
-        if (o[14] === "BT") tm = tlm = IDENTITE;
-      } else if (o[15] !== undefined && ressource) {
-        // `'` et `"` passent d'abord à la ligne suivante.
-        if (o[15] === "'" || o[15] === '"') {
-          tlm = multiplier([1, 0, 0, 1, 0, -interligne], tlm);
-          tm = tlm;
-        }
-        const [a, b] = tm;
-        poses.push({
-          ressource,
-          corpsPt: Number((Math.hypot(a, b) * taille).toFixed(3)),
-          x: tm[4],
-          y: tm[5],
-          rotation: Math.round((Math.atan2(b, a) * 180) / Math.PI),
-        });
-      }
-    }
-  }
-  return poses;
-}
-
-/** Métriques des polices embarquées, déclarées en clair dans les descripteurs. */
-function lireMetriques(pdf: Buffer): Record<string, MetriquePolice> {
-  const texte = pdf.toString("latin1");
-  const polices: Record<string, MetriquePolice> = {};
-  const bloc = /\/FontName\s*\/([A-Za-z0-9+\-.]+)([\s\S]{0,800}?)\/XHeight\s+(-?\d+)/g;
-  let m: RegExpExecArray | null;
-
-  while ((m = bloc.exec(texte)) !== null) {
-    const nom = nomPolice(m[1]);
-    const cap = /\/CapHeight\s+(-?\d+)/.exec(m[0]);
-    polices[nom] = {
-      nom,
-      xHeight: Number(m[3]),
-      capHeight: cap ? Number(cap[1]) : null,
-    };
-  }
-  return polices;
 }
 
 /**
@@ -266,27 +121,6 @@ function rattacherStyle(
       mot.police = ressources[meilleure.ressource] ?? null;
     }
   }
-}
-
-/** Table ressource (`T1_0`) → nom de police, lue dans le dictionnaire de la page. */
-function lireRessources(pdf: Buffer): Record<string, string> {
-  const texte = pdf.toString("latin1");
-  const table: Record<string, string> = {};
-  const paires = /\/(T1_\d+|TT\d+|F\d+)\s+(\d+)\s+\d+\s+R/g;
-  const objets = new Map<string, string>();
-
-  const definitions = /(\d+)\s+\d+\s+obj([\s\S]{0,600}?)\/BaseFont\s*\/([A-Za-z0-9+\-.]+)/g;
-  let d: RegExpExecArray | null;
-  while ((d = definitions.exec(texte)) !== null) {
-    objets.set(d[1], nomPolice(d[3]));
-  }
-
-  let p: RegExpExecArray | null;
-  while ((p = paires.exec(texte)) !== null) {
-    const nom = objets.get(p[2]);
-    if (nom) table[p[1]] = nom;
-  }
-  return table;
 }
 
 /** Analyse XML de `pdftotext -bbox` : pages et mots avec leurs boîtes. */
@@ -356,8 +190,9 @@ export async function analyserBat(buffer: ArrayBuffer | Uint8Array): Promise<Ana
     });
 
     const { pages: brutes } = lireBoites(xml);
-    const polices = lireMetriques(octets);
-    const ressources = lireRessources(octets);
+    const objets = lireObjets(octets);
+    const polices = lireMetriques(objets);
+    const ressources = lireRessources(objets);
     const poses = lirePosesTexte(octets);
 
     const pages: PageBat[] = [];
