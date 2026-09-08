@@ -9,7 +9,7 @@
  */
 
 import { normalize } from "../canonical";
-import { hauteurXmm, type AnalyseBat, type MotBat } from "@/lib/utils/pdf-bat";
+import { hauteurXmm, type AnalyseBat, type MetriquePolice, type MotBat } from "@/lib/utils/pdf-bat";
 
 /** Comparaison : casse, accents et espace pliés, nombre et unité recollés. */
 export function normCmp(valeur: string): string {
@@ -59,7 +59,7 @@ export function tokens(mention: string): string[] {
 export function mesurerMention(
   mention: string,
   pages: MotBat[][],
-  polices: Record<string, { nom: string; xHeight: number; capHeight: number | null }>
+  polices: Record<string, MetriquePolice>
 ): MesureMention | EchecMesure {
   const attendus = new Set(tokens(mention));
   if (attendus.size === 0) return "absente";
@@ -111,7 +111,7 @@ export function mesurerMention(
 
 
 /** Assemble les métriques de police de toutes les faces. */
-export function toutesPolices(analyses: AnalyseBat[]): Record<string, { nom: string; xHeight: number; capHeight: number | null }> {
+export function toutesPolices(analyses: AnalyseBat[]): Record<string, MetriquePolice> {
   return Object.assign({}, ...analyses.map((a) => a.polices));
 }
 

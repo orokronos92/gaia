@@ -35,6 +35,7 @@ import {
   type PoseTexte,
 } from "./pdf-objets";
 
+export { estGrasse, estItalique } from "./pdf-objets";
 export type { MetriquePolice, PoseTexte } from "./pdf-objets";
 
 const executer = promisify(execFile);

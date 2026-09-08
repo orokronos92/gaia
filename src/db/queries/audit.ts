@@ -99,7 +99,13 @@ export const getAuditInputForFiche = cache(
 export const getBatTextInputForFiche = cache(
   async (
     ficheId: string
-  ): Promise<{ produitId: string; codePf: string; input: BatTextInput } | null> => {
+  ): Promise<{
+    produitId: string;
+    codePf: string;
+    input: BatTextInput;
+    /** Au moins un ingrédient certifié Demeter — pilote le contrôle §11.1. */
+    estDemeter: boolean;
+  } | null> => {
     const fiche = await db.query.fichesEtiquettes.findFirst({
       where: eq(fichesEtiquettes.id, ficheId),
     });
@@ -110,9 +116,23 @@ export const getBatTextInputForFiche = cache(
     });
     if (!produit) return null;
 
+    // La certification Demeter se lit sur les lignes de la recette, jamais sur
+    // le produit : c'est un ingrédient qui la porte, et c'est elle qui impose le
+    // gras italique du mot « demeter » sur l'étiquette (PRO-QHS-013 §11.1).
+    const recette = await db.query.recettes.findFirst({
+      where: eq(recettes.produitId, produit.id),
+    });
+    const lignes = recette
+      ? await db.query.ingredientsRecette.findMany({
+          where: eq(ingredientsRecette.recetteId, recette.id),
+        })
+      : [];
+    const estDemeter = lignes.some((i) => i.estDemeter);
+
     return {
       produitId: produit.id,
       codePf: produit.codePf,
+      estDemeter,
       input: {
         denomination: produit.denominationFr ?? fiche.denominationLegale,
         ingredients: fiche.ingredientsFr,

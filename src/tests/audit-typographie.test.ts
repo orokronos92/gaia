@@ -9,7 +9,7 @@ import {
 import type { AnalyseBat, MotBat } from "../lib/utils/pdf-bat";
 
 /** Une police fictive dont les métriques donnent des millimètres ronds. */
-const POLICE = { nom: "Test", xHeight: 500, capHeight: 700 };
+const POLICE = { nom: "Test", xHeight: 500, capHeight: 700, fontWeight: 400, italicAngle: 0, flags: 32 };
 
 const mot = (texte: string, corpsPt: number | null, x = 0, y = 0): MotBat => ({
   texte,
@@ -138,12 +138,14 @@ describe("contrôles typographiques mesurés", () => {
     expect(q?.justification).toContain("2.469 mm");
   });
 
-  it("laisse le champ visuel à confirmer même quand la hauteur passe", () => {
-    // 15 pt × 700/1000 × 25,4/72 = 3,704 mm — au-dessus des 3 mm.
+  it("conclut sur la seule hauteur quand elle passe", () => {
+    // 15 pt × 700/1000 × 25,4/72 = 3,704 mm — au-dessus des 3 mm. Le « même
+    // champ visuel » qu'exige le même §4 est mesuré à part (positions.ts) et
+    // rattaché au même point 6.2 : ce contrôle-ci ne répond que de la hauteur.
     const a = face(74.25, [mot("100g", 15)]);
     const q = controlerTypographie([a], { poidsNet: "100 g" }).find((c) => c.checklistId === "6.2");
-    expect(q?.statut).toBe("WARNING");
-    expect(q?.justification).toContain("même champ visuel");
+    expect(q?.statut).toBe("PASS");
+    expect(q?.justification).toContain("3.704 mm");
   });
 
   it("signale l'exemption nutritionnelle sous 25 cm², et seulement là", () => {

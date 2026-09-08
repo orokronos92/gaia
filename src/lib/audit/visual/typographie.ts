@@ -209,14 +209,10 @@ function controlerHauteurChiffres(analyses: AnalyseBat[], entree: EntreeTypo): B
     return { ...base, statut: "FAIL", justification: `${mesure}. Non conforme.` };
   }
 
-  // La hauteur est acquise ; le « même champ visuel que la dénomination » exigé
-  // par le même paragraphe relève des positions relatives (lot P6) et reste à
-  // confirmer par la Qualité.
-  return {
-    ...base,
-    statut: "WARNING",
-    justification: `${mesure}. Hauteur conforme ; reste à confirmer que la quantité nette figure dans le même champ visuel que la dénomination.`,
-  };
+  // La hauteur est acquise. Le « même champ visuel que la dénomination » exigé
+  // par le même paragraphe est mesuré à part et rattaché au même point : les
+  // deux constats s'additionnent sur la ligne que Marie lit.
+  return { ...base, statut: "PASS", justification: `${mesure}. Hauteur conforme.` };
 }
 
 /** §2.3 — exemption d'étiquetage nutritionnel sous 25 cm² (point 4.1). */

@@ -16,6 +16,37 @@ export interface MetriquePolice {
   xHeight: number;
   /** Hauteur de capitale, quand la police la déclare. */
   capHeight: number | null;
+  /** Graisse déclarée (400 = normal, 700 = gras). Null si absente. */
+  fontWeight: number | null;
+  /** Inclinaison de l'italique, en degrés. 0 pour un caractère droit. */
+  italicAngle: number;
+  /** Drapeaux du descripteur : bit 7 = italique, bit 19 = gras forcé. */
+  flags: number;
+}
+
+/** Bits du champ `/Flags` d'un descripteur de police (PDF 32000-1, tableau 123). */
+const FLAG_ITALIQUE = 1 << 6;
+const FLAG_GRAS_FORCE = 1 << 18;
+
+/**
+ * Une police est-elle grasse ?
+ *
+ * `/FontWeight` est la source la plus fiable — Illustrator la déclare pour
+ * toutes les polices embarquées. Le nom sert de filet quand elle manque : une
+ * fonderie nomme « Bold », « Heavy », « Black » ou « Demi » ce qu'elle a dessiné
+ * gras.
+ */
+export function estGrasse(metrique: MetriquePolice): boolean {
+  if (metrique.fontWeight !== null) return metrique.fontWeight >= 600;
+  if ((metrique.flags & FLAG_GRAS_FORCE) !== 0) return true;
+  return /bold|heavy|black|demi|semib/i.test(metrique.nom);
+}
+
+/** Une police est-elle italique ? Inclinaison, drapeau, puis nom. */
+export function estItalique(metrique: MetriquePolice): boolean {
+  if (metrique.italicAngle !== 0) return true;
+  if ((metrique.flags & FLAG_ITALIQUE) !== 0) return true;
+  return /italic|oblique/i.test(metrique.nom);
 }
 
 /**
@@ -222,11 +253,17 @@ export function lireMetriques(objets: Map<string, string>): Record<string, Metri
     const xh = /\/XHeight\s+(-?\d+)/.exec(corps);
     if (!nom || !xh) continue;
     const cap = /\/CapHeight\s+(-?\d+)/.exec(corps);
+    const poids = /\/FontWeight\s+(-?[\d.]+)/.exec(corps);
+    const angle = /\/ItalicAngle\s+(-?[\d.]+)/.exec(corps);
+    const drapeaux = /\/Flags\s+(\d+)/.exec(corps);
     const propre = nomPolice(nom[1]);
     polices[propre] = {
       nom: propre,
       xHeight: Number(xh[1]),
       capHeight: cap ? Number(cap[1]) : null,
+      fontWeight: poids ? Number(poids[1]) : null,
+      italicAngle: angle ? Number(angle[1]) : 0,
+      flags: drapeaux ? Number(drapeaux[1]) : 0,
     };
   }
   return polices;

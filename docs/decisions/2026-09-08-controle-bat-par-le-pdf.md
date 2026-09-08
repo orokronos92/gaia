@@ -220,6 +220,72 @@ synthétiques ; la lecture des `ObjStm` n'a pas de test de non-régression.
 
 ---
 
+## 5 quater. P5 et P6 livrés — 8 septembre
+
+`style-typo.ts` et `positions.ts` complètent la mesure : après la taille des
+caractères, la façon dont ils sont imprimés et l'endroit où ils sont posés.
+`controles-bat.ts` compose les trois familles en un seul point d'entrée.
+
+**P5 — graisse et style.** Chaque police embarquée déclare `/FontWeight`,
+`/ItalicAngle` et `/Flags` : la graisse et l'italique se lisent, ils ne
+s'estiment pas. Deux contrôles en découlent :
+
+- **§3.1, allergène mis en évidence** (point 5.1). La référence n'est pas « gras
+  dans l'absolu » mais « distinct du reste de la liste » : on compare la police
+  de l'allergène à celle qui domine la liste d'ingrédients, car une liste
+  entièrement en gras ne mettrait rien en évidence.
+- **§11.1, le mot « demeter » en gras italique** (point 2.4), émis seulement
+  quand le mot figure sur l'étiquette ou que la recette porte un ingrédient
+  Demeter — la certification se lit sur les lignes de recette, jamais sur le
+  produit.
+
+**P6 — positions relatives.** Le « champ de vision » de l'INCO (art. 2.2.k) est
+l'ensemble des surfaces lisibles d'un seul angle de vue. Sur un BAT — un fichier
+par face — cela se traduit sans ambiguïté : *une même page = un même champ
+visuel*. Deux contrôles :
+
+- **§1 et §4, dénomination et poids net dans le même champ visuel** (points 1.4
+  et 6.2, la même mesure rattachée aux deux points pour que chacun se lise seul) ;
+- **§6, origine des matières premières sous le code de l'organisme de contrôle**
+  (point 8.1), par comparaison d'ordonnées.
+
+### Mesuré sur TA7372
+
+| Contrôle | Constat |
+|---|---|
+| §6 origine sous FR-BIO-01 | **1,1 mm en dessous**, sur la face avant — conforme |
+| §1/§4 même champ visuel | dénomination et « 100g » sur la contre-étiquette, distants de 79,2 mm |
+| §3.1 allergène | non applicable (aucun allergène déclaré) |
+| §11.1 demeter | non applicable (produit non Demeter) — aucune ligne ajoutée |
+
+### Trois limites assumées
+
+**Le soulignement n'est pas du texte.** C'est un trait vectoriel posé à côté du
+mot, indiscernable des autres traits de l'étiquette. La procédure accepte
+« Gras, Souligné » : quand la graisse ne distingue pas l'allergène, on ne conclut
+donc pas à la faute — on demande de vérifier le soulignement à l'œil. Prouver
+l'absence d'une preuve qu'on ne sait pas lire serait une faute de raisonnement.
+
+**La dénomination légale n'est pas le nom commercial.** La fiche porte
+« Malin comme un chimpanzé », l'étiquette porte aussi « THÉ NOIR SAVEUR MIEL
+FIGUE ET THYM ». §1 vise la seconde. Le contrôle 1.4 livre donc le constat mesuré
+et le dit explicitement, mais ne tranche pas : un PASS y serait faussement
+rassurant, un FAIL faussement accusateur. C'est la question ouverte du même nom
+dans `visitegaia1109.md`.
+
+**L'Eurofeuille est un dessin.** §8.1 exige l'origine sous le code OC, lui-même
+sous l'Eurofeuille. Le code mesure la première relation ; la seconde attend P8 ou
+la vision. Le point reste donc à confirmer, mais avec les faits en main.
+
+### Une hypothèse à surveiller
+
+« Une page = une face » tomberait si un BAT arrivait en imposition d'imprimeur,
+deux faces sur une même page. Le contrôle donne toujours la face et l'écart en
+millimètres, précisément pour que ce cas se voie plutôt que de passer en PASS
+silencieux.
+
+---
+
 ## 6. Découpage proposé
 
 | Lot | Contenu | Dépend de |
@@ -228,8 +294,8 @@ synthétiques ; la lecture des `ObjStm` n'a pas de test de non-régression.
 | **P2** | Rattacher les contrôles BAT aux points de la checklist (`checklistId`) | — |
 | ~~**P3**~~ | Surface de la face la plus grande → pilote §12, §2.3 | ✅ 8 sept |
 | ~~**P4**~~ | Hauteur de x et hauteur des chiffres → §12, §4 | ✅ 8 sept |
-| **P5** | Graisse et style → §3.1, §11.1 | P1 |
-| **P6** | Positions relatives → §1, §8.1, §11.1 « même champ visuel » | P1 |
+| ~~**P5**~~ | Graisse et style → §3.1, §11.1 | ✅ 8 sept |
+| ~~**P6**~~ | Positions relatives → §1, §4, §6 « même champ visuel » | ✅ 8 sept |
 | **P7** | Écran Fabrice : auto-contrôle avant envoi à Marie | P1-P6 |
 | **P8** | Prototype d'empreinte vectorielle des logos | P1 |
 
