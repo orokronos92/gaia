@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   differentielComposition,
   differentielDepuisTexte,
+  ecartsDeDenomination,
   type LigneComposition,
 } from "../lib/recette/differentiel";
 
@@ -48,5 +49,42 @@ describe("differentielComposition — écarts recette ↔ produit", () => {
     );
     expect(e.map((x) => x.designation)).toEqual(["Guarana"]);
     expect(e[0].type).toBe("ajoute");
+  });
+});
+
+describe("ecartsDeDenomination — ce qui mérite de prévenir Marie", () => {
+  const recette = [
+    { designation: "thé noir", pourcentage: 38.5 },
+    { designation: "honeybush", pourcentage: 32 },
+  ];
+
+  it("se tait quand seuls les pourcentages bougent", () => {
+    // L'arrondi change les chiffres à chaque validation : alerter là-dessus
+    // ferait une alerte permanente, donc une alerte que plus personne ne lit.
+    const ecarts = ecartsDeDenomination("thé noir* 38%, honeybush* 32%.", recette);
+    expect(ecarts).toHaveLength(0);
+  });
+
+  it("prévient quand la recette nomme d'autres matières", () => {
+    // Le cas réel : la recette porte la désignation fournisseur, l'étiquette la
+    // dénomination légale. Écraser ici dégrade la liste comparée au BAT.
+    const ecarts = ecartsDeDenomination("thé noir* 38%, honeybush* 32%.", [
+      { designation: "SORWATHE OP1", pourcentage: 38.5 },
+      { designation: "HONEYBUSH", pourcentage: 32 },
+    ]);
+    expect(ecarts.map((e) => e.type).sort()).toEqual(["ajoute", "retire"]);
+    expect(ecarts.some((e) => e.designation === "SORWATHE OP1")).toBe(true);
+  });
+
+  it("prévient quand un ingrédient disparaît ou apparaît", () => {
+    const ecarts = ecartsDeDenomination("thé noir* 38%, honeybush* 32%, thym* 1%.", recette);
+    expect(ecarts).toHaveLength(1);
+    expect(ecarts[0]).toMatchObject({ designation: "thym", type: "retire" });
+  });
+
+  it("se tait quand la fiche ne porte encore aucune liste", () => {
+    // Rien à écraser : la recette remplit, sans rien demander.
+    expect(ecartsDeDenomination(null, recette)).toHaveLength(0);
+    expect(ecartsDeDenomination("", recette)).toHaveLength(0);
   });
 });
