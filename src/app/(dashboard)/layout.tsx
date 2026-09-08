@@ -26,7 +26,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <Sidebar />
                     <div className="flex flex-1 flex-col sm:gap-4 sm:py-4 sm:pl-64 relative">
                         <Header />
-                        <main className="flex-1 items-start gap-4 p-4 sm:px-8 sm:py-4 md:gap-8 max-w-7xl mx-auto w-full">
+                        {/*
+                          1280 px conviennent à une page qui se lit en colonne.
+                          L'écran de contrôle, lui, met la checklist et le BAT
+                          côte à côte : la même laisse le comprime alors qu'il
+                          demande déjà 1600 px pour lui-même.
+
+                          L'élargissement est donc demandé par la page, avec
+                          `data-wide`, plutôt qu'accordé à toutes : aucune autre
+                          n'est touchée, et un navigateur sans `:has()` retombe
+                          sur la largeur d'aujourd'hui.
+                        */}
+                        <main className="flex-1 items-start gap-4 p-4 sm:px-8 sm:py-4 md:gap-8 max-w-7xl has-[[data-wide]]:max-w-[1600px] mx-auto w-full">
                             {children}
                         </main>
                     </div>

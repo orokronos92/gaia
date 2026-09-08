@@ -364,7 +364,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
 
 
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 max-w-[1600px] mx-auto pb-20">
+        // `data-wide` : cette page demande au layout de desserrer sa laisse de
+        // 1280 px, sans quoi le `max-w-[1600px]` ci-dessous ne sert à rien.
+        <div data-wide className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 max-w-[1600px] mx-auto pb-20">
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-white/60 backdrop-blur-xl p-6 rounded-3xl border border-stone-200/50 shadow-sm">
                 <div className="flex flex-col gap-2">
