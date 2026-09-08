@@ -14,6 +14,7 @@
  * reste le sien, daté et signé ; on lui épargne seulement la saisie.
  */
 
+import { decomposerCodeArticle } from "../code-article";
 import { facesBat, normCmp } from "./mesure-mentions";
 import { repereMot, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
@@ -98,8 +99,35 @@ type LectureCode =
   | { propose: Proposition & { reperes: RepereBat[] } }
   | { propose: null; motif: string };
 
+/** Les chiffres que porte un code étiquette : `ETCNA7372V5` → `7372`. */
+const CHIFFRES_CODE = /^ET[A-Z]{2,6}(\d{3,5})(?:V\d{1,2})?$/;
+
 /**
- * Le code étiquette imprimé, s'il n'y en a qu'un.
+ * Le code imprimé désigne-t-il bien CE produit ?
+ *
+ * Les JDG rangent les BAT par dossier, et un dossier sert parfois deux
+ * conditionnements : TA737 et TA7372 partagent les leurs, dont une seule face
+ * est lisible. Sans ce garde-fou, les deux fiches se voyaient proposer
+ * `ETCNA7372V5` — juste pour l'une, faux pour l'autre, et d'un seul clic.
+ *
+ * Le code porte le n° d'article suivi du conditionnement (MOP-PRO-029 §2.1) :
+ * `ETCNA7372V5` → 737 + 2. Un codePf sans chiffre de conditionnement est écrit
+ * avec un 0 sur l'étiquette — TH577 → `ETHN5770V5` — et les deux formes sont
+ * acceptées. Tout le reste désigne un autre produit.
+ *
+ * Mesuré sur le catalogue : 86 des 95 codes uniques concordent. Des 9 écartés,
+ * 3 étaient le code du voisin de dossier.
+ */
+function designeLeProduit(code: string, codePf: string): boolean {
+  const produit = decomposerCodeArticle(codePf);
+  const chiffres = CHIFFRES_CODE.exec(code)?.[1];
+  if (!produit || !chiffres) return false;
+  if (produit.conditionnement) return chiffres === produit.article + produit.conditionnement;
+  return chiffres === produit.article || chiffres === `${produit.article}0`;
+}
+
+/**
+ * Le code étiquette imprimé, s'il n'y en a qu'un et s'il désigne ce produit.
  *
  * Mesuré sur les 146 produits qui ont des BAT : 95 n'en impriment qu'un — c'est
  * le code de la contre-étiquette dans 78 cas, celui de la face unique dans les
@@ -107,14 +135,15 @@ type LectureCode =
  * dont les BAT sont entièrement vectorisés (aucun mot à lire) et 10 dont le
  * dossier couvre plusieurs conditionnements, donc plusieurs codes.
  *
- * Dans ces deux derniers cas on ne propose rien. Le nom du fichier porte bien
- * un code, mais c'est une métadonnée de rangement, pas la mention imprimée que
- * le contrôle vise — et sur un dossier partagé il en porte deux ou trois. On le
- * cite alors dans le constat : Marie a la valeur sous les yeux, elle reste
- * celle qui décide de l'écrire.
+ * Dans tous les cas écartés on ne propose rien. Le nom du fichier porte bien un
+ * code, mais c'est une métadonnée de rangement, pas la mention imprimée que le
+ * contrôle vise — et sur un dossier partagé il en porte deux ou trois. On cite
+ * alors ce qu'on a lu dans le constat : Marie a la valeur sous les yeux, elle
+ * reste celle qui décide de l'écrire.
  */
 export function lireCodeEtiquette(
   analyses: AnalyseBat[],
+  codePf?: string | null,
   noms?: string[]
 ): LectureCode {
   const trouves = new Map<string, RepereBat>();
@@ -129,6 +158,12 @@ export function lireCodeEtiquette(
 
   if (trouves.size === 1) {
     const [valeur, repere] = [...trouves][0];
+    if (codePf && !designeLeProduit(valeur, codePf)) {
+      return {
+        propose: null,
+        motif: `Le BAT imprime « ${valeur} », dont le n° d'article ne correspond pas au code produit ${codePf} — le dossier de BAT sert vraisemblablement un autre conditionnement. À trancher sur le BAT.`,
+      };
+    }
     return {
       propose: {
         table: "fiche",
@@ -173,6 +208,8 @@ function codeDuNomDeFichier(nom: string): string | null {
 export interface EntreePropositions {
   poidsNet?: string | null;
   codeEtiquette?: string | null;
+  /** Sert à vérifier qu'un code lu sur le BAT désigne bien ce produit. */
+  codePf?: string | null;
 }
 
 export function controlerPropositions(
@@ -213,7 +250,7 @@ export function controlerPropositions(
       manqueSurLaFiche: "le code étiquette",
       checklistId: "15.1",
     };
-    const lecture = lireCodeEtiquette(analyses, noms);
+    const lecture = lireCodeEtiquette(analyses, entree.codePf, noms);
     checks.push(
       lecture.propose
         ? {

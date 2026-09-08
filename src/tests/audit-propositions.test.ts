@@ -48,30 +48,45 @@ describe("proposition du poids net lu sur le BAT", () => {
 });
 
 /** Une fiche déjà renseignée sur tout sauf ce que le test regarde. */
-const FICHE_COMPLETE = { poidsNet: "100 g", codeEtiquette: "ETCRA2372V6" };
+const FICHE_COMPLETE = { poidsNet: "100 g", codeEtiquette: "ETCRA2372V6", codePf: "TR2372" };
 
 describe("proposition du code étiquette lu sur le BAT", () => {
   it("propose le seul code imprimé", () => {
-    const lu = lireCodeEtiquette([face(["Poire", "Belle-Hélène", "ETCRA2372V6", "100g"])]);
+    const lu = lireCodeEtiquette([face(["Poire", "Belle-Hélène", "ETCRA2372V6", "100g"])], "TR2372");
     expect(lu.propose?.valeur).toBe("ETCRA2372V6");
     expect(lu.propose?.table).toBe("fiche");
     expect(lu.propose?.champ).toBe("codeEtiquette");
   });
 
   it("reconnaît aussi la face unique, sans C de contre-étiquette", () => {
-    expect(lireCodeEtiquette([face(["ETTUTO3542"])]).propose?.valeur).toBe("ETTUTO3542");
+    expect(lireCodeEtiquette([face(["ETTUTO3542"])], "BT3542").propose?.valeur).toBe("ETTUTO3542");
+  });
+
+  it("accepte le 0 que l'étiquette ajoute à un code sans conditionnement", () => {
+    // TH577 n'a pas de chiffre de conditionnement ; son étiquette écrit 5770.
+    expect(lireCodeEtiquette([face(["ETHN5770V5"])], "TH577").propose?.valeur).toBe("ETHN5770V5");
   });
 
   it("ne prend pas pour un code un mot qui y ressemble", () => {
     // « ETE » ou une origine ne doivent jamais devenir une identité de BAT.
-    const lu = lireCodeEtiquette([face(["ETE", "FR-BIO-01", "3", "5828", "ETIQUETTE"])]);
+    const lu = lireCodeEtiquette([face(["ETE", "FR-BIO-01", "3", "5828", "ETIQUETTE"])], "TR2372");
     expect(lu.propose).toBeNull();
+  });
+
+  it("refuse le code du voisin de dossier", () => {
+    // TA737 et TA7372 partagent leurs BAT, dont une seule face est lisible :
+    // sans ce garde-fou, les deux fiches reçoivent le même code d'un clic.
+    const lu = lireCodeEtiquette([face(["ETCNA7372V5"])], "TA737");
+    expect(lu.propose).toBeNull();
+    expect(lu).toHaveProperty("motif", expect.stringContaining("TA737"));
+    // Le vrai propriétaire du code, lui, le reçoit.
+    expect(lireCodeEtiquette([face(["ETCNA7372V5"])], "TA7372").propose?.valeur).toBe("ETCNA7372V5");
   });
 
   it("ne propose rien quand le dossier couvre plusieurs conditionnements", () => {
     // Dix produits du catalogue partagent un dossier de BAT : deux codes y sont
     // imprimés, et rien ne dit lequel est celui de cette fiche.
-    const lu = lireCodeEtiquette([face(["ETCBN4042V6"]), face(["ETCBN4046V6"])]);
+    const lu = lireCodeEtiquette([face(["ETCBN4042V6"]), face(["ETCBN4046V6"])], "TB4042");
     expect(lu.propose).toBeNull();
     expect(lu).toHaveProperty("motif", expect.stringContaining("ETCBN4042V6"));
   });
@@ -79,7 +94,7 @@ describe("proposition du code étiquette lu sur le BAT", () => {
   it("cite le nom des fichiers quand le BAT est vectorisé", () => {
     // 41 produits n'impriment aucun mot lisible : on ne propose pas, mais Marie
     // doit voir la valeur plutôt que d'aller ouvrir MinIO.
-    const lu = lireCodeEtiquette([face([])], ["ETCVN4312V5-Pin Ho Jade.pdf"]);
+    const lu = lireCodeEtiquette([face([])], "TV4312", ["ETCVN4312V5-Pin Ho Jade.pdf"]);
     expect(lu.propose).toBeNull();
     expect(lu).toHaveProperty("motif", expect.stringContaining("ETCVN4312V5"));
   });
