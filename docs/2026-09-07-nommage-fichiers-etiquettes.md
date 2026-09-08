@@ -1,12 +1,19 @@
 # Association produit ↔ étiquette : constat et règles à établir
 
-**Date** : 7 septembre 2026
+**Date** : 7 septembre 2026, révisé le 8 septembre
 **Rédigé par** : SPC, à partir des données réelles de l'échantillon GaïaLabel
 **Destinataires** : Les Jardins de Gaïa — Direction, Qualité, Graphisme
+**Documents de référence** : MOP-PRO-029 v.2 (26/01/2023) · PRO-QHS-013 (30/03/2023)
 
 > Ce document part d'une anomalie constatée en test. Il montre qu'elle n'est pas
-> un incident isolé mais la conséquence d'une absence de règle, et propose les
-> règles qui la rendraient impossible.
+> un incident isolé mais la conséquence d'un écart entre une convention écrite et
+> son application, et propose les règles qui la rendraient impossible.
+>
+> **Révision du 8 septembre.** La première version de ce rapport posait des
+> questions sur la structure du code article. MOP-PRO-029 y répond : le
+> quatrième chiffre est le type de conditionnement (§2.1.3), et le GENCODE suit
+> une structure définie (§3). Les constats ci-dessous ont été refaits à la
+> lumière de ces règles ; les questions déjà tranchées ont été retirées.
 >
 > **Périmètre.** Les chiffres portent sur l'échantillon chargé dans GaïaLabel au
 > 7 septembre 2026 : **151 produits** et **149 dossiers d'étiquettes**. C'est un
@@ -62,28 +69,30 @@ correspondait de façon fiable à un nom de dossier, la recherche avait été
 élargie jusqu'à retrouver quelque chose — au prix de retrouver aussi ce qu'il ne
 fallait pas.
 
-C'est le point important pour la suite : **le défaut logiciel est né d'un défaut
-de convention.** Nous avons corrigé le premier ; le second ne peut être corrigé
-que par JDG.
+C'est le point important pour la suite : **le défaut logiciel est né d'un écart
+entre la convention écrite et son application.** La convention existe pourtant, et
+elle est claire — c'est le nommage des dossiers qui s'en éloigne.
 
 ---
 
 ## 4. Ce que dit l'échantillon
 
-### 4.1 Le code article n'a pas de forme stable
+### 4.1 Les dossiers ne portent pas le code complet
 
-Le dossier porte le code de base, la base produit y ajoute un chiffre :
+Le code article est parfaitement défini par MOP-PRO-029 : famille, numéro
+d'article sur trois chiffres, puis conditionnement. La base produit le respecte.
+**Les noms de dossiers, eux, omettent le plus souvent le conditionnement :**
 
 | Base produit | Dossier | Produit |
 |---|---|---|
 | `TA6122` | `TA612 - LA BALADE DU HÉRISSON` | La balade du hérisson |
 | `TH1502` | `TH150-HIBISCUS` | Hibiscus |
 | `TB4016` | `TB401 WHITE MONKEY` | White Monkey |
-| `TA7372` | `TA7372 - Malin comme un chimpanzé` | Malin comme un chimpanzé |
+| `TA7372` | `TA7372 - Malin comme un chimpanzé` | ✅ code complet |
 
-Sur 151 produits, **50 correspondent exactement** à un nom de dossier et
-**99 correspondent à un chiffre près**. Aucune règle écrite ne dit lequel des
-deux cas s'applique.
+Sur 151 produits, **50 seulement** trouvent un dossier au nom exact ; **99**
+n'y parviennent qu'en retirant le chiffre de conditionnement. C'est ce qui oblige
+l'application à rapprocher par ressemblance au lieu de lire un code.
 
 ### 4.2 Trois séparateurs coexistent
 
@@ -156,10 +165,23 @@ TJ220 → TJ2202, TJ2206        (Matcha pour la cuisine)
 MT265 → MT265, MT2652         (Maté sportif)
 ```
 
-Le dernier chiffre distingue donc des **états** d'un même article — version,
-conditionnement, ou les deux selon les cas. **Cette ambiguïté est la racine du
-problème** : un même caractère sert à plusieurs choses, et personne ne peut dire
-laquelle sans connaître le dossier.
+Le dernier chiffre est le **type de conditionnement**, et il est défini noir sur
+blanc dans **MOP-PRO-029 §2.1.3** :
+
+| Poids | Code | | Poids | Code |
+|---|---|---|---|---|
+| 1,5 kg vrac | 1 | | 250 g | 4 |
+| 100 g ou ≥ 80 g | 2 | | 500 g | 5 |
+| 1 kg Malongo | 3 | | 50 g ou < 80 g | 6 |
+| | | | 1 kg Jardins de Gaïa | 7 |
+
+Les six cas ci-dessus ne sont donc **ni des doublons ni des versions** : ce sont
+les conditionnements d'un même thé. `TB4016` est le White Monkey en 50 g,
+`TB4017` le même en 1 kg.
+
+Vérification sur le catalogue : **131 produits sur 135** portant un chiffre de
+conditionnement ont un poids net cohérent avec lui. La règle est donc appliquée,
+et elle est fiable.
 
 ---
 
@@ -209,18 +231,20 @@ initiale de cette donnée dépend encore de la cohérence des noms.
 
 ## 7. Ce que l'application ne peut pas résoudre seule
 
-Aucune règle informatique ne peut trancher les questions suivantes, parce que
-l'information n'existe nulle part :
+MOP-PRO-029 lève une partie des questions que nous nous posions :
 
-- **Quelle version fait foi** quand un dossier contient une V5 et une V6.
-- **Quel dossier correspond à quel code** quand un article en a deux
-  (`TB401 WHITE MONKEY` / `TB401 WHITE MONKEY Boîte 1kg`).
-- **Ce que signifie le 4ᵉ chiffre** : version, conditionnement, ou autre.
-- **Lequel des deux codes est le bon** quand un dossier en contient deux
-  (`ETNA737V5` et `ETCNA7372V5`).
+- Le **4ᵉ chiffre** est le type de conditionnement (§2.1.3).
+- **Les deux codes d'un même dossier** sont normaux : l'étiquette *facing* peut
+  omettre le chiffre de conditionnement, la *contre-étiquette* le porte
+  (§2.2.2 et §2.2.3). D'où `ETNA737V5` à côté de `ETCNA7372V5`.
 
-Tant que ces points ne sont pas fixés, chaque nouvelle référence rouvre le
-risque.
+Restent deux points qu'aucune règle informatique ne peut trancher :
+
+- **Quelle version de visuel fait foi** quand un dossier contient une V5 et une
+  V6. Le `V<n>` des noms de fichiers n'est décrit dans aucune procédure.
+- **Quel dossier correspond à quel conditionnement** quand un article en a deux
+  (`TB401 WHITE MONKEY` / `TB401 WHITE MONKEY Boîte 1kg`), les noms de dossiers
+  ne portant pas le chiffre de conditionnement.
 
 ---
 
@@ -263,21 +287,26 @@ dossier ne porte un code différent de celui-là.
 
 > ✅ `TA7372_RECTO_V5.pdf` et `TA7372_RECTO_V5.ai`
 
-### R4 — Le 4ᵉ chiffre a une seule signification
+### R4 — Le nom du dossier porte le code complet, conditionnement compris
 
-À définir et à écrire **une fois pour toutes**. Si c'est un numéro de version,
-alors il ne doit jamais désigner un conditionnement — et réciproquement. Deux
-notions distinctes exigent deux emplacements distincts.
+MOP-PRO-029 §2.1.3 définit déjà le chiffre de conditionnement. Il suffit de
+l'écrire dans le nom du dossier, comme dans l'ERP.
 
-C'est la règle la plus structurante des huit : toutes les autres en découlent.
+> ✅ `TA7372 - Malin comme un chimpanzé` (100 g)
+> ❌ `TB401 WHITE MONKEY` puis `TB401 WHITE MONKEY Boîte 1kg`
+> ✅ `TB4016 - White Monkey` et `TB4017 - White Monkey`
 
-### R5 — Un conditionnement différent est un article différent
+Aujourd'hui **148 dossiers sur 149** omettent ou tronquent ce chiffre, alors que
+la base produit le porte. C'est ce décalage qui oblige l'application à
+rapprocher les fichiers par ressemblance au lieu de lire un code.
 
-S'il a son propre code article, il a son propre dossier. Sinon, il partage le
-dossier de l'article et se distingue par le champ `TYPE` du nom de fichier.
+### R5 — Un conditionnement = un dossier
 
-> Le cas `TB401 WHITE MONKEY` / `TB401 WHITE MONKEY Boîte 1kg` doit basculer
-> dans l'un ou l'autre de ces deux cas, pas rester entre les deux.
+Deux conditionnements du même thé ont deux codes article distincts (§2.1.3) :
+ils méritent deux dossiers distincts, nommés par leur code complet.
+
+> Le cas `TB401 WHITE MONKEY` / `TB401 WHITE MONKEY Boîte 1kg` se résout de
+> lui-même une fois R4 appliquée.
 
 ### R6 — Une seule version en vigueur, visible
 
@@ -313,14 +342,28 @@ indéfiniment derrière chaque exception.
 
 ## 10. Questions à trancher avec JDG
 
-1. Que signifie le 4ᵉ chiffre du code article ? Version, conditionnement, autre ?
-2. `TA737` et `TA7372` désignent-ils le même article à deux versions ?
-3. Que distinguent les préfixes de fichier `ETN` et `ETCN` ?
-4. À quoi renvoie le `V5` des noms de fichiers — version d'étiquette, révision
-   graphique, millésime ?
-5. `TB401 WHITE MONKEY` et `TB401 WHITE MONKEY Boîte 1kg` : un ou deux articles ?
-6. `TN2412` et `TN5472` n'ont aucun fichier : BAT manquants, ou codes erronés ?
-7. `TH5296` et `TU5226` portent le même nom commercial : est-ce voulu ?
+*Les questions sur le 4ᵉ chiffre, les préfixes `ETN`/`ETCN` et les deux codes
+d'un même dossier ont trouvé leur réponse dans MOP-PRO-029 — elles sont retirées
+de cette liste.*
+
+1. À quoi renvoie le **`V5`** des noms de fichiers — version d'étiquette, révision
+   graphique, millésime ? Aucune procédure ne le décrit, et **21 fichiers sur 276
+   n'en portent aucun**.
+2. **17 produits n'ont pas de chiffre de conditionnement** dans leur code
+   (`TH200`, `TH440`, `MT265`…). Codes historiques à conserver, ou à compléter ?
+3. **Deux EAN sont portés par deux produits différents** :
+   `TH5226` La tisane d'hiver et `TH5296` La tisane de Noël partagent
+   `3582811005223` ; `TR2092` et `TR2482` partagent `3582810920923`.
+   Deux produits distincts ne peuvent pas partager un GTIN.
+4. **Quatre produits** ont un conditionnement incohérent avec leur poids net :
+   `TJ9051` (code 1 = 1,5 kg, poids 30 g), `BT3542` (code 2, poids « 3 pièces »),
+   `TH0632` (code 2 = ≥ 80 g, poids 70 g), `TU0025` (code 5 = 500 g, poids 125 g).
+5. `TN2412` et `TN5472` n'ont aucun fichier d'étiquette : BAT manquants, ou codes
+   erronés ?
+6. `TH5296` et `TU5226` portent le même nom commercial : est-ce voulu ?
+7. L'arrondi QUID : **§2.2 dit un chiffre après la virgule**, les fiches recette
+   R&D arrondissent autrement (MT265 : 62 / 15,5 / 6 ; TA7372 : 38 / 32 / 19).
+   Quelle règle fait foi ?
 8. Qui fait foi, à terme : le dossier partagé ou GaïaLabel ?
 
 ---

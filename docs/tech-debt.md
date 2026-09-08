@@ -294,3 +294,44 @@ centralisation des modèles, ils ont dû être analysés pour rien.
 revivre, le rebrancher sur `callMistral` et lui attribuer une valeur de l'enum `agent_ia`.
 
 **Fichiers.** `src/agents/import-agent.ts`, `src/agents/pdf-comparison-agent.ts`.
+
+
+---
+
+## 17. 🔴 Arrondi QUID — la procédure écrite et la pratique R&D divergent
+
+**Constat (2026-09-08, après lecture de PRO-QHS-013).** §2.2 énonce la règle :
+
+> « Le résultat du calcul des pourcentages est donné avec **un chiffre après la virgule**,
+> selon la règle des arrondis (deuxième chiffre 0-4 → inférieur, 5-9 → supérieur). Si le
+> total est **supérieur à 100 %** du fait de ces arrondis, l'ajustement se fera sur la
+> **matière en quantité la plus importante**. »
+
+Aucune des trois sources ne s'accorde :
+
+| Source | MT265 |
+|---|---|
+| **Règle §2.2** appliquée littéralement | 62,2 / 15,5 / 6,2 / 6,2 / 3,7 / 3,7 / 1,9 / 0,5 = **99,9** |
+| **Fiche recette R&D** (colonne « % pour liste d'ingrédient ») | 62 / 15,5 / 6 / 6 / 4 / 4 / 2 / 0,5 = **100** |
+| **Notre moteur** (plus grand reste, pas 0,5) | 62 / 15,5 / 6 / 6 / 4 / 4 / 2 / 0,5 = **100** |
+
+La règle écrite produit 99,9 %, et sa clause de correction ne couvre que le cas « > 100 ».
+Notre moteur reproduit la feuille au chiffre près — mais par un algorithme que la procédure
+ne décrit pas. Et sur TA7372 la feuille arrondit à l'entier (38 / 32 / 19 / 5 / 4 / 1 / 1)
+là où MT265 garde des demis : **le pas change selon le produit**, ce qui laisse penser que
+la colonne est saisie à la main, pas calculée.
+
+**Impact.** Les pourcentages générés diffèrent de la fiche R&D sur les produits dont le pas
+n'est pas 0,5 (TA7372 : on écrit 38,5 / 19,5 / 4,5 / 0,5 au lieu de 38 / 19 / 5 / 1). Un
+écran comparé à une feuille pendant une démo se voit immédiatement.
+
+**Ce qu'il ne faut PAS faire.** Ni appliquer §2.2 littéralement (99,9 %), ni « arrondir puis
+reporter l'écart sur le plus gros » — cette variante a été testée et infirmée par la feuille
+MT265 (elle pousse le maté à 63 au lieu de 62). Voir le garde-fou dans `recette.test.ts`.
+
+**Solution.** Question à poser à Marie **avant** de toucher au moteur : quelle règle fait foi,
+et qui remplit la colonne « % pour liste d'ingrédient » ? Selon la réponse : lire la colonne
+du classeur plutôt que recalculer, ou rendre le pas d'arrondi paramétrable par produit.
+
+**Fichiers.** `src/lib/business-rules/recette.ts` (`arrondiPlusGrandReste`),
+`src/agents/imports/recetteExtractor.ts:23` (`PRECISION_PAR_DEFAUT = 0.5`).

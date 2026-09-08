@@ -53,19 +53,24 @@ async function listAllKeys(): Promise<string[]> {
 }
 
 /**
- * Base article code: alphabetic prefix + the first three digits.
+ * Base article code: alphabetic prefix + the three-digit article number.
  *
- * The fourth digit is a version, not a different article — JDG's own numbering.
- * Verified on the live bucket (2026-09-07): every code that collapses to the
- * same base belongs to the same product (TB4016/TB4017 are both White Monkey,
- * TB4041/2/6 are all Ché Chun), and 148 of the 151 real products resolve to one
- * folder and one only. Keeping the alphabetic prefix is what stops TA737 from
- * reaching "TM7372 - LIGHT MY FIRE" — an unrelated product whose files the old
+ * MOP-PRO-029 §2.1.2 and §2.1.3 (JDG, v.2, 26/01/2023): a finished-product code
+ * is `<famille><n° article sur 3 chiffres><conditionnement>`, the last digit
+ * naming a packaging format — 2 = 100 g, 6 = 50 g, 1 = 1,5 kg vrac, and so on.
+ * So TB4016 and TB4017 are White Monkey in 50 g and in 1 kg, not two versions of
+ * one thing; grouping on the article number is what puts a product's packagings
+ * together. Label file names follow the same rule (§2.2.2, §2.2.3): the facing
+ * label may omit the packaging digit, the back label carries it — hence
+ * ETNA737V5 alongside ETCNA7372V5 in a single folder.
+ *
+ * Keeping the alphabetic prefix is what stops TA737 from reaching
+ * "TM7372 - LIGHT MY FIRE" — an unrelated product whose files the old
  * digits-only search pulled straight into this one's audit.
  *
- * This assumes a three-digit base, which is the client's current convention and
- * not a law. The resolved folder is reported to the caller so an unexpected
- * match is visible rather than silent.
+ * The three-digit article number is the client's documented convention, not a
+ * law. The resolved folder is reported to the caller so an unexpected match is
+ * visible rather than silent.
  */
 export function codeDeBase(code: string): string | null {
     const match = code.trim().toUpperCase().match(/^([A-Z]+)(\d{3})/);

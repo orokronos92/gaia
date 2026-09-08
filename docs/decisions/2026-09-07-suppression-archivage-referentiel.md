@@ -69,14 +69,20 @@ compte présent dès qu'il apparaît sur une face, l'Eurofeuille d'un autre prod
 pouvait valider celui-ci.
 
 Corrigé en deux temps : rapprochement strict sur le **code de base** (préfixe alpha
-+ 3 chiffres, le 4ᵉ chiffre étant une version), puis **table `fichiers_etiquettes`**
++ 3 chiffres, le 4ᵉ chiffre étant le conditionnement — MOP-PRO-029 §2.1.3), puis
+**table `fichiers_etiquettes`**
 qui stocke le lien. 604 liens sur 150 des 152 produits. Une ligne posée par un
 humain (`origine = MANUEL`) n'est jamais écrasée par une réexécution.
 
 **Rapport à imprimer pour Karrame** :
 `docs/2026-09-07-nommage-fichiers-etiquettes.md` — 8 règles de nommage proposées,
 8 questions à leur poser, chiffres mesurés sur l'échantillon. La règle la plus
-structurante est **R4 : le 4ᵉ chiffre n'a qu'une seule signification**.
+structurante est **R4 : le nom du dossier porte le code complet, conditionnement
+compris**.
+
+**Révisé le 8 septembre** à la lumière de MOP-PRO-029, reçu ce jour-là : le rapport
+affirmait que le 4ᵉ chiffre était une version. C'est le type de conditionnement,
+et leur procédure le définit depuis 2022.
 
 ---
 

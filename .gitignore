@@ -42,3 +42,7 @@ next-env.d.ts
 
 # claude code (local permissions per-machine)
 .claude/settings.local.json
+
+# Référentiels clients (JDG) — documents internes, ne quittent pas le VPS
+docs/referentiels/*
+!docs/referentiels/.gitkeep
