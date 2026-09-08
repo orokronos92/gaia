@@ -109,14 +109,30 @@ function checkIngredients(batN: string, input: BatTextInput): BatTextCheck {
   };
 }
 
-/** Presence of a single fiche string on the artwork. */
+/**
+ * Presence of a single fiche string on the artwork.
+ *
+ * `couvertParProposition` : sur les points où le BAT sait proposer la valeur
+ * manquante, le module des propositions rend déjà un constat qui dit la même
+ * chose en mieux — il nomme la valeur lue. Émettre les deux met deux phrases
+ * sur la même ligne de Marie, dont une qui n'apprend rien.
+ */
 function checkPresence(
   batN: string,
   value: string | null | undefined,
-  cfg: { id: string; checklistId?: string; rubrique: string; libelle: string; absent: string }
-): BatTextCheck {
-  const base = { ...cfg, origine: "texte" as const };
+  cfg: {
+    id: string;
+    checklistId?: string;
+    rubrique: string;
+    libelle: string;
+    absent: string;
+    couvertParProposition?: true;
+  }
+): BatTextCheck | null {
+  const { couvertParProposition, ...reste } = cfg;
+  const base = { ...reste, origine: "texte" as const };
   if (!value || value.trim() === "") {
+    if (couvertParProposition) return null;
     return { ...base, statut: "WARNING", justification: "Donnée absente de la fiche — non vérifiable." };
   }
   if (batN.includes(normCmp(value))) {
@@ -158,7 +174,7 @@ function checkTokens(
 /** Runs the deterministic text robot over the concatenated BAT text. */
 export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck[] {
   const batN = normCmp(batText);
-  const results: BatTextCheck[] = [
+  const results: (BatTextCheck | null)[] = [
     checkIngredients(batN, input),
     checkPresence(batN, input.denomination, {
       id: "TXT_DENOMINATION", rubrique: "Dénomination", libelle: "Dénomination présente sur le BAT ?",
@@ -167,10 +183,12 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
     checkPresence(batN, input.poidsNet, {
       id: "TXT_POIDS_NET", checklistId: "6.1", rubrique: "Quantité nette", libelle: "Poids net présent sur le BAT ?",
       absent: "Poids net non retrouvé sur les faces analysées — à vérifier.",
+      couvertParProposition: true,
     }),
     checkPresence(batN, input.codeEtiquette, {
       id: "TXT_CODE_ETIQUETTE", checklistId: "15.1", rubrique: "Code étiquette", libelle: "Code étiquette présent sur le BAT ?",
       absent: "Code étiquette non retrouvé sur les faces analysées — à vérifier.",
+      couvertParProposition: true,
     }),
     checkTokens(batN, CONSERVATION_TOKENS, {
       id: "TXT_CONSERVATION", checklistId: "7.2", rubrique: "Conservation", libelle: "Mention de conservation présente sur le BAT ?",
@@ -195,5 +213,5 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
     }));
   }
 
-  return results;
+  return results.filter((c): c is BatTextCheck => c !== null);
 }
