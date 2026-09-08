@@ -9,8 +9,10 @@ import { getBatTextInputForFiche } from "@/db/queries/audit"
 import { writeAuditLog } from "@/db/queries/audit-logs"
 import { aggregateAll, checksFromPresences, reconcile, type Presence } from "@/lib/audit/visual/pictos"
 import { runTextRobot, type BatTextCheck } from "@/lib/audit/visual/text-robot"
+import { controlerTypographie } from "@/lib/audit/visual/typographie"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
 import type { ControlStatus } from "@/lib/audit/types"
+import { analyserBat, type AnalyseBat } from "@/lib/utils/pdf-bat"
 import { extractPdfText } from "@/lib/utils/pdf-text"
 import { getBatsActifsProduit } from "@/db/queries/fichiers-etiquettes"
 import { getObjectBuffer } from "@/lib/utils/s3-client"
@@ -65,12 +67,22 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     const faces: string[] = []
     const texts: string[] = []
     const base64s: string[] = []
+    // Geometry and typography, read from the file itself: trim box, exact point
+    // size and font of every word. A face whose deep read fails still gets its
+    // text checked — one missing measurement never costs the whole audit.
+    const analyses: AnalyseBat[] = []
     for (const key of keys) {
         try {
             const buffer = await getObjectBuffer(key)
             texts.push(await extractPdfText(buffer))
             base64s.push(buffer.toString("base64"))
             faces.push(key.split("/").pop() ?? key)
+            try {
+                analyses.push(await analyserBat(buffer))
+            } catch {
+                // Deep read unavailable for this face — typography degrades to
+                // "à vérifier", never to an invented measurement.
+            }
         } catch {
             // Unreadable face — skip; its absence shows in `faces`.
         }
@@ -81,6 +93,9 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
 
     const batText = texts.join("\n\n")
     const textChecks = runTextRobot(batText, data.input)
+
+    // Typographic controls (PRO-QHS-013 §12, §4, §2.3) — measured, not guessed.
+    const typoChecks = analyses.length > 0 ? controlerTypographie(analyses, data.input) : []
 
     // Token accounting per LLM robot (CLAUDE.md §7 — audit trail expected by the
     // client). The deterministic text robot consumes nothing.
@@ -139,7 +154,7 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
         visualChecks = checksFromPresences(finalPresences)
     }
 
-    const checks = [...textChecks, ...semanticChecks, ...visualChecks]
+    const checks = [...textChecks, ...typoChecks, ...semanticChecks, ...visualChecks]
 
     // Token-usage trail (best-effort; a logging failure never breaks the audit).
     const tokensUsed = tokens.semantique + tokens.vision + tokens.contreExamen

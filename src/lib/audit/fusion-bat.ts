@@ -81,9 +81,13 @@ export function appliquerPreuves(
   // Le point n'était pas exécuté (visuel ou LLM sans exécuteur) : le BAT y répond.
   if (resultat.mode !== "deterministic") {
     const surCode = preuves.every((p) => p.origine === "texte");
-    if (pire === "PASS" && surCode) {
-      // Du code a lu le BAT et a trouvé : le point est vérifié.
-      return { ...resultat, statut: "PASS", action: "RIEN", justification: detail };
+    if (surCode) {
+      // Du code a lu ou mesuré le BAT. S'il conclut, le point est vérifié ; s'il
+      // laisse une réserve, elle dit déjà d'elle-même ce qu'il reste à regarder —
+      // y ajouter « à confirmer sur le BAT » laisserait croire à un avis de modèle.
+      return pire === "PASS"
+        ? { ...resultat, statut: "PASS", action: "RIEN", justification: detail }
+        : { ...resultat, statut: pire, action: "VERIFIER", justification: detail };
     }
     // Un modèle a donné son avis : il oriente le regard, il ne le remplace pas.
     return {

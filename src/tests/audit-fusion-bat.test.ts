@@ -16,6 +16,14 @@ describe("fusion des résultats BAT dans la checklist", () => {
     expect(Object.keys(p).sort()).toEqual(["12.1", "13.1"]);
   });
 
+  it("n'ajoute pas « à confirmer sur le BAT » à une réserve mesurée par le code", () => {
+    const r = appliquerPreuves(point("14.1", "manual", "WARNING", "VERIFIER"), [
+      { libelle: "L", statut: "WARNING", justification: "mesure partielle", origine: "texte" },
+    ]);
+    expect(r.action).toBe("VERIFIER");
+    expect(r.justification).not.toContain("à confirmer sur le BAT");
+  });
+
   it("ignore un contrôle BAT non rattaché", () => {
     const orphelin: BatTextCheck = { id: "X", rubrique: "R", libelle: "L", statut: "PASS", justification: "j" };
     expect(preuvesParPoint([orphelin])).toEqual({});
