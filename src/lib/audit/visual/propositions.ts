@@ -14,7 +14,8 @@
  * reste le sien, daté et signé ; on lui épargne seulement la saisie.
  */
 
-import { normCmp, pagesDeMots } from "./mesure-mentions";
+import { facesBat, normCmp } from "./mesure-mentions";
+import { repereMot, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
 import type { AnalyseBat } from "@/lib/utils/pdf-bat";
 
@@ -46,21 +47,32 @@ function commeMasse(texte: string): string | null {
  *
  * Deux valeurs différentes trouvées : on ne propose rien et on le dit.
  */
-export function proposerPoidsNet(analyses: AnalyseBat[]): Proposition | null {
+export function proposerPoidsNet(
+  analyses: AnalyseBat[]
+): (Proposition & { reperes: RepereBat[] }) | null {
   const trouvees = new Set<string>();
+  const reperes: RepereBat[] = [];
 
-  for (const mots of pagesDeMots(analyses)) {
+  for (const [face, page] of facesBat(analyses).entries()) {
+    const mots = page.mots;
     for (let i = 0; i + 2 < mots.length; i++) {
       if (normCmp(mots[i].texte) !== "poids") continue;
       if (normCmp(mots[i + 1].texte) !== "net") continue;
       const masse = commeMasse(mots[i + 2].texte);
-      if (masse) trouvees.add(masse);
+      if (!masse) continue;
+      trouvees.add(masse);
+      reperes.push(repereMot(mots[i + 2], page, face, `Poids net ${masse}`));
     }
   }
 
   if (trouvees.size !== 1) return null;
   const valeur = [...trouvees][0];
-  return { champ: "poidsNet", valeur, source: `lu sur le BAT : « poids net ${valeur} »` };
+  return {
+    champ: "poidsNet",
+    valeur,
+    source: `lu sur le BAT : « poids net ${valeur} »`,
+    reperes,
+  };
 }
 
 /**
@@ -88,6 +100,7 @@ export function controlerPropositions(
       justification: `La fiche ne porte pas de quantité nette, mais le BAT l'imprime — ${proposition.source}. À enregistrer sur la fiche, qui reste la référence.`,
       checklistId: "6.1",
       proposition,
+      reperes: proposition.reperes,
     },
   ];
 }

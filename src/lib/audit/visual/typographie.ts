@@ -21,10 +21,10 @@
 
 import { hauteurCapitaleMm, type AnalyseBat } from "@/lib/utils/pdf-bat";
 import {
+  facesBat,
   mesurerMention,
   motsMesures,
   normCmp,
-  pagesDeMots,
   toutesPolices,
   type MesureMention,
 } from "./mesure-mentions";
@@ -34,6 +34,7 @@ import {
   trancheSurface,
   type TrancheSurface,
 } from "./seuils-typo";
+import { repereMot } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
 
 // Point d'entrée unique des contrôles typographiques : l'appelant n'a pas à
@@ -65,7 +66,7 @@ function controlerHauteurX(
     checklistId: "14.1",
   };
 
-  const pages = pagesDeMots(analyses);
+  const faces = facesBat(analyses);
   const polices = toutesPolices(analyses);
 
   // Sous 10 cm², la procédure n'exige plus que quatre mentions sur l'emballage ;
@@ -93,7 +94,7 @@ function controlerHauteurX(
   const nonRattachees: string[] = [];
 
   for (const [nom, valeur] of declarees) {
-    const r = mesurerMention(valeur, pages, polices);
+    const r = mesurerMention(valeur, faces, polices);
     if (r === "absente") absentes.push(nom);
     else if (r === "corps-non-rattache") nonRattachees.push(nom);
     else mesures.push({ ...r, mention: nom });
@@ -140,11 +141,18 @@ function controlerHauteurX(
     .map((m) => `${m.mention} ${m.hauteurXmm} mm (${m.police} ${m.corpsPt} pt)`)
     .join(" ; ");
 
+  // Chaque mention mesurée désigne le mot qui a décidé de sa hauteur : c'est
+  // celui-là qu'il faut montrer, pas la mention entière.
+  const reperes = mesures
+    .map((m) => (m.repere ? { ...m.repere, libelle: `${m.mention} ${m.hauteurXmm} mm` } : null))
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+
   const sousSeuil = mesures.filter((m) => m.hauteurXmm < tranche.seuilHauteurXmm);
   if (sousSeuil.length > 0) {
     return {
       ...base,
       statut: "FAIL",
+      reperes,
       justification: `${contexte} Sous le seuil : ${sousSeuil
         .map((m) => `${m.mention} ${m.hauteurXmm} mm`)
         .join(", ")}. Mesuré : ${detail}.${reserve}`,
@@ -155,6 +163,7 @@ function controlerHauteurX(
   return {
     ...base,
     statut: reserves.length > 0 ? "WARNING" : "PASS",
+    reperes,
     justification: `${contexte} Conforme, marge ${marge.toFixed(3)} mm. Mesuré : ${detail}.${reserve}`,
   };
 }
@@ -183,7 +192,9 @@ function controlerHauteurChiffres(analyses: AnalyseBat[], entree: EntreeTypo): B
 
   const cible = normCmp(entree.poidsNet);
   const polices = toutesPolices(analyses);
+  const faces = facesBat(analyses);
   const trouve = motsMesures(analyses).find((m) => normCmp(m.texte) === cible);
+  const facePoids = faces.findIndex((f) => f.mots.includes(trouve as never));
 
   if (!trouve) {
     return {
@@ -204,15 +215,19 @@ function controlerHauteurChiffres(analyses: AnalyseBat[], entree: EntreeTypo): B
   }
 
   const mesure = `« ${trouve.texte} » en ${metrique.nom} ${trouve.corpsPt} pt → chiffres ${hauteur} mm, seuil ${seuil} mm pour ${grammes} g`;
+  const reperes =
+    facePoids >= 0
+      ? [repereMot(trouve, faces[facePoids], facePoids, `Chiffres ${hauteur} mm`)]
+      : [];
 
   if (hauteur < seuil) {
-    return { ...base, statut: "FAIL", justification: `${mesure}. Non conforme.` };
+    return { ...base, statut: "FAIL", reperes, justification: `${mesure}. Non conforme.` };
   }
 
   // La hauteur est acquise. Le « même champ visuel que la dénomination » exigé
   // par le même paragraphe est mesuré à part et rattaché au même point : les
   // deux constats s'additionnent sur la ligne que Marie lit.
-  return { ...base, statut: "PASS", justification: `${mesure}. Hauteur conforme.` };
+  return { ...base, statut: "PASS", reperes, justification: `${mesure}. Hauteur conforme.` };
 }
 
 /** §2.3 — exemption d'étiquetage nutritionnel sous 25 cm² (point 4.1). */

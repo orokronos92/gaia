@@ -56,6 +56,11 @@ export interface BatTextCheck {
    * contrôle ne l'applique jamais lui-même : la fiche reste la référence.
    */
   proposition?: import("./propositions").Proposition;
+  /**
+   * Où regarder sur le BAT. Un contrôle qui mesure sait où il a mesuré ; le
+   * dire épargne à Marie de chercher le texte dont il parle.
+   */
+  reperes?: import("./reperes").RepereBat[];
 }
 
 /** Normalize for comparison: fold case/accents/space AND glue number+unit. */

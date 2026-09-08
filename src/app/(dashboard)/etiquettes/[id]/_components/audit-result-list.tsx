@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CheckCircle2, AlertTriangle, XCircle, MinusCircle, CircleDashed, ChevronDown } from "lucide-react"
+import { CheckCircle2, AlertTriangle, XCircle, MinusCircle, CircleDashed, ChevronDown, Crosshair } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { CONTROL_CHECKLIST } from "@/lib/audit/control-checklist"
@@ -56,9 +56,13 @@ interface AuditResultListProps {
     ficheId: string
     /** Relance la checklist après une décision de la Qualité. */
     onChange: () => void
+    /** Montre sur le BAT ce dont ce point parle. */
+    onVoir?: (r: ControlResult) => void
+    /** Point actuellement montré dans le volet. */
+    pointVu?: string
 }
 
-export function AuditResultList({ results, ficheId, onChange }: AuditResultListProps) {
+export function AuditResultList({ results, ficheId, onChange, onVoir, pointVu }: AuditResultListProps) {
     const [showNA, setShowNA] = useState(false)
 
     const naCount = results.filter((r) => r.statut === "NA").length
@@ -92,7 +96,7 @@ export function AuditResultList({ results, ficheId, onChange }: AuditResultListP
                         </div>
                         <div className="space-y-2">
                             {duGroupe.map((r) => (
-                                <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} ficheId={ficheId} onChange={onChange} />
+                                <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} ficheId={ficheId} onChange={onChange} onVoir={onVoir} vu={pointVu === r.id} />
                             ))}
                         </div>
                     </section>
@@ -107,7 +111,7 @@ export function AuditResultList({ results, ficheId, onChange }: AuditResultListP
                     {visible
                         .filter((r) => r.statut === "NA")
                         .map((r) => (
-                            <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} ficheId={ficheId} onChange={onChange} />
+                            <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} ficheId={ficheId} onChange={onChange} onVoir={onVoir} vu={pointVu === r.id} />
                         ))}
                 </section>
             )}
@@ -121,18 +125,23 @@ function Ligne({
     point,
     ficheId,
     onChange,
+    onVoir,
+    vu,
 }: {
     r: ControlResult
     point?: ControlPoint
     ficheId: string
     onChange: () => void
+    onVoir?: (r: ControlResult) => void
+    vu?: boolean
 }) {
     const style = styleDe(r)
     const Icon = style.icon
     return (
         <div
             className={cn(
-                "flex gap-3 p-4 bg-white border border-stone-200/70 rounded-2xl shadow-sm",
+                "flex gap-3 p-4 bg-white border rounded-2xl shadow-sm transition-colors",
+                vu ? "border-amber-300 ring-2 ring-amber-200" : "border-stone-200/70",
                 r.statut === "NA" && "opacity-60"
             )}
         >
@@ -168,6 +177,21 @@ function Ligne({
                         <span className="text-[10px] text-stone-400">
                             {r.mode === "manual" ? "contrôle visuel" : "à évaluer"}
                         </span>
+                    )}
+                    {/* Le contrôle sait où il a mesuré : autant le montrer. */}
+                    {onVoir && r.reperes && r.reperes.length > 0 && (
+                        <button
+                            onClick={() => onVoir(r)}
+                            className={cn(
+                                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                vu
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "text-stone-400 hover:bg-amber-50 hover:text-amber-700"
+                            )}
+                        >
+                            <Crosshair className="h-3 w-3" />
+                            Voir sur le BAT
+                        </button>
                     )}
                 </div>
                 {/* Un point non applicable n'appelle aucune décision. */}

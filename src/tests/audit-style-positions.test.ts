@@ -35,6 +35,7 @@ const face = (mots: MotBat[]): AnalyseBat => ({
       largeurPt: 200,
       hauteurPt: 400,
       coupe: { largeurMm: 55, hauteurMm: 135, surfaceCm2: 74.25 },
+      rognage: { x0: 0, y0: 0, x1: 200, y1: 400 },
       mots,
     },
   ],

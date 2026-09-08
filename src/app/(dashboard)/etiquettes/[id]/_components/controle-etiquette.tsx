@@ -10,6 +10,8 @@ import { BatVisionneuse, type FaceBatAffichable } from "./bat-visionneuse"
 import { ConstatsHorsChecklist } from "./constats-hors-checklist"
 import { DeterministicAuditPanel } from "./deterministic-audit-panel"
 import type { SousResultatAudit } from "./audit-synthese"
+import type { ControlResult } from "@/lib/audit/types"
+import type { RepereBat } from "@/lib/audit/visual/reperes"
 
 interface ControleEtiquetteProps {
     ficheId: string
@@ -50,6 +52,16 @@ export function ControleEtiquette({
 }: ControleEtiquetteProps) {
     const [pending, startTransition] = useTransition()
     const [faceActive, setFaceActive] = useState(0)
+    const [montre, setMontre] = useState<{ point: string; reperes: RepereBat[] } | null>(null)
+
+    // Montrer un point, c'est d'abord aller sur la bonne face : sinon Marie
+    // cherche sur l'étiquette qu'elle a sous les yeux ce qui est sur l'autre.
+    const voir = (r: ControlResult) => {
+        const reperes = (r.reperes ?? []) as RepereBat[]
+        if (reperes.length === 0) return
+        setFaceActive(reperes[0].face)
+        setMontre({ point: r.id, reperes })
+    }
 
     const lancerIa = () =>
         startTransition(async () => {
@@ -90,6 +102,8 @@ export function ControleEtiquette({
                         data={detData}
                         onData={onDetData}
                         onResult={onDetResult}
+                        onVoir={voir}
+                        pointVu={montre?.point}
                         actions={
                             <Button
                                 variant="outline"
@@ -115,7 +129,11 @@ export function ControleEtiquette({
                         <BatVisionneuse
                             faces={faces}
                             faceActive={faceActive}
-                            onFaceChange={setFaceActive}
+                            onFaceChange={(i) => {
+                                setFaceActive(i)
+                                setMontre(null)
+                            }}
+                            reperes={montre?.reperes}
                         />
                     </div>
                 </div>

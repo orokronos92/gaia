@@ -28,7 +28,9 @@
  */
 
 import type { TraceVectoriel } from "@/lib/utils/pdf-vecteurs";
+import { repereBoitePdf, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
+import type { PageBat } from "@/lib/utils/pdf-bat";
 
 const PT_EN_MM = 25.4 / 72;
 
@@ -114,7 +116,10 @@ export function mesurerEurofeuille(traces: TraceVectoriel[]): MesureEurofeuille 
  * preuve qu'il n'y est pas. Le contrôle dit ce qu'il a vu, et laisse le reste
  * à la vision ou à l'œil.
  */
-export function controlerEurofeuille(mesures: (MesureEurofeuille | null)[]): BatTextCheck {
+export function controlerEurofeuille(
+  mesures: (MesureEurofeuille | null)[],
+  faces: PageBat[] = []
+): BatTextCheck {
   const base = {
     id: "VEC_EUROFEUILLE",
     origine: "texte" as const,
@@ -138,10 +143,17 @@ export function controlerEurofeuille(mesures: (MesureEurofeuille | null)[]): Bat
   const logo = trouvees.sort((a, b) => b.largeurMm - a.largeurMm)[0];
   const taille = `${logo.largeurMm} × ${logo.hauteurMm} mm`;
 
+  const face = mesures.indexOf(logo);
+  const page = faces[face];
+  const reperes: RepereBat[] = page
+    ? [repereBoitePdf(logo, page, face, `Eurofeuille ${taille}`)]
+    : [];
+
   if (logo.largeurMm >= EUROFEUILLE_MIN.largeurMm && logo.hauteurMm >= EUROFEUILLE_MIN.hauteurMm) {
     return {
       ...base,
       statut: "PASS",
+      reperes,
       justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — au-dessus du minimum ${EUROFEUILLE_MIN.largeurMm} × ${EUROFEUILLE_MIN.hauteurMm} mm.`,
     };
   }
@@ -158,6 +170,7 @@ export function controlerEurofeuille(mesures: (MesureEurofeuille | null)[]): Bat
     return {
       ...base,
       statut: "WARNING",
+      reperes,
       justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — c'est exactement la taille dérogatoire « très petits emballages ». Le manuel ne chiffre pas « très petit » : à assumer explicitement.`,
     };
   }
@@ -165,6 +178,7 @@ export function controlerEurofeuille(mesures: (MesureEurofeuille | null)[]): Bat
   return {
     ...base,
     statut: "FAIL",
+    reperes,
     justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — sous le minimum ${EUROFEUILLE_MIN.largeurMm} × ${EUROFEUILLE_MIN.hauteurMm} mm, et ce n'est pas la taille dérogatoire ${EUROFEUILLE_DEROGATION.largeurMm} × ${EUROFEUILLE_DEROGATION.hauteurMm} mm : c'est le logo standard dessiné trop petit.`,
   };
 }

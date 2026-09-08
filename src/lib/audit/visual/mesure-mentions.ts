@@ -9,7 +9,8 @@
  */
 
 import { normalize } from "../canonical";
-import { hauteurXmm, type AnalyseBat, type MetriquePolice, type MotBat } from "@/lib/utils/pdf-bat";
+import { repereMot, type RepereBat } from "./reperes";
+import { hauteurXmm, type AnalyseBat, type MetriquePolice, type MotBat, type PageBat } from "@/lib/utils/pdf-bat";
 
 /** Comparaison : casse, accents et espace pliés, nombre et unité recollés. */
 export function normCmp(valeur: string): string {
@@ -34,6 +35,8 @@ export interface MesureMention {
   /** Mots de la mention effectivement mesurés, sur ceux retrouvés. */
   motsMesures: number;
   motsTrouves: number;
+  /** Où se trouve le mot qui a décidé de la mesure. */
+  repere?: RepereBat;
 }
 
 /** Pourquoi une mention n'a pas pu être mesurée — la nuance compte pour Marie. */
@@ -58,9 +61,10 @@ export function tokens(mention: string): string[] {
  */
 export function mesurerMention(
   mention: string,
-  pages: MotBat[][],
+  faces: PageBat[],
   polices: Record<string, MetriquePolice>
 ): MesureMention | EchecMesure {
+  const pages = faces.map((f) => f.mots);
   const attendus = new Set(tokens(mention));
   if (attendus.size === 0) return "absente";
 
@@ -71,13 +75,13 @@ export function mesurerMention(
   // Toutes les occurrences denses comptent, pas seulement la première : une
   // mention peut être répétée d'une face à l'autre, et le seuil doit être tenu
   // partout où elle est imprimée. C'est donc la plus petite qui décide.
-  const retenus: MotBat[] = [];
-  for (const mots of pages) {
+  const retenus: { mot: MotBat; face: number }[] = [];
+  for (const [face, mots] of pages.entries()) {
     for (let i = 0; i < mots.length; i++) {
       const fenetre = mots.slice(i, i + largeur);
       const dedans = fenetre.filter((m) => attendus.has(normCmp(m.texte)));
       const couverture = new Set(dedans.map((m) => normCmp(m.texte))).size;
-      if (couverture >= requis) retenus.push(...dedans);
+      if (couverture >= requis) retenus.push(...dedans.map((mot) => ({ mot, face })));
     }
   }
 
@@ -85,11 +89,13 @@ export function mesurerMention(
 
   // Un mot compté une seule fois, quel que soit le nombre de fenêtres qui le
   // recouvrent — sinon la part mesurée ne voudrait rien dire.
-  const distincts = [...new Map(retenus.map((m) => [`${m.x}|${m.y}|${m.texte}`, m])).values()];
+  const distincts = [
+    ...new Map(retenus.map((r) => [`${r.face}|${r.mot.x}|${r.mot.y}|${r.mot.texte}`, r])).values(),
+  ];
 
   let mesure: Omit<MesureMention, "motsMesures" | "motsTrouves"> | null = null;
   let mesures = 0;
-  for (const mot of distincts) {
+  for (const { mot, face } of distincts) {
     if (mot.corpsPt === null || mot.police === null) continue;
     const metrique = polices[mot.police];
     if (!metrique) continue;
@@ -102,6 +108,7 @@ export function mesurerMention(
         corpsPt: mot.corpsPt,
         police: metrique.nom,
         hauteurXmm: h,
+        repere: repereMot(mot, faces[face], face, mention),
       };
     }
   }
@@ -115,8 +122,17 @@ export function toutesPolices(analyses: AnalyseBat[]): Record<string, MetriquePo
   return Object.assign({}, ...analyses.map((a) => a.polices));
 }
 
+/**
+ * Les faces d'un produit, dans l'ordre où elles ont été lues.
+ * Un fichier par face chez les Jardins de Gaïa, mais on aplatit les pages pour
+ * ne pas dépendre de cette habitude.
+ */
+export function facesBat(analyses: AnalyseBat[]): PageBat[] {
+  return analyses.flatMap((a) => a.pages);
+}
+
 /** Les mots de chaque face, dans l'ordre de lecture. */
 export function pagesDeMots(analyses: AnalyseBat[]): MotBat[][] {
-  return analyses.flatMap((a) => a.pages).map((p) => p.mots);
+  return facesBat(analyses).map((p) => p.mots);
 }
 

@@ -63,6 +63,12 @@ export interface PageBat {
   hauteurPt: number;
   /** Zone de coupe — la face finie, hors fond perdu. Null si le PDF n'en a pas. */
   coupe: { largeurMm: number; hauteurMm: number; surfaceCm2: number } | null;
+  /**
+   * Boîte de rognage en points — le repère que poppler mesure ET rend.
+   * C'est elle qui permet de situer un tracé, dont les coordonnées sont dans
+   * l'espace usager, par rapport à l'image affichée à Marie.
+   */
+  rognage: { x0: number; y0: number; x1: number; y1: number };
   mots: MotBat[];
 }
 
@@ -166,20 +172,37 @@ function lireBoites(xml: string): { pages: { largeur: number; hauteur: number; m
 }
 
 /** Zone de coupe par page, via `pdfinfo -box`. */
-async function lireCoupe(chemin: string, page: number): Promise<PageBat["coupe"]> {
+async function lireBoitesPage(
+  chemin: string,
+  page: number,
+  largeurPt: number,
+  hauteurPt: number
+): Promise<{ coupe: PageBat["coupe"]; rognage: PageBat["rognage"] }> {
+  const rognageDefaut = { x0: 0, y0: 0, x1: largeurPt, y1: hauteurPt };
   try {
     const { stdout } = await executer("pdfinfo", ["-box", "-f", String(page), "-l", String(page), chemin]);
-    const m = /TrimBox:\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)/.exec(stdout);
-    if (!m) return null;
-    const largeurMm = (Number(m[3]) - Number(m[1])) * PT_EN_MM;
-    const hauteurMm = (Number(m[4]) - Number(m[2])) * PT_EN_MM;
+    const lire = (nom: string) =>
+      new RegExp(`${nom}:\\s+([\\d.-]+)\\s+([\\d.-]+)\\s+([\\d.-]+)\\s+([\\d.-]+)`).exec(stdout);
+
+    const r = lire("CropBox") ?? lire("MediaBox");
+    const rognage = r
+      ? { x0: Number(r[1]), y0: Number(r[2]), x1: Number(r[3]), y1: Number(r[4]) }
+      : rognageDefaut;
+
+    const t = lire("TrimBox");
+    if (!t) return { coupe: null, rognage };
+    const largeurMm = (Number(t[3]) - Number(t[1])) * PT_EN_MM;
+    const hauteurMm = (Number(t[4]) - Number(t[2])) * PT_EN_MM;
     return {
-      largeurMm: Number(largeurMm.toFixed(2)),
-      hauteurMm: Number(hauteurMm.toFixed(2)),
-      surfaceCm2: Number(((largeurMm * hauteurMm) / 100).toFixed(2)),
+      rognage,
+      coupe: {
+        largeurMm: Number(largeurMm.toFixed(2)),
+        hauteurMm: Number(hauteurMm.toFixed(2)),
+        surfaceCm2: Number(((largeurMm * hauteurMm) / 100).toFixed(2)),
+      },
     };
   } catch {
-    return null;
+    return { coupe: null, rognage: rognageDefaut };
   }
 }
 
@@ -207,10 +230,12 @@ export async function analyserBat(buffer: ArrayBuffer | Uint8Array): Promise<Ana
     const pages: PageBat[] = [];
     for (const [i, p] of brutes.entries()) {
       rattacherStyle(p.mots, poses, p.hauteur, ressources);
+      const boites = await lireBoitesPage(chemin, i + 1, p.largeur, p.hauteur);
       pages.push({
         largeurPt: p.largeur,
         hauteurPt: p.hauteur,
-        coupe: await lireCoupe(chemin, i + 1),
+        coupe: boites.coupe,
+        rognage: boites.rognage,
         mots: p.mots,
       });
     }

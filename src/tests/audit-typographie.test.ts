@@ -27,6 +27,7 @@ const face = (surfaceCm2: number | null, mots: MotBat[]): AnalyseBat => ({
       largeurPt: 200,
       hauteurPt: 400,
       coupe: surfaceCm2 === null ? null : { largeurMm: 55, hauteurMm: 135, surfaceCm2 },
+      rognage: { x0: 0, y0: 0, x1: 200, y1: 400 },
       mots,
     },
   ],

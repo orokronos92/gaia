@@ -38,6 +38,9 @@ interface DeterministicAuditPanelProps {
     ficheId: string
     /** Boutons rendus à côté du sien — l'analyse IA vit dans le même en-tête. */
     actions?: React.ReactNode
+    /** Montre sur le BAT ce dont un point parle. */
+    onVoir?: (r: import("@/lib/audit/types").ControlResult) => void
+    pointVu?: string
     /** Résultats de l'audit BAT, s'il a été lancé — ils remplissent la liste. */
     batChecks?: BatTextCheck[]
     /** Controlled result, lifted to the fiche so it survives tab switches. */
@@ -46,7 +49,7 @@ interface DeterministicAuditPanelProps {
     onResult?: (r: SousResultatAudit) => void
 }
 
-export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onData, onResult }: DeterministicAuditPanelProps) {
+export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onData, onResult, onVoir, pointVu }: DeterministicAuditPanelProps) {
     const [pending, startTransition] = useTransition()
 
     const run = () => {
@@ -139,7 +142,7 @@ export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onD
                                 )}
                             </div>
                         </div>
-                        {resultats && <AuditResultList results={resultats} ficheId={ficheId} onChange={run} />}
+                        {resultats && <AuditResultList results={resultats} ficheId={ficheId} onChange={run} onVoir={onVoir} pointVu={pointVu} />}
                     </div>
                 )}
             </CardContent>

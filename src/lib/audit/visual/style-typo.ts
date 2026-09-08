@@ -14,8 +14,9 @@
  * soulignement à l'œil.
  */
 
-import { estGrasse, estItalique, type AnalyseBat, type MetriquePolice, type MotBat } from "@/lib/utils/pdf-bat";
-import { motsMesures, normCmp, toutesPolices } from "./mesure-mentions";
+import { estGrasse, estItalique, type AnalyseBat, type MetriquePolice } from "@/lib/utils/pdf-bat";
+import { facesBat, normCmp, toutesPolices } from "./mesure-mentions";
+import { repereMot, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
 
 export interface EntreeStyle {
@@ -32,12 +33,27 @@ interface StyleMot {
   texte: string;
   police: MetriquePolice;
   corpsPt: number;
+  repere: RepereBat;
 }
 
-function styleDe(mot: MotBat, polices: Record<string, MetriquePolice>): StyleMot | null {
-  if (mot.corpsPt === null || mot.police === null) return null;
-  const police = polices[mot.police];
-  return police ? { texte: mot.texte, police, corpsPt: mot.corpsPt } : null;
+/** Les mots mesurés de toutes les faces, chacun sachant où il est. */
+function motsStyles(analyses: AnalyseBat[]): StyleMot[] {
+  const polices = toutesPolices(analyses);
+  const styles: StyleMot[] = [];
+  for (const [face, page] of facesBat(analyses).entries()) {
+    for (const mot of page.mots) {
+      if (mot.corpsPt === null || mot.police === null) continue;
+      const police = polices[mot.police];
+      if (!police) continue;
+      styles.push({
+        texte: mot.texte,
+        police,
+        corpsPt: mot.corpsPt,
+        repere: repereMot(mot, page, face, mot.texte),
+      });
+    }
+  }
+  return styles;
 }
 
 /**
@@ -77,10 +93,7 @@ export function controlerAllergeneEnEvidence(
   const declares = motsDe(entree.allergenes ?? "");
   if (declares.length === 0) return null;
 
-  const polices = toutesPolices(analyses);
-  const mots = motsMesures(analyses)
-    .map((m) => styleDe(m, polices))
-    .filter((s): s is StyleMot => s !== null);
+  const mots = motsStyles(analyses);
 
   // Police dominante de la liste d'ingrédients : le style de référence.
   const motsListe = new Set(motsDe(entree.ingredients ?? ""));
@@ -92,6 +105,7 @@ export function controlerAllergeneEnEvidence(
   const reference = [...comptes.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
 
   const trouves = mots.filter((m) => declares.includes(normCmp(m.texte)));
+  const reperes = trouves.map((m) => ({ ...m.repere, libelle: `Allergène « ${m.texte} »` }));
   if (trouves.length === 0) {
     return {
       ...base,
@@ -117,6 +131,7 @@ export function controlerAllergeneEnEvidence(
     return {
       ...base,
       statut: "PASS",
+      reperes,
       justification: `${detail}, distinct du reste de la liste (${reference}).`,
     };
   }
@@ -126,6 +141,7 @@ export function controlerAllergeneEnEvidence(
   return {
     ...base,
     statut: "WARNING",
+    reperes,
     justification: `${detail} — même police que le reste de la liste (${reference}). Aucune mise en évidence par la graisse : vérifier un soulignement, qui n'est pas détectable dans le texte du PDF.`,
   };
 }
@@ -143,17 +159,16 @@ export function controlerDemeterGrasItalique(
     checklistId: "2.4",
   };
 
-  const polices = toutesPolices(analyses);
-  const occurrences = motsMesures(analyses)
-    .filter((m) => normCmp(m.texte).includes("demeter"))
-    .map((m) => styleDe(m, polices))
-    .filter((s): s is StyleMot => s !== null);
+  const occurrences = motsStyles(analyses).filter((m) =>
+    normCmp(m.texte).includes("demeter")
+  );
 
   // Produit non Demeter et mot absent : rien à dire, et surtout rien à ajouter
   // au bruit de la liste de travail.
   if (occurrences.length === 0) return entree.estDemeter === true ? { ...base, statut: "WARNING", justification: "Produit déclaré Demeter mais le mot « demeter » n'a pas été localisé avec sa police sur le BAT — contrôle à l'œil." } : null;
 
   const fautives = occurrences.filter((m) => !estGrasse(m.police) || !estItalique(m.police));
+  const reperesDemeter = occurrences.map((m) => ({ ...m.repere, libelle: "demeter" }));
   const decrire = (m: StyleMot) =>
     `« ${m.texte} » en ${m.police.nom} (${estGrasse(m.police) ? "gras" : "maigre"}, ${estItalique(m.police) ? "italique" : "droit"})`;
 
@@ -161,6 +176,7 @@ export function controlerDemeterGrasItalique(
     return {
       ...base,
       statut: "FAIL",
+      reperes: reperesDemeter,
       justification: `${fautives.map(decrire).join(" ; ")} — la charte Demeter impose le gras italique.`,
     };
   }
@@ -168,6 +184,7 @@ export function controlerDemeterGrasItalique(
   return {
     ...base,
     statut: "PASS",
+    reperes: reperesDemeter,
     justification: `${occurrences.map(decrire).join(" ; ")}.`,
   };
 }

@@ -179,6 +179,15 @@ export type ControlResult = z.infer<typeof ControlResultSchema> & {
   };
   /** Une valeur que le BAT porte et que la fiche pourrait enregistrer. */
   proposition?: { champ: "poidsNet"; valeur: string; source: string };
+  /** Où regarder sur le BAT, en fractions de la face rendue. */
+  reperes?: {
+    face: number;
+    x: number;
+    y: number;
+    largeur: number;
+    hauteur: number;
+    libelle?: string;
+  }[];
 };
 
 /**

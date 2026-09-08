@@ -10,6 +10,7 @@
 
 import type { AnalyseBat } from "@/lib/utils/pdf-bat";
 import { controlerEurofeuille, mesurerEurofeuille } from "./eurofeuille";
+import { facesBat } from "./mesure-mentions";
 import { controlerPositions } from "./positions";
 import { controlerPropositions } from "./propositions";
 import { controlerStyle, type EntreeStyle } from "./style-typo";
@@ -31,12 +32,13 @@ export function controlerBat(faces: FaceBat[], entree: EntreeBat): BatTextCheck[
   // L'Eurofeuille est mesurée une fois : elle sert son propre point (13.1) et
   // donne au §11.1 la position qui manquait au contrôle d'origine (8.1).
   const eurofeuilles = analyses.map((a) => mesurerEurofeuille(a.traces));
+  const pages = facesBat(analyses);
 
   return [
     ...controlerTypographie(analyses, entree),
     ...controlerStyle(analyses, entree),
     ...controlerPositions(analyses, entree, noms, eurofeuilles),
-    controlerEurofeuille(eurofeuilles),
+    controlerEurofeuille(eurofeuilles, pages),
     ...controlerPropositions(analyses, entree),
   ];
 }

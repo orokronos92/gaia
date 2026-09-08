@@ -14,7 +14,9 @@ const mot = (texte: string): MotBat => ({
 });
 
 const face = (mots: string[]): AnalyseBat => ({
-  pages: [{ largeurPt: 200, hauteurPt: 400, coupe: null, mots: mots.map(mot) }],
+  pages: [
+    { largeurPt: 200, hauteurPt: 400, coupe: null, rognage: { x0: 0, y0: 0, x1: 200, y1: 400 }, mots: mots.map(mot) },
+  ],
   polices: {},
   traces: [],
   texte: mots.join(" "),

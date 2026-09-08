@@ -21,7 +21,8 @@
 
 import type { AnalyseBat, MotBat } from "@/lib/utils/pdf-bat";
 import type { MesureEurofeuille } from "./eurofeuille";
-import { normCmp, pagesDeMots } from "./mesure-mentions";
+import { facesBat, normCmp } from "./mesure-mentions";
+import { repereBoitePdf, repereMot, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
 
 /** 1 point PostScript = 1/72 pouce. */
@@ -92,7 +93,8 @@ export function controlerChampVisuel(
 
   if (!entree.denomination?.trim() || !entree.poidsNet?.trim()) return null;
 
-  const pages = pagesDeMots(analyses);
+  const facesLues = facesBat(analyses);
+  const pages = facesLues.map((f) => f.mots);
   const cible = normCmp(entree.poidsNet);
   const motsDenom = normCmp(entree.denomination)
     .split(/[\s,.;:()]+/)
@@ -135,10 +137,15 @@ export function controlerChampVisuel(
   const p = poids.find((o) => o.face === face)!.mot;
   const d = denom.find((o) => o.face === face)!.mot;
   const ecart = Math.hypot(p.x - d.x, p.y - d.y) * PT_EN_MM;
+  const reperes: RepereBat[] = [
+    repereMot(d, facesLues[face], face, "Dénomination"),
+    repereMot(p, facesLues[face], face, "Poids net"),
+  ];
 
   return {
     ...base,
     statut: "WARNING",
+    reperes,
     justification: `« ${entree.denomination} » et « ${entree.poidsNet} » sur la même face (${nommer(
       face,
       noms
@@ -167,7 +174,8 @@ export function controlerOrigineSousCodeOc(
     checklistId: "8.1",
   };
 
-  const pages = pagesDeMots(analyses);
+  const facesLues = facesBat(analyses);
+  const pages = facesLues.map((f) => f.mots);
   const codes = localiser(pages, (t) => sansSeparateurs(t) === CODE_OC);
   const origines = localiser(pages, (t) => t === "agriculture");
 
@@ -205,6 +213,15 @@ export function controlerOrigineSousCodeOc(
   // ramène le logo dans le repère des mots avant de comparer quoi que ce soit.
   const surmonte = surmonteLeCode(analyses, face, code, eurofeuilles);
 
+  // Les trois éléments que §6 et §11.1 veulent empilés — le logo n'y figure que
+  // s'il a été reconnu, ne pas reconnaître un dessin n'étant pas une absence.
+  const logo = eurofeuilles?.[face];
+  const reperes: RepereBat[] = [
+    ...(logo ? [repereBoitePdf(logo, facesLues[face], face, "Eurofeuille")] : []),
+    repereMot(code, facesLues[face], face, "Code OC"),
+    repereMot(origine, facesLues[face], face, "Origine"),
+  ];
+
   if (!dessous) {
     return {
       ...base,
@@ -221,6 +238,7 @@ export function controlerOrigineSousCodeOc(
     return {
       ...base,
       statut: "WARNING",
+      reperes,
       justification: `${debut} L'Eurofeuille n'ayant pas été reconnue sur cette face, sa position au-dessus des deux mentions (§11.1) reste à confirmer à l'œil.`,
     };
   }
@@ -229,6 +247,7 @@ export function controlerOrigineSousCodeOc(
     return {
       ...base,
       statut: "FAIL",
+      reperes,
       justification: `${debut} Mais l'Eurofeuille ne surmonte pas le code : son bord inférieur est ${surmonte.ecartMm.toFixed(
         1
       )} mm SOUS FR-BIO-01, alors que §11.1 la veut au-dessus.`,
@@ -238,6 +257,7 @@ export function controlerOrigineSousCodeOc(
   return {
     ...base,
     statut: "PASS",
+    reperes,
     justification: `${debut} L'Eurofeuille la surmonte de ${surmonte.ecartMm.toFixed(
       1
     )} mm sur la même face : même champ visuel, ordre conforme au §11.1.`,

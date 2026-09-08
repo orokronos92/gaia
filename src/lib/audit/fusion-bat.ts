@@ -28,6 +28,7 @@ export interface PreuveBat {
   justification: string;
   origine: NonNullable<BatTextCheck["origine"]>;
   proposition?: BatTextCheck["proposition"];
+  reperes?: BatTextCheck["reperes"];
 }
 
 const LIBELLE_ORIGINE: Record<PreuveBat["origine"], string> = {
@@ -47,6 +48,7 @@ export function preuvesParPoint(checks: BatTextCheck[]): Record<string, PreuveBa
       justification: c.justification,
       origine: c.origine ?? "texte",
       proposition: c.proposition,
+      reperes: c.reperes,
     });
   }
   return parPoint;
@@ -85,6 +87,11 @@ export function appliquerPreuves(
   // Ce que le BAT propose d'enregistrer suit le point, quel que soit son verdict.
   const proposition = preuves.find((p) => p.proposition)?.proposition;
   if (proposition) resultat = { ...resultat, proposition };
+
+  // Les repères de toutes les preuves du point se cumulent : un contrôle de
+  // position en désigne deux ou trois, et Marie doit les voir ensemble.
+  const reperes = preuves.flatMap((p) => p.reperes ?? []);
+  if (reperes.length > 0) resultat = { ...resultat, reperes };
 
   if (dejaTranche) {
     return {

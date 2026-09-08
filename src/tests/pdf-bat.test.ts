@@ -65,8 +65,8 @@ siPresent("lecture d'un BAT — TA7372 contre-étiquette", () => {
   it("retient la face la plus grande — c'est elle qui fixe le seuil §12", () => {
     expect(
       surfaceFaceLaPlusGrande([
-        { pages: [{ largeurPt: 0, hauteurPt: 0, coupe: { largeurMm: 55, hauteurMm: 95, surfaceCm2: 52.25 }, mots: [] }], polices: {}, traces: [], texte: "" },
-        { pages: [{ largeurPt: 0, hauteurPt: 0, coupe: { largeurMm: 55, hauteurMm: 135, surfaceCm2: 74.25 }, mots: [] }], polices: {}, traces: [], texte: "" },
+        { pages: [{ largeurPt: 0, hauteurPt: 0, coupe: { largeurMm: 55, hauteurMm: 95, surfaceCm2: 52.25 }, rognage: { x0: 0, y0: 0, x1: 0, y1: 0 }, mots: [] }], polices: {}, traces: [], texte: "" },
+        { pages: [{ largeurPt: 0, hauteurPt: 0, coupe: { largeurMm: 55, hauteurMm: 135, surfaceCm2: 74.25 }, rognage: { x0: 0, y0: 0, x1: 0, y1: 0 }, mots: [] }], polices: {}, traces: [], texte: "" },
       ])
     ).toBe(74.25);
   });
