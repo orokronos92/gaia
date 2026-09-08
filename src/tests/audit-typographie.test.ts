@@ -31,6 +31,7 @@ const face = (surfaceCm2: number | null, mots: MotBat[]): AnalyseBat => ({
     },
   ],
   polices: { Test: POLICE },
+  traces: [],
   texte: mots.map((m) => m.texte).join(" "),
 });
 

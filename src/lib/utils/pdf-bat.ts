@@ -34,9 +34,11 @@ import {
   type MetriquePolice,
   type PoseTexte,
 } from "./pdf-objets";
+import { lireTraces, type TraceVectoriel } from "./pdf-vecteurs";
 
 export { estGrasse, estItalique } from "./pdf-objets";
 export type { MetriquePolice, PoseTexte } from "./pdf-objets";
+export type { TraceVectoriel } from "./pdf-vecteurs";
 
 const executer = promisify(execFile);
 
@@ -70,6 +72,12 @@ export interface AnalyseBat {
   polices: Record<string, MetriquePolice>;
   /** Texte complet, pages séparées par une ligne vide. */
   texte: string;
+  /**
+   * Tracés vectoriels du fichier, toutes pages confondues — l'empreinte qui
+   * permet de reconnaître un logo sans modèle. Non séparés par page : les BAT
+   * des Jardins de Gaïa portent une face par fichier.
+   */
+  traces: TraceVectoriel[];
 }
 
 /**
@@ -208,7 +216,7 @@ export async function analyserBat(buffer: ArrayBuffer | Uint8Array): Promise<Ana
     }
 
     const texte = pages.map((p) => p.mots.map((m) => m.texte).join(" ")).join("\n\n");
-    return { pages, polices, texte };
+    return { pages, polices, texte, traces: lireTraces(octets) };
   } finally {
     await rm(dossier, { recursive: true, force: true });
   }

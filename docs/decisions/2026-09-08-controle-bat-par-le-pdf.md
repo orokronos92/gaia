@@ -24,8 +24,10 @@ portent, en clair ou décompressable :
 | Couleurs, y compris Pantone | `/Separation` | ✅ 1 déclarée |
 | Calques Illustrator | `/OCProperties` | ✅ 1 |
 
-**Aucune image matricielle** : tout est vectoriel. La géométrie est donc exacte,
-jamais approximée par un rendu.
+**La géométrie est vectorielle**, donc exacte, jamais approximée par un rendu.
+(Nuance mesurée depuis sur 258 BAT : la face avant de TA7372 porte aussi une
+image matricielle — un QR code de 200 × 200 px posé en 12,8 mm — et 165
+XObjects existent sur le corpus. Les logos, eux, restent vectoriels.)
 
 ### Deux corrections que ça impose
 
@@ -286,6 +288,90 @@ silencieux.
 
 ---
 
+## 5 quinquies. P7 et P8 livrés — 8 septembre
+
+### P7 — l'auto-contrôle du graphisme
+
+`/controle-graphisme` : Fabrice dépose les faces d'un BAT, choisit le produit, et
+reçoit les contrôles mesurés avant d'envoyer quoi que ce soit à la Qualité.
+C'est l'écran qui aurait rattrapé l'étiquette partie sans titre.
+
+Trois propriétés délibérées : **aucun modèle appelé** (ni jeton, ni attente, ni
+verdict d'IA à relire), **rien n'est écrit** (ni fichier stocké, ni journal, ni
+statut de fiche — un brouillon reste un brouillon), et **le contrôle de Marie
+reste entier** : l'écran débroussaille, il ne valide pas.
+
+Emplacement provisoire dans le menu principal. Le graphisme aura son espace ;
+en attendant, un outil d'auto-contrôle inaccessible ne vaut rien.
+
+### P8 — l'empreinte vectorielle : ça marche
+
+L'hypothèse était qu'un logo, étant un artwork **fixe** reposé à l'identique,
+laisse dans le flux de contenu une empreinte géométrique reconnaissable sans IA.
+Mesurée sur **258 BAT** du catalogue, elle se vérifie.
+
+**Le principe.** L'Eurofeuille se reconnaît en deux temps, chacun auto-validant :
+
+1. le **feuillage d'étoiles** — un sous-tracé de 22 courbes, empreinte relevée
+   sur l'artwork JDG ;
+2. le **champ vert qui l'englobe**, retenu par son ratio **1:1,5**, celui du
+   drapeau européen. Le manuel officiel en fait *l'unité de mesure du logo* :
+   c'est donc lui, et rien d'autre, qui porte les dimensions de §11.1.
+
+Le ratio n'est pas qu'un filtre : il vérifie qu'on a bien attrapé le champ vert
+et pas un rectangle voisin. Sans lui, la mesure s'ancrait au hasard — la
+première tentative, calée sur « le plus petit rectangle englobant », attrapait
+parfois le fond de page et donnait des largeurs de 65 mm.
+
+**Ce que ça donne sur le corpus :**
+
+| | |
+|---|---|
+| Fichiers analysés | 258 (147 faces avant, 111 contre-étiquettes) |
+| Eurofeuille reconnue | **141**, toutes sur une face avant |
+| Faux positifs sur contre-étiquette | **0 / 111** |
+| Faces avant manquées | 3 sur ~144 (2 sans tracé exploitable, 1 gabarit différent) |
+| Champ vert mesuré | **140 / 141** |
+| Jetons consommés | **0** |
+
+**Et une trouvaille.** Les dimensions se rangent en familles nettes, ce qui est
+la signature d'un système de gabarits :
+
+| Champ vert | Fichiers | Statut |
+|---|---|---|
+| 13,7 × 9,1 mm | 105 | conforme |
+| 16,7 × 11,1 mm | 3 | conforme |
+| 9,0 × 6,0 mm | 15 | exactement la dérogation « très petits emballages » |
+| **12,8 × 8,5 mm** | **10** | **sous le minimum**, sur des faces de 74,3 cm² |
+| 13,4 × 8,9 mm | 3 | sous le minimum de 0,1 mm |
+| 12,7 × 8,5 · 13,2 × 8,7 · 11,8 × 7,8 mm | 4 | sous le minimum |
+
+Le minimum légal est 13,5 × 9 mm. **Dix-sept étiquettes sont en dessous sans
+relever de la dérogation** — dont TA7372, à 12,78 × 8,52 mm, soit 94,7 % du
+minimum. Un écart de 5 % qu'aucun œil ne rattrape et que deux gabarits
+d'Illustrator suffisent à expliquer : l'un est calé juste au-dessus du seuil,
+l'autre juste en dessous.
+
+Les 15 fichiers à 9,0 × 6,0 mm portent exactement la taille de la dérogation,
+sur des faces de 29,6 cm². Le manuel autorise 9 × 6 mm pour les « très petits
+emballages » **sans chiffrer ce qu'est un très petit emballage**. Le contrôle ne
+tranche donc pas à sa place : il nomme la dérogation et demande qu'elle soit
+assumée. → question pour la visite.
+
+**Ce que l'empreinte n'est pas.** Elle décrit **cet artwork-là**. Si les Jardins
+de Gaïa redessinent leur Eurofeuille, elle ne correspondra plus — et le contrôle
+dira « non reconnue », jamais « conforme ». C'est le bon sens de l'échec : ne pas
+reconnaître un dessin n'est pas la preuve qu'il n'y est pas, et le verdict le dit
+mot pour mot.
+
+**Une correction au §1 de ce document.** « Aucune image matricielle : tout est
+vectoriel » était vrai de la contre-étiquette de TA7372, pas de sa face avant :
+celle-ci porte une image de 200 × 200 px posée en 12,8 × 12,8 mm — un QR code.
+165 XObjects ont été rencontrés sur le corpus. La géométrie des logos reste
+vectorielle, mais l'affirmation générale était trop large.
+
+---
+
 ## 6. Découpage proposé
 
 | Lot | Contenu | Dépend de |
@@ -296,8 +382,8 @@ silencieux.
 | ~~**P4**~~ | Hauteur de x et hauteur des chiffres → §12, §4 | ✅ 8 sept |
 | ~~**P5**~~ | Graisse et style → §3.1, §11.1 | ✅ 8 sept |
 | ~~**P6**~~ | Positions relatives → §1, §4, §6 « même champ visuel » | ✅ 8 sept |
-| **P7** | Écran Fabrice : auto-contrôle avant envoi à Marie | P1-P6 |
-| **P8** | Prototype d'empreinte vectorielle des logos | P1 |
+| ~~**P7**~~ | Écran Fabrice : auto-contrôle avant envoi à Marie | ✅ 8 sept |
+| ~~**P8**~~ | Empreinte vectorielle des logos — concluant, Eurofeuille livrée | ✅ 8 sept |
 
 **P1 et P2 d'abord.** P1 supprime la cause des faux avertissements ; P2 fait que
 l'audit BAT remplisse la liste de travail de Marie au lieu d'ouvrir une seconde

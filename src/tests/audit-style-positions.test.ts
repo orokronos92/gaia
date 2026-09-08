@@ -39,6 +39,7 @@ const face = (mots: MotBat[]): AnalyseBat => ({
     },
   ],
   polices: POLICES,
+  traces: [],
   texte: mots.map((m) => m.texte).join(" "),
 });
 

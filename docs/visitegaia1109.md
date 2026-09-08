@@ -203,6 +203,45 @@ des deux faces analysées. Trois explications possibles, très différentes :
 - elles n'y sont pas — non-conformité réelle ;
 - elles sont sur une **troisième face** que nous n'avons pas.
 
+### 🔴 F6. Dix-sept Eurofeuilles sous le minimum légal
+
+Mesuré au tracé sur **258 BAT** du catalogue — 141 Eurofeuilles reconnues,
+aucune erreur sur les 111 contre-étiquettes. Les tailles se rangent en familles
+nettes, ce qui désigne un système de gabarits, pas des accidents :
+
+| Champ vert | Étiquettes | |
+|---|---|---|
+| 13,7 × 9,1 mm | 105 | conforme |
+| 16,7 × 11,1 mm | 3 | conforme |
+| 9,0 × 6,0 mm | 15 | taille de la dérogation (voir F7) |
+| **12,8 × 8,5 mm** | **10** | **sous le minimum**, faces de 74,3 cm² |
+| 13,4 × 8,9 mm | 3 | sous le minimum de 0,1 mm |
+| 12,7 × 8,5 · 13,2 × 8,7 · 11,8 × 7,8 mm | 4 | sous le minimum |
+
+Le minimum est **13,5 × 9 mm** (manuel Eurofeuille, règlement bio). Dix-sept
+étiquettes sont en dessous. TA7372 est à **12,78 × 8,52 mm**, soit 94,7 % du
+minimum — un écart de 5 % qu'aucun œil ne rattrape.
+
+Deux gabarits Illustrator suffisent à l'expliquer : l'un calé juste au-dessus du
+seuil (13,7), l'autre juste en dessous (12,8).
+
+**À demander :** est-ce connu ? Le gabarit à 12,8 mm est-il une ancienne version
+qui traîne ? Corriger le gabarit règle les dix d'un coup.
+
+### 🟠 F7. « Très petit emballage » n'est pas chiffré
+
+Quinze étiquettes portent l'Eurofeuille à **exactement 9,0 × 6,0 mm**, la taille
+que le manuel officiel autorise « pour les emballages de très petite taille ».
+Leurs faces mesurent 29,6 cm².
+
+Le manuel ne dit nulle part ce qu'est un emballage de très petite taille. Nous
+n'avons donc aucun moyen de trancher, et l'application ne le fera pas à la place
+de la Qualité : elle nomme la dérogation et demande qu'elle soit assumée.
+
+**À demander :** 29,6 cm², est-ce « très petit » au sens du manuel ? La
+dérogation a-t-elle été validée à l'époque, et par qui ? Si oui, écrire le seuil
+quelque part une bonne fois.
+
 ---
 
 ## Karrame — Direction
