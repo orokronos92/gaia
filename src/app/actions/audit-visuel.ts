@@ -54,7 +54,15 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
 
     // The audit reads the stored product ↔ file links, never a name match: an
     // audit is only worth the certainty of what it looked at.
-    const bats = await getBatsActifsProduit(data.produitId)
+    const tousBats = await getBatsActifsProduit(data.produitId)
+
+    // Le BAT est le PDF envoyé à l'imprimeur ; le `.ai` est la source
+    // Illustrator du même dessin. Les lire tous les deux ne change aucun
+    // verdict — mesuré sur TA737 — mais double le coût de la vision, qui est
+    // facturée par face. On garde les PDF, et on ne se rabat sur le reste que
+    // s'il n'y en a aucun.
+    const pdfs = tousBats.filter((f) => f.cleS3.toLowerCase().endsWith(".pdf"))
+    const bats = pdfs.length > 0 ? pdfs : tousBats
     const keys = bats.map((f) => f.cleS3)
     if (keys.length === 0) {
         return {

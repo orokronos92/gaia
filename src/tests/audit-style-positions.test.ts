@@ -74,6 +74,13 @@ describe("mise en évidence des allergènes — §3.1", () => {
     const a = face([mot("amande")]);
     expect(controlerStyle([a], { ingredients: entree.ingredients })).toHaveLength(0);
   });
+
+  it("ne prend pas « Aucun » pour un allergène à chercher", () => {
+    // La fiche répond « Aucun » ; chercher ce mot sur l'étiquette produisait une
+    // ligne absurde dans la liste de travail de Marie.
+    const a = face([mot("amande"), mot("cannelle")]);
+    expect(controlerStyle([a], { allergenes: "Aucun", ingredients: entree.ingredients })).toHaveLength(0);
+  });
 });
 
 describe("style du mot demeter — §11.1", () => {

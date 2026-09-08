@@ -40,11 +40,19 @@ function styleDe(mot: MotBat, polices: Record<string, MetriquePolice>): StyleMot
   return police ? { texte: mot.texte, police, corpsPt: mot.corpsPt } : null;
 }
 
-/** Les mots d'un texte, ponctuation pliée, mots courts écartés. */
+/**
+ * Les mots d'un texte, ponctuation pliée, mots courts écartés.
+ *
+ * « Aucun » est une réponse, pas un allergène : le laisser passer faisait
+ * chercher le mot « aucun » sur l'étiquette et produisait une ligne absurde
+ * dans la liste de travail.
+ */
+const NEGATIONS = new Set(["aucun", "aucune", "neant", "sans", "non"]);
+
 function motsDe(valeur: string): string[] {
   return normCmp(valeur)
     .split(/[\s,.;:()]+/)
-    .filter((m) => m.length >= 4);
+    .filter((m) => m.length >= 4 && !NEGATIONS.has(m));
 }
 
 /**
