@@ -11,7 +11,21 @@
 import { z } from "zod";
 
 /** Who evaluates a control point. The mode decides the executor — hard rule. */
-export const CONTROL_MODES = ["deterministic", "llm", "manual"] as const;
+/**
+ * Qui répond à un point de contrôle.
+ *
+ * `deterministic` — du code, sur les données de la fiche.
+ * `bat` — du code, mais en **lisant le BAT** : mesure, texte imprimé, tracé.
+ *          Le point n'a donc de réponse que si un BAT est associé au produit.
+ * `llm` — un modèle, pour ce qui demande d'interpréter un sens.
+ * `manual` — un œil, parce que rien d'autre ne sait le faire aujourd'hui.
+ *
+ * `bat` n'est pas un détail d'affichage : ces points étaient annoncés
+ * « contrôle visuel » à Marie alors que le code les mesure depuis qu'il lit les
+ * BAT. Ils restent hors de la voie déterministe — celle-ci ne connaît que la
+ * fiche — et c'est la fusion des constats du BAT qui les tranche.
+ */
+export const CONTROL_MODES = ["deterministic", "bat", "llm", "manual"] as const;
 export const ControlModeSchema = z.enum(CONTROL_MODES);
 export type ControlMode = z.infer<typeof ControlModeSchema>;
 

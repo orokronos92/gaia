@@ -42,7 +42,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     applicableSi: (c) => c.estParfumeEnfleurage === true,
   },
   {
-    id: "1.4", ordre: 5, section: "DENOMINATION", typeControle: "DENOM_CHAMP_VISUEL", mode: "manual",
+    id: "1.4", ordre: 5, section: "DENOMINATION", typeControle: "DENOM_CHAMP_VISUEL", mode: "bat",
     libelle: "La dénomination figure-t-elle dans le même champ visuel que le poids net, en caractères droits et lisibles ?",
     reference: "PRO-QHS-013 §1 ; INCO art. 9/13",
   },
@@ -52,7 +52,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     // decoration on the label, not a stored field — `ingredientsFr` holds the
     // list alone, so a string match would WARNING forever. Marie ticks it on the
     // BAT until the prefix becomes real, QUID-surfaced data.
-    id: "2.1", ordre: 6, section: "INGREDIENTS", typeControle: "INGR_MENTION", mode: "manual",
+    id: "2.1", ordre: 6, section: "INGREDIENTS", typeControle: "INGR_MENTION", mode: "bat",
     libelle: "Le mot « ingrédients » précède-t-il la liste ?",
     reference: "PRO-QHS-013 §2.1",
   },
@@ -67,7 +67,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     reference: "PRO-QHS-013 §2.1",
   },
   {
-    id: "2.4", ordre: 9, section: "INGREDIENTS", typeControle: "INGR_ETOILES_BIO", mode: "manual",
+    id: "2.4", ordre: 9, section: "INGREDIENTS", typeControle: "INGR_ETOILES_BIO", mode: "bat",
     libelle: "Étoiles présentes (* bio / ** demeter) avec la mention de certification associée, demeter en gras italique ?",
     reference: "PRO-QHS-013 §11.1",
   },
@@ -126,13 +126,13 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     reference: "PRO-QHS-013 §4",
   },
   {
-    id: "6.2", ordre: 19, section: "QUANTITE_NETTE", typeControle: "QTE_NETTE_HAUTEUR", mode: "manual",
+    id: "6.2", ordre: 19, section: "QUANTITE_NETTE", typeControle: "QTE_NETTE_HAUTEUR", mode: "bat",
     libelle: "Hauteur des chiffres conforme (2 mm si ≤ 50 g ; 3 mm si 50-200 g ; 4 mm si 200-1000 g ; 6 mm si > 1000 g), dans le même champ visuel que la dénomination ?",
     reference: "PRO-QHS-013 §4",
   },
   // 7. CONSERVATION / UTILISATION
   {
-    id: "7.1", ordre: 20, section: "CONSERVATION", typeControle: "CONSERVATION_MODE_EMPLOI", mode: "llm",
+    id: "7.1", ordre: 20, section: "CONSERVATION", typeControle: "CONSERVATION_MODE_EMPLOI", mode: "bat",
     libelle: "Mode d'emploi présent si nécessaire (nb sachets/cuillères, température, durée), sans recours exclusif à des symboles ?",
     reference: "PRO-QHS-013 §5",
   },
@@ -143,7 +143,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   // 8. ORIGINE GÉOGRAPHIQUE
   {
-    id: "8.1", ordre: 22, section: "ORIGINE", typeControle: "ORIGINE_SOUS_CODE_OC", mode: "manual",
+    id: "8.1", ordre: 22, section: "ORIGINE", typeControle: "ORIGINE_SOUS_CODE_OC", mode: "bat",
     libelle: "Indication de l'origine des matières premières placée sous le code de l'organisme de contrôle, sous l'Eurofeuille ?",
     reference: "PRO-QHS-013 §6 et §11.1",
   },
@@ -175,7 +175,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   // 11. E MÉTROLOGIQUE
   {
-    id: "11.1", ordre: 27, section: "METROLOGIE", typeControle: "METRO_E_ABSENT", mode: "manual",
+    id: "11.1", ordre: 27, section: "METROLOGIE", typeControle: "METRO_E_ABSENT", mode: "bat",
     libelle: "Le « e » métrologique est-il bien ABSENT (politique JDG) ?",
     reference: "PRO-QHS-013 §9",
   },
@@ -192,7 +192,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   // 13. LABELS
   {
-    id: "13.1", ordre: 30, section: "LABELS", typeControle: "EUROFEUILLE", mode: "manual",
+    id: "13.1", ordre: 30, section: "LABELS", typeControle: "EUROFEUILLE", mode: "bat",
     libelle: "Eurofeuille présente, dimensions ≥ L 13,5 × H 9 mm (proportions 1/1,15), dans le même champ visuel que le code OC et l'origine ?",
     reference: "PRO-QHS-013 §11.1 ; annexe 6",
   },
@@ -200,7 +200,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     // BAT control, not deterministic: FR-BIO-01 is a JDG invariant printed on
     // the label, absent from the fiche. Its presence is read on the BAT —
     // vision-eligible (visual robot), confirmed by Marie.
-    id: "13.2", ordre: 31, section: "LABELS", typeControle: "CODE_OC", mode: "manual",
+    id: "13.2", ordre: 31, section: "LABELS", typeControle: "CODE_OC", mode: "bat",
     libelle: "Code de l'organisme de contrôle du dernier opérateur présent (FR-BIO-01) ?",
     reference: "PRO-QHS-013 §11.1",
   },
@@ -216,7 +216,7 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   // 14. TYPOGRAPHIE
   {
-    id: "14.1", ordre: 34, section: "TYPOGRAPHIE", typeControle: "TYPO_HAUTEUR_X", mode: "manual",
+    id: "14.1", ordre: 34, section: "TYPOGRAPHIE", typeControle: "TYPO_HAUTEUR_X", mode: "bat",
     libelle: "Hauteur de x des mentions obligatoires conforme à la face la plus grande (0,9 mm si < 80 cm² ; ≥ 1,2 mm si > 80 cm²) ?",
     reference: "PRO-QHS-013 §12 ; INCO art. 13.2/13.3/16.2",
   },
@@ -263,10 +263,11 @@ export function getApplicableControls(ctx: AuditContext): ControlPoint[] {
   return CONTROL_CHECKLIST.filter((c) => !c.applicableSi || c.applicableSi(ctx));
 }
 
-/** Splits points by mode to orchestrate the audit (code vs LLM vs human). */
+/** Splits points by mode to orchestrate the audit (fiche vs BAT vs LLM vs human). */
 export function partitionByMode(controls: ControlPoint[]): Record<ControlMode, ControlPoint[]> {
   return {
     deterministic: controls.filter((c) => c.mode === "deterministic"),
+    bat: controls.filter((c) => c.mode === "bat"),
     llm: controls.filter((c) => c.mode === "llm"),
     manual: controls.filter((c) => c.mode === "manual"),
   };

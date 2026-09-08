@@ -32,9 +32,14 @@ import {
  */
 function pointNonExecute(control: ControlPoint): ControlResult {
   const justification =
-    control.mode === "manual"
-      ? "Contrôle visuel sur le BAT — à confirmer par la Qualité."
-      : "Non évalué automatiquement — à confirmer par la Qualité.";
+    control.mode === "bat"
+      ? // Mesuré dès qu'un BAT est associé. Sans constat, c'est que le produit
+        // n'en a pas, ou qu'aucune face n'était lisible — et il faut le dire,
+        // plutôt que réclamer un contrôle visuel que le code sait faire.
+        "Se mesure sur le BAT — aucun constat pour l'instant : BAT absent ou face illisible."
+      : control.mode === "manual"
+        ? "Contrôle visuel sur le BAT — à confirmer par la Qualité."
+        : "Non évalué automatiquement — à confirmer par la Qualité.";
 
   return ControlResultSchema.parse({
     id: control.id,

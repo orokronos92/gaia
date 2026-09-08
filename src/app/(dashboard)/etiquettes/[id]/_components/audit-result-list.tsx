@@ -49,6 +49,14 @@ function styleDe(r: ControlResult) {
     return ACTION_STYLE[r.action ?? "VERIFIER"]
 }
 
+/** Qui répond au point — l'annoncer évite de réclamer un œil là où le code mesure. */
+const MODE_LABEL: Record<ControlPoint["mode"], string> = {
+    deterministic: "",
+    bat: "mesuré sur le BAT",
+    llm: "à évaluer",
+    manual: "contrôle visuel",
+}
+
 const REGISTRY: Map<string, ControlPoint> = new Map(CONTROL_CHECKLIST.map((c) => [c.id, c]))
 
 interface AuditResultListProps {
@@ -193,7 +201,7 @@ function Ligne({
                     )}
                     {r.mode !== "deterministic" && (
                         <span className="text-[10px] text-stone-400">
-                            {r.mode === "manual" ? "contrôle visuel" : "à évaluer"}
+                            {MODE_LABEL[r.mode]}
                         </span>
                     )}
                 </div>
