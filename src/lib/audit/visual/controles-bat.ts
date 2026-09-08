@@ -1,9 +1,10 @@
 /**
  * Les contrôles mesurés sur un BAT, en un seul point d'entrée.
  *
- * Quatre familles, toutes déterministes et toutes chiffrées : les tailles
- * (§12, §4, §2.3), les styles (§3.1, §11.1), les positions (§1, §4, §6) et la
- * reconnaissance de l'Eurofeuille par son tracé (§11.1).
+ * Cinq familles, toutes déterministes : les tailles (§12, §4, §2.3), les styles
+ * (§3.1, §11.1), les positions (§1, §4, §6), la reconnaissance de l'Eurofeuille
+ * par son tracé (§11.1), et les mentions que l'étiquette porte en toutes lettres
+ * (§2.1, §5, §6, §9, §11.1).
  * L'orchestrateur n'a pas à savoir laquelle vit dans quel module — il lui donne
  * les faces lues et la fiche, et reçoit des constats opposables.
  */
@@ -11,13 +12,14 @@
 import type { AnalyseBat } from "@/lib/utils/pdf-bat";
 import { controlerEurofeuille, mesurerEurofeuille } from "./eurofeuille";
 import { facesBat } from "./mesure-mentions";
+import { controlerMentions, type EntreeMentions } from "./mentions-etiquette";
 import { controlerPositions } from "./positions";
 import { controlerPropositions } from "./propositions";
 import { controlerStyle, type EntreeStyle } from "./style-typo";
 import type { BatTextCheck } from "./text-robot";
 import { controlerTypographie, type EntreeTypo } from "./typographie";
 
-export type EntreeBat = EntreeTypo & EntreeStyle;
+export type EntreeBat = EntreeTypo & EntreeStyle & EntreeMentions;
 
 /** Une face lue en profondeur, avec le nom sous lequel Marie la connaît. */
 export interface FaceBat {
@@ -40,5 +42,6 @@ export function controlerBat(faces: FaceBat[], entree: EntreeBat): BatTextCheck[
     ...controlerPositions(analyses, entree, noms, eurofeuilles),
     controlerEurofeuille(eurofeuilles, pages),
     ...controlerPropositions(analyses, entree),
+    ...controlerMentions(analyses, entree),
   ];
 }

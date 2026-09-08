@@ -136,3 +136,21 @@ export function pagesDeMots(analyses: AnalyseBat[]): MotBat[][] {
   return facesBat(analyses).map((p) => p.mots);
 }
 
+export interface MotSitue {
+  mot: MotBat;
+  page: PageBat;
+  face: number;
+  index: number;
+}
+
+/** Tous les mots du produit, chacun sachant sur quelle face et à quel rang. */
+export function motsSitues(analyses: AnalyseBat[]): MotSitue[] {
+  return facesBat(analyses).flatMap((page, face) =>
+    page.mots.map((mot, index) => ({ mot, page, face, index }))
+  );
+}
+
+export const texteComplet = (analyses: AnalyseBat[]) =>
+  facesBat(analyses)
+    .map((p) => p.mots.map((m) => m.texte).join(" "))
+    .join("\n");
