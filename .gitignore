@@ -46,3 +46,6 @@ next-env.d.ts
 # Référentiels clients (JDG) — documents internes, ne quittent pas le VPS
 docs/referentiels/*
 !docs/referentiels/.gitkeep
+
+# BAT clients servant de fixtures de test — artworks JDG, ne quittent pas le VPS
+src/tests/fixtures/*.pdf

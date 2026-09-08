@@ -127,6 +127,28 @@ Un seul consommateur existant : l'ingestion RAG. La bascule est isolée.
 
 ---
 
+## 5 bis. P1 livré — 8 septembre
+
+`src/lib/utils/pdf-bat.ts` lit un BAT : zone de coupe, texte, boîtes, corps
+exacts, polices et métriques. `pdf-text.ts` passe sur poppler et garde sa
+signature — les trois consommateurs (audit BAT, import, RAG) sont inchangés.
+
+Mesuré sur TA7372 : 81 % et 88 % des mots reçoivent leur corps et leur police.
+Les manquants sont des mots isolés de texte décoratif (« € », « à », « la ») ;
+toutes les mentions obligatoires sont couvertes.
+
+Deux points d'attention :
+
+- **`poppler-utils` a dû être ajouté au Dockerfile**, qui vit dans
+  `/docker/gaialabel/` — **hors du dépôt git**. La construction dépend donc d'un
+  fichier non versionné : un clone neuf ne se construirait pas correctement. À
+  traiter (le `docker-compose.yml` est dans le même cas).
+- Le BAT servant de témoin de test n'est **pas versionné** (`.gitignore`) : c'est
+  un artwork du client. Les tests concernés se désactivent proprement s'il est
+  absent.
+
+---
+
 ## 6. Découpage proposé
 
 | Lot | Contenu | Dépend de |
