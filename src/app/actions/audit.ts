@@ -3,8 +3,8 @@
 import { z } from "zod"
 
 import { auth } from "@/auth"
-import { getAuditInputForFiche } from "@/db/queries/audit"
-import { compterResteAFaire, construireChecklist, type ResteAFaire } from "@/lib/audit/checklist-complete"
+import { compterResteAFaire, type ResteAFaire } from "@/lib/audit/checklist-complete"
+import { chargerChecklist } from "./_checklist"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
 import type { ControlResult, ControlStatus } from "@/lib/audit/types"
 
@@ -37,13 +37,11 @@ export async function auditDeterministeAction(raw: unknown): Promise<AuditDeterm
     const parsed = AuditDeterministeSchema.safeParse(raw)
     if (!parsed.success) return { ok: false, error: "Entrée invalide." }
 
-    const input = await getAuditInputForFiche(parsed.data.ficheId)
-    if (!input) return { ok: false, error: "Fiche introuvable." }
-
-    // La checklist COMPLÈTE : les points déterministes avec leur verdict, et les
-    // points LLM/visuels avec ce qu'il reste à faire. Aucun point du registre ne
-    // reste invisible.
-    const results = construireChecklist(input)
+    // La checklist COMPLÈTE : les points déterministes avec leur verdict, ce que
+    // les BAT montrent, et les décisions déjà prises par la Qualité. Aucun point
+    // du registre ne reste invisible, aucune coche posée n'est perdue.
+    const results = await chargerChecklist(parsed.data.ficheId)
+    if (!results) return { ok: false, error: "Fiche introuvable." }
     return {
         ok: true,
         overallStatus: overallStatus(results),

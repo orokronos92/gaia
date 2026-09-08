@@ -11,6 +11,7 @@
 import type { AnalyseBat } from "@/lib/utils/pdf-bat";
 import { controlerEurofeuille, mesurerEurofeuille } from "./eurofeuille";
 import { controlerPositions } from "./positions";
+import { controlerPropositions } from "./propositions";
 import { controlerStyle, type EntreeStyle } from "./style-typo";
 import type { BatTextCheck } from "./text-robot";
 import { controlerTypographie, type EntreeTypo } from "./typographie";
@@ -36,5 +37,6 @@ export function controlerBat(faces: FaceBat[], entree: EntreeBat): BatTextCheck[
     ...controlerStyle(analyses, entree),
     ...controlerPositions(analyses, entree, noms, eurofeuilles),
     controlerEurofeuille(eurofeuilles),
+    ...controlerPropositions(analyses, entree),
   ];
 }

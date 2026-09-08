@@ -27,6 +27,7 @@ export interface PreuveBat {
   statut: BatTextCheck["statut"];
   justification: string;
   origine: NonNullable<BatTextCheck["origine"]>;
+  proposition?: BatTextCheck["proposition"];
 }
 
 const LIBELLE_ORIGINE: Record<PreuveBat["origine"], string> = {
@@ -45,6 +46,7 @@ export function preuvesParPoint(checks: BatTextCheck[]): Record<string, PreuveBa
       statut: c.statut,
       justification: c.justification,
       origine: c.origine ?? "texte",
+      proposition: c.proposition,
     });
   }
   return parPoint;
@@ -58,10 +60,17 @@ export function preuvesParPoint(checks: BatTextCheck[]): Record<string, PreuveBa
  * nous » et « est-elle imprimée ». Le second complète le premier.
  */
 export function appliquerPreuves(
-  resultat: ControlResult,
+  resultatInitial: ControlResult,
   preuves: PreuveBat[] | undefined
 ): ControlResult {
+  let resultat = resultatInitial;
   if (!preuves || preuves.length === 0) return resultat;
+
+  // Un point que la Qualité a tranché reste tranché : la preuve vient s'ajouter
+  // à la ligne, elle ne rouvre pas la décision. C'est l'empreinte du constat,
+  // calculée côté serveur, qui décide de la péremption — pas l'arrivée d'un
+  // élément supplémentaire à l'écran.
+  const dejaTranche = resultat.validation && !resultat.validation.perimee;
 
   const pire = preuves.some((p) => p.statut === "FAIL")
     ? "FAIL"
@@ -72,6 +81,18 @@ export function appliquerPreuves(
   const detail = preuves
     .map((p) => `${LIBELLE_ORIGINE[p.origine]} : ${p.justification}`)
     .join(" ");
+
+  // Ce que le BAT propose d'enregistrer suit le point, quel que soit son verdict.
+  const proposition = preuves.find((p) => p.proposition)?.proposition;
+  if (proposition) resultat = { ...resultat, proposition };
+
+  if (dejaTranche) {
+    return {
+      ...resultat,
+      justification: `${resultat.justification ?? ""} · ${detail}`.trim(),
+      action: "RIEN",
+    };
+  }
 
   // Une non-conformité prouvée sur le BAT prime, d'où qu'elle vienne.
   if (pire === "FAIL") {

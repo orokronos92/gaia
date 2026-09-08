@@ -161,7 +161,25 @@ export const ControlResultSchema = z.object({
   justification: z.string().optional(),
   suggestionIa: z.string().optional(),
 });
-export type ControlResult = z.infer<typeof ControlResultSchema>;
+
+/**
+ * Un point de contrôle, plus la décision que la Qualité a portée dessus.
+ *
+ * La décision n'est pas dans le schéma Zod : celui-ci décrit ce que le moteur
+ * produit, elle vient de la base et s'y ajoute après coup.
+ */
+export type ControlResult = z.infer<typeof ControlResultSchema> & {
+  validation?: {
+    decision: "VERIFIE" | "DEROGATION";
+    parNom: string;
+    le: Date;
+    justification: string | null;
+    /** Vrai si le contrôle ne dit plus ce qu'elle avait validé. */
+    perimee: boolean;
+  };
+  /** Une valeur que le BAT porte et que la fiche pourrait enregistrer. */
+  proposition?: { champ: "poidsNet"; valeur: string; source: string };
+};
 
 /**
  * Already-fetched audit input. The lane is pure (CLAUDE.md §3 — `lib/` never

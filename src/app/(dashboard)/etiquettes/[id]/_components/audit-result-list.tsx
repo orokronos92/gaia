@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { CONTROL_CHECKLIST } from "@/lib/audit/control-checklist"
 import { CONTROL_SECTIONS, type ControlAction, type ControlPoint, type ControlResult } from "@/lib/audit/types"
+import { ValidationLigne } from "./validation-ligne"
 
 const SECTION_LABELS: Record<(typeof CONTROL_SECTIONS)[number], string> = {
     DENOMINATION: "Dénomination",
@@ -52,9 +53,12 @@ const REGISTRY: Map<string, ControlPoint> = new Map(CONTROL_CHECKLIST.map((c) =>
 
 interface AuditResultListProps {
     results: ControlResult[]
+    ficheId: string
+    /** Relance la checklist après une décision de la Qualité. */
+    onChange: () => void
 }
 
-export function AuditResultList({ results }: AuditResultListProps) {
+export function AuditResultList({ results, ficheId, onChange }: AuditResultListProps) {
     const [showNA, setShowNA] = useState(false)
 
     const naCount = results.filter((r) => r.statut === "NA").length
@@ -88,7 +92,7 @@ export function AuditResultList({ results }: AuditResultListProps) {
                         </div>
                         <div className="space-y-2">
                             {duGroupe.map((r) => (
-                                <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} />
+                                <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} ficheId={ficheId} onChange={onChange} />
                             ))}
                         </div>
                     </section>
@@ -103,7 +107,7 @@ export function AuditResultList({ results }: AuditResultListProps) {
                     {visible
                         .filter((r) => r.statut === "NA")
                         .map((r) => (
-                            <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} />
+                            <Ligne key={r.id} r={r} point={REGISTRY.get(r.id)} ficheId={ficheId} onChange={onChange} />
                         ))}
                 </section>
             )}
@@ -112,7 +116,17 @@ export function AuditResultList({ results }: AuditResultListProps) {
 }
 
 /** Une ligne de la checklist : ce qu'il faut faire, pourquoi, et sur quel texte. */
-function Ligne({ r, point }: { r: ControlResult; point?: ControlPoint }) {
+function Ligne({
+    r,
+    point,
+    ficheId,
+    onChange,
+}: {
+    r: ControlResult
+    point?: ControlPoint
+    ficheId: string
+    onChange: () => void
+}) {
     const style = styleDe(r)
     const Icon = style.icon
     return (
@@ -156,6 +170,10 @@ function Ligne({ r, point }: { r: ControlResult; point?: ControlPoint }) {
                         </span>
                     )}
                 </div>
+                {/* Un point non applicable n'appelle aucune décision. */}
+                {r.statut !== "NA" && (
+                    <ValidationLigne ficheId={ficheId} r={r} onChange={onChange} />
+                )}
             </div>
         </div>
     )

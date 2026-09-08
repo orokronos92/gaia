@@ -51,6 +51,11 @@ export interface BatTextCheck {
    * confirmation reste à la Qualité.
    */
   origine?: "texte" | "semantique" | "visuel";
+  /**
+   * Valeur lue sur le BAT que la fiche pourrait enregistrer, en un clic. Le
+   * contrôle ne l'applique jamais lui-même : la fiche reste la référence.
+   */
+  proposition?: import("./propositions").Proposition;
 }
 
 /** Normalize for comparison: fold case/accents/space AND glue number+unit. */

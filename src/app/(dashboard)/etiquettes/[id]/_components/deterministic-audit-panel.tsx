@@ -111,7 +111,7 @@ export function DeterministicAuditPanel({ ficheId, batChecks, data, onData, onRe
                                 )}
                             </div>
                         </div>
-                        {resultats && <AuditResultList results={resultats} />}
+                        {resultats && <AuditResultList results={resultats} ficheId={ficheId} onChange={run} />}
                     </div>
                 )}
             </CardContent>

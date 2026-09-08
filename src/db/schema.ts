@@ -472,3 +472,45 @@ export const knowledgeDocuments = pgTable("knowledge_documents", {
 });
 
 
+
+/**
+ * Ce que Marie décide sur un point de contrôle.
+ *
+ * `VERIFIE` — elle a regardé l'alerte, c'est bon. `DEROGATION` — elle passe
+ * outre une non-conformité prouvée, ce qui n'est pas le même geste : la
+ * justification devient obligatoire et la ligne reste marquée, parce qu'une
+ * dérogation assumée doit rester lisible, pas disparaître dans du vert.
+ */
+export const DecisionControle = pgEnum("decision_controle", ["VERIFIE", "DEROGATION"]);
+
+/**
+ * Les décisions de la Qualité sur les points de la checklist.
+ *
+ * L'audit recalcule tout à chaque lancement ; sans cette table, cocher une
+ * ligne ne survivrait pas au rafraîchissement suivant. Une décision est donc
+ * stockée, mais **attachée au constat qu'elle a validé** (`empreinte`) : si la
+ * fiche ou le BAT change et que le contrôle ne dit plus la même chose, la ligne
+ * se rouvre d'elle-même. Sans cela, l'application certifierait un BAT qu'elle
+ * n'a jamais regardé.
+ *
+ * `point_id` est le numéro du registre (« 14.1 »), pas l'énumération
+ * `type_controle` : celle-ci date de l'ancien moteur et ne couvre pas les
+ * 39 points.
+ */
+export const validationsControle = pgTable("validations_controle", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ficheEtiquetteId: uuid("fiche_etiquette_id").references(() => fichesEtiquettes.id, { onDelete: 'cascade' }).notNull(),
+    /** Numéro du point dans PRO-QHS-013 / MOP-PRO-029, ex. « 14.1 ». */
+    pointId: varchar("point_id", { length: 16 }).notNull(),
+    decision: DecisionControle("decision").notNull(),
+    /** Obligatoire pour une dérogation ; libre sinon. */
+    justification: text("justification"),
+    /** Empreinte du constat validé — statut + justification du contrôle. */
+    empreinte: varchar("empreinte", { length: 64 }).notNull(),
+    valideParId: uuid("valide_par_id").references(() => utilisateurs.id).notNull(),
+    valideLe: timestamp("valide_le").defaultNow().notNull(),
+}, (t) => [
+    // Une seule décision vivante par point et par fiche ; l'historique des
+    // changements vit dans `audit_logs`, qui est déjà la piste d'audit.
+    uniqueIndex("validations_controle_fiche_point_idx").on(t.ficheEtiquetteId, t.pointId),
+]);
