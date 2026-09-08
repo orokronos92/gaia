@@ -893,7 +893,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         <div className="grid gap-3">
                                             {/* Sous-dénomination FR only — the ingredient list now lives in the two derived cards below. */}
                                             <LanguageRow lang="FR" sousDes={labelData.sousDesignationFr} ingredients="" />
-                                            <RecetteListeCards recette={recette} />
+                                            <RecetteListeCards recette={recette} ingredientsFr={labelData.ingredientsFr} />
                                         </div>
                                     </div>
 
