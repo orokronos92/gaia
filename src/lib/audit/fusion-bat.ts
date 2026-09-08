@@ -27,6 +27,7 @@ export interface PreuveBat {
   statut: BatTextCheck["statut"];
   justification: string;
   origine: NonNullable<BatTextCheck["origine"]>;
+  manqueSurLaFiche?: string;
   proposition?: BatTextCheck["proposition"];
   reperes?: BatTextCheck["reperes"];
 }
@@ -47,6 +48,7 @@ export function preuvesParPoint(checks: BatTextCheck[]): Record<string, PreuveBa
       statut: c.statut,
       justification: c.justification,
       origine: c.origine ?? "texte",
+      manqueSurLaFiche: c.manqueSurLaFiche,
       proposition: c.proposition,
       reperes: c.reperes,
     });
@@ -113,9 +115,12 @@ export function appliquerPreuves(
       // Du code a lu ou mesuré le BAT. S'il conclut, le point est vérifié ; s'il
       // laisse une réserve, elle dit déjà d'elle-même ce qu'il reste à regarder —
       // y ajouter « à confirmer sur le BAT » laisserait croire à un avis de modèle.
+      // Rien à vérifier tant que la fiche est muette : ce qu'on attend d'elle,
+      // c'est d'être complétée. Le décompte de tête d'écran doit le dire.
+      const aCompleter = preuves.some((p) => p.manqueSurLaFiche);
       return pire === "PASS"
         ? { ...resultat, statut: "PASS", action: "RIEN", justification: detail }
-        : { ...resultat, statut: pire, action: "VERIFIER", justification: detail };
+        : { ...resultat, statut: pire, action: aCompleter ? "COMPLETER" : "VERIFIER", justification: detail };
     }
     // Un modèle a donné son avis : il oriente le regard, il ne le remplace pas.
     return {

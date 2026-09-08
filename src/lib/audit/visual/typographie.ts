@@ -178,7 +178,18 @@ function controlerHauteurChiffres(analyses: AnalyseBat[], entree: EntreeTypo): B
     checklistId: "6.2",
   };
 
-  if (!entree.poidsNet || entree.poidsNet.trim() === "") return null;
+  // Le seuil de hauteur se lit sur le grammage : sans quantité nette au dossier,
+  // il n'y a pas de seuil, donc pas de mesure — et c'est la fiche qu'il faut
+  // compléter, pas le BAT qu'il faut aller rechercher.
+  if (!entree.poidsNet || entree.poidsNet.trim() === "") {
+    return {
+      ...base,
+      statut: "WARNING",
+      manqueSurLaFiche: "la quantité nette",
+      justification:
+        "Hauteur non mesurable : la fiche ne porte pas de quantité nette — le seuil §4 se déduit du grammage.",
+    };
+  }
 
   const grammes = poidsNetEnGrammes(entree.poidsNet);
   if (grammes === null) {

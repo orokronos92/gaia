@@ -37,6 +37,22 @@ describe("fusion des résultats BAT dans la checklist", () => {
     expect(r.action).toBe("RIEN");
   });
 
+  it("un champ manquant sur la fiche se compte « à compléter », pas « à vérifier »", () => {
+    // Le point 6.2 mesure la hauteur des chiffres du grammage : sans quantité
+    // nette au dossier, il n'y a rien à regarder sur le BAT — il y a une fiche
+    // à remplir. La distinction pilote le décompte de tête d'écran.
+    const r = appliquerPreuves(point("6.2", "bat", "WARNING", "VERIFIER"), [
+      {
+        libelle: "L",
+        statut: "WARNING",
+        justification: "Hauteur non mesurable",
+        origine: "texte",
+        manqueSurLaFiche: "la quantité nette",
+      },
+    ]);
+    expect(r.action).toBe("COMPLETER");
+  });
+
   it("un MODÈLE oriente le regard, il ne remplace pas la confirmation", () => {
     const r = appliquerPreuves(point("13.1", "manual", "WARNING", "VERIFIER"), [
       { libelle: "L", statut: "PASS", justification: "Eurofeuille détectée", origine: "visuel" },

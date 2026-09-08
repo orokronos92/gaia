@@ -91,12 +91,27 @@ export function controlerChampVisuel(
     checklistId,
   };
 
-  if (!entree.denomination?.trim() || !entree.poidsNet?.trim()) return null;
+  // Se taire ici laissait le point retomber sur « BAT absent ou face illisible »,
+  // alors que le BAT est là et lisible : c'est la fiche qui ne dit pas quoi
+  // chercher. On nomme ce qui manque, et le point demande à être complété.
+  const denomination = entree.denomination?.trim();
+  const poidsNet = entree.poidsNet?.trim();
+  if (!denomination || !poidsNet) {
+    const manquants = [!denomination ? "la dénomination" : null, !poidsNet ? "la quantité nette" : null].filter(
+      (m): m is string => m !== null
+    );
+    return {
+      ...base,
+      statut: "WARNING",
+      manqueSurLaFiche: manquants.join(" et "),
+      justification: `Position non mesurable : la fiche ne porte pas ${manquants.join(" ni ")} — sans cette valeur, il n'y a rien à localiser sur le BAT.`,
+    };
+  }
 
   const facesLues = facesBat(analyses);
   const pages = facesLues.map((f) => f.mots);
-  const cible = normCmp(entree.poidsNet);
-  const motsDenom = normCmp(entree.denomination)
+  const cible = normCmp(poidsNet);
+  const motsDenom = normCmp(denomination)
     .split(/[\s,.;:()]+/)
     .filter((m) => m.length >= 4);
   if (motsDenom.length === 0) return null;

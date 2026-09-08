@@ -52,6 +52,17 @@ export interface BatTextCheck {
    */
   origine?: "texte" | "semantique" | "visuel";
   /**
+   * Le champ de fiche qui manque pour que ce contrôle puisse aboutir.
+   *
+   * Un contrôle qui mesure le BAT à partir d'une donnée de la fiche ne peut
+   * rien conclure quand la fiche est muette. Il se taisait, et le point
+   * retombait sur le message d'un contrôle non exécuté : « BAT absent ou face
+   * illisible » — faux, et il envoyait Marie chercher un problème de fichier.
+   * En le nommant, le point dit ce qu'il attend et compte comme « à compléter »
+   * plutôt que comme « à vérifier ».
+   */
+  manqueSurLaFiche?: string;
+  /**
    * Valeur lue sur le BAT que la fiche pourrait enregistrer, en un clic. Le
    * contrôle ne l'applique jamais lui-même : la fiche reste la référence.
    */
