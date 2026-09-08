@@ -950,7 +950,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                 <TabsContent value="audit" className="mt-0 focus-visible:outline-none">
                   <div className="space-y-6">
                     <AuditSynthese donnees={syntheseDet} visuel={syntheseVis} />
-                    <DeterministicAuditPanel ficheId={labelData.id} data={auditDetData} onData={setAuditDetData} onResult={setSyntheseDet} />
+                    <DeterministicAuditPanel ficheId={labelData.id} batChecks={auditVisData?.checks} data={auditDetData} onData={setAuditDetData} onResult={setSyntheseDet} />
                   </div>
                 </TabsContent>
 

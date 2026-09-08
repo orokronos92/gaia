@@ -17,6 +17,8 @@ type Attendu = "REQUIS" | "INTERDIT" | "OPTIONNEL";
 
 export interface PictoDef {
   cle: string;
+  /** Point de la checklist auquel ce logo répond (PRO-QHS-013). */
+  checklistId: string;
   /** Visual description handed to the model so it knows what to look for. */
   desc: string;
   rubrique: string;
@@ -26,11 +28,11 @@ export interface PictoDef {
 
 /** Logos the visual robot inspects on the BAT. */
 export const PICTOS_A_DETECTER: PictoDef[] = [
-  { cle: "EUROFEUILLE", desc: "Eurofeuille (feuille verte composée d'étoiles, logo bio UE)", rubrique: "Labels", libelle: "Eurofeuille présente sur le BAT ?", attendu: "REQUIS" },
-  { cle: "TRIMAN", desc: "Triman (silhouette stylisée avec trois flèches, logo de tri)", rubrique: "Pictogrammes", libelle: "Triman présent sur le BAT ?", attendu: "REQUIS" },
-  { cle: "INFO_TRI", desc: "cartouche Info-Tri (consignes de tri détaillées en bloc)", rubrique: "Pictogrammes", libelle: "Info-Tri présent sur le BAT ?", attendu: "OPTIONNEL" },
-  { cle: "POINT_VERT", desc: "Point Vert (deux flèches vertes enlacées formant un cercle)", rubrique: "Labels", libelle: "Point Vert bien absent du BAT (interdit) ?", attendu: "INTERDIT" },
-  { cle: "WFTO", desc: "logo WFTO (World Fair Trade Organization)", rubrique: "Labels", libelle: "Logo WFTO présent sur le BAT ?", attendu: "OPTIONNEL" },
+  { cle: "EUROFEUILLE", checklistId: "13.1", desc: "Eurofeuille (feuille verte composée d'étoiles, logo bio UE)", rubrique: "Labels", libelle: "Eurofeuille présente sur le BAT ?", attendu: "REQUIS" },
+  { cle: "TRIMAN", checklistId: "12.1", desc: "Triman (silhouette stylisée avec trois flèches, logo de tri)", rubrique: "Pictogrammes", libelle: "Triman présent sur le BAT ?", attendu: "REQUIS" },
+  { cle: "INFO_TRI", checklistId: "12.2", desc: "cartouche Info-Tri (consignes de tri détaillées en bloc)", rubrique: "Pictogrammes", libelle: "Info-Tri présent sur le BAT ?", attendu: "OPTIONNEL" },
+  { cle: "POINT_VERT", checklistId: "13.4", desc: "Point Vert (deux flèches vertes enlacées formant un cercle)", rubrique: "Labels", libelle: "Point Vert bien absent du BAT (interdit) ?", attendu: "INTERDIT" },
+  { cle: "WFTO", checklistId: "13.3", desc: "logo WFTO (World Fair Trade Organization)", rubrique: "Labels", libelle: "Logo WFTO présent sur le BAT ?", attendu: "OPTIONNEL" },
 ];
 
 /** Aggregate a logo's presence across faces: any PRESENT wins; all ABSENT → ABSENT; else INCERTAIN. */
@@ -81,7 +83,15 @@ export function reconcile(p1: Presence, p2: Presence): Presence {
 export function checksFromPresences(presences: Record<string, Presence>): BatTextCheck[] {
   return PICTOS_A_DETECTER.map((def) => {
     const v = verdict(def.attendu, presences[def.cle] ?? "INCERTAIN");
-    return { id: `VIS_${def.cle}`, rubrique: def.rubrique, libelle: def.libelle, statut: v.statut, justification: v.justification };
+    return {
+      id: `VIS_${def.cle}`,
+      checklistId: def.checklistId,
+      origine: "visuel",
+      rubrique: def.rubrique,
+      libelle: def.libelle,
+      statut: v.statut,
+      justification: v.justification,
+    };
   });
 }
 

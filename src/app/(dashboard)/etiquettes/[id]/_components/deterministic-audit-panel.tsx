@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { auditDeterministeAction, type AuditDeterministeResult } from "@/app/actions/audit"
 import type { ControlStatus } from "@/lib/audit/types"
 import { AuditResultList } from "./audit-result-list"
+import { fusionner } from "@/lib/audit/fusion-bat"
+import { compterResteAFaire } from "@/lib/audit/checklist-complete"
+import type { BatTextCheck } from "@/lib/audit/visual/text-robot"
 import type { SousResultatAudit } from "./audit-synthese"
 
 const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string; icon: typeof ShieldCheck }> = {
@@ -20,13 +23,15 @@ const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string;
 
 interface DeterministicAuditPanelProps {
     ficheId: string
+    /** Résultats de l'audit BAT, s'il a été lancé — ils remplissent la liste. */
+    batChecks?: BatTextCheck[]
     /** Controlled result, lifted to the fiche so it survives tab switches. */
     data: AuditDeterministeResult | null
     onData: (r: AuditDeterministeResult | null) => void
     onResult?: (r: SousResultatAudit) => void
 }
 
-export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: DeterministicAuditPanelProps) {
+export function DeterministicAuditPanel({ ficheId, batChecks, data, onData, onResult }: DeterministicAuditPanelProps) {
     const [pending, startTransition] = useTransition()
 
     const run = () => {
@@ -37,8 +42,15 @@ export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: Det
         })
     }
 
+    // L'audit BAT ne tient plus une liste à part : ses verdicts viennent remplir
+    // les points de la checklist auxquels ils répondent.
+    const resultats = data?.results
+        ? batChecks && batChecks.length > 0
+            ? fusionner(data.results, batChecks)
+            : data.results
+        : undefined
     const overall = data?.ok && data.overallStatus ? OVERALL[data.overallStatus] : null
-    const reste = data?.resteAFaire
+    const reste = resultats ? compterResteAFaire(resultats) : data?.resteAFaire
 
     return (
         <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
@@ -99,7 +111,7 @@ export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: Det
                                 )}
                             </div>
                         </div>
-                        {data.results && <AuditResultList results={data.results} />}
+                        {resultats && <AuditResultList results={resultats} />}
                     </div>
                 )}
             </CardContent>

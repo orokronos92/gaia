@@ -37,6 +37,20 @@ export interface BatTextCheck {
   libelle: string;
   statut: ControlStatus;
   justification: string;
+  /**
+   * Point de la checklist auquel ce contrôle répond (PRO-QHS-013).
+   *
+   * L'audit BAT ouvrait sa propre liste à côté de celle de Marie : deux
+   * réponses à la même question, dans deux écrans, sans lien. Rattaché, il
+   * REMPLIT sa liste de travail au lieu de la dédoubler.
+   */
+  checklistId?: string;
+  /**
+   * Qui a rendu ce verdict. Le texte est du code — il peut trancher un point.
+   * Le sémantique et le visuel sont des modèles : ils apportent une preuve, la
+   * confirmation reste à la Qualité.
+   */
+  origine?: "texte" | "semantique" | "visuel";
 }
 
 /** Normalize for comparison: fold case/accents/space AND glue number+unit. */
@@ -52,7 +66,7 @@ function declares(value?: string | null): boolean {
 
 /** Ingredient list + percentages must appear verbatim on the artwork. */
 function checkIngredients(batN: string, input: BatTextInput): BatTextCheck {
-  const base = { id: "TXT_INGREDIENTS", rubrique: "Liste des ingrédients", libelle: "Liste d'ingrédients et % conformes à la fiche ?" };
+  const base = { id: "TXT_INGREDIENTS", origine: "texte" as const, rubrique: "Liste des ingrédients", libelle: "Liste d'ingrédients et % conformes à la fiche ?" };
   if (!input.ingredients || input.ingredients.trim() === "") {
     return { ...base, statut: "WARNING", justification: "Liste d'ingrédients absente de la fiche — comparaison impossible." };
   }
@@ -78,9 +92,9 @@ function checkIngredients(batN: string, input: BatTextInput): BatTextCheck {
 function checkPresence(
   batN: string,
   value: string | null | undefined,
-  cfg: { id: string; rubrique: string; libelle: string; absent: string }
+  cfg: { id: string; checklistId?: string; rubrique: string; libelle: string; absent: string }
 ): BatTextCheck {
-  const base = { id: cfg.id, rubrique: cfg.rubrique, libelle: cfg.libelle };
+  const base = { ...cfg, origine: "texte" as const };
   if (!value || value.trim() === "") {
     return { ...base, statut: "WARNING", justification: "Donnée absente de la fiche — non vérifiable." };
   }
@@ -94,14 +108,31 @@ function checkPresence(
 function checkTokens(
   batN: string,
   tokens: readonly string[],
-  cfg: { id: string; rubrique: string; libelle: string; absent: string }
+  cfg: { id: string; checklistId?: string; rubrique: string; libelle: string; absent: string }
 ): BatTextCheck {
-  const base = { id: cfg.id, rubrique: cfg.rubrique, libelle: cfg.libelle };
+  const base = { ...cfg, origine: "texte" as const };
   if (tokens.every((t) => batN.includes(t))) {
     return { ...base, statut: "PASS", justification: "Mention présente sur le BAT." };
   }
   return { ...base, statut: "WARNING", justification: cfg.absent };
 }
+
+/**
+ * Deux contrôles restent volontairement NON rattachés à la checklist :
+ *
+ *   - `TXT_INGREDIENTS` compare la liste imprimée au texte de la fiche. Le point
+ *     2.2, lui, porte sur l'ORDRE pondéral décroissant. Les rattacher ferait
+ *     échouer 2.2 sur presque chaque produit, puisque la réglementation impose
+ *     que recette et étiquette diffèrent (dénomination légale contre référence
+ *     matière, arrondis QUID, regroupement des arômes).
+ *   - `TXT_DENOMINATION` vérifie que le NOM COMMERCIAL est imprimé ; le point
+ *     1.0 juge la DÉNOMINATION LÉGALE. Le §1 interdit d'ailleurs que l'un tienne
+ *     lieu de l'autre — c'est un contrôle qui manque encore au registre.
+ *
+ * Ils restent affichés dans le panneau BAT. Un rattachement approximatif vaut
+ * moins qu'aucun rattachement : il produit un verdict faux sous une référence
+ * réglementaire, ce qui est pire que de ne rien dire.
+ */
 
 /** Runs the deterministic text robot over the concatenated BAT text. */
 export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck[] {
@@ -113,19 +144,19 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
       absent: "Dénomination non retrouvée sur les faces analysées — à vérifier.",
     }),
     checkPresence(batN, input.poidsNet, {
-      id: "TXT_POIDS_NET", rubrique: "Quantité nette", libelle: "Poids net présent sur le BAT ?",
+      id: "TXT_POIDS_NET", checklistId: "6.1", rubrique: "Quantité nette", libelle: "Poids net présent sur le BAT ?",
       absent: "Poids net non retrouvé sur les faces analysées — à vérifier.",
     }),
     checkPresence(batN, input.codeEtiquette, {
-      id: "TXT_CODE_ETIQUETTE", rubrique: "Code étiquette", libelle: "Code étiquette présent sur le BAT ?",
+      id: "TXT_CODE_ETIQUETTE", checklistId: "15.1", rubrique: "Code étiquette", libelle: "Code étiquette présent sur le BAT ?",
       absent: "Code étiquette non retrouvé sur les faces analysées — à vérifier.",
     }),
     checkTokens(batN, CONSERVATION_TOKENS, {
-      id: "TXT_CONSERVATION", rubrique: "Conservation", libelle: "Mention de conservation présente sur le BAT ?",
+      id: "TXT_CONSERVATION", checklistId: "7.2", rubrique: "Conservation", libelle: "Mention de conservation présente sur le BAT ?",
       absent: "Mention de conservation JDG non retrouvée sur les faces analysées — à vérifier.",
     }),
     checkTokens(batN, FABRICANT_JDG_TOKENS, {
-      id: "TXT_FABRICANT", rubrique: "Fabricant", libelle: "Adresse fabricant présente sur le BAT ?",
+      id: "TXT_FABRICANT", checklistId: "9.1", rubrique: "Fabricant", libelle: "Adresse fabricant présente sur le BAT ?",
       absent: "Adresse fabricant JDG non retrouvée sur les faces analysées — à vérifier.",
     }),
   ];
@@ -138,7 +169,7 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
   // is kept for them).
   if (declares(input.allergenes)) {
     results.push(checkPresence(batN, input.allergenes, {
-      id: "TXT_ALLERGENES", rubrique: "Particularités", libelle: "Allergènes déclarés présents sur le BAT ?",
+      id: "TXT_ALLERGENES", checklistId: "5.1", rubrique: "Particularités", libelle: "Allergènes déclarés présents sur le BAT ?",
       absent: "Allergène déclaré sur la fiche mais non retrouvé sur le BAT — à vérifier.",
     }));
   }

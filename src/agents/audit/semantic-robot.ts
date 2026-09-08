@@ -96,7 +96,16 @@ Réponds STRICTEMENT en JSON : {"resultats":[{"cle":"...","statut":"CONFORME|DOU
     .filter((r) => byCle.has(r.cle))
     .map((r) => {
       const e = byCle.get(r.cle)!;
-      return { id: e.cle, rubrique: e.rubrique, libelle: e.libelle, statut: STATUT_MAP[r.statut], justification: r.justification };
+      return {
+        id: e.cle,
+        // L'allégation est le point 5.2 de PRO-QHS-013 (§3.2).
+        checklistId: "5.2",
+        origine: "semantique",
+        rubrique: e.rubrique,
+        libelle: e.libelle,
+        statut: STATUT_MAP[r.statut],
+        justification: r.justification,
+      };
     });
 
   return { checks, tokensUsed: response.usage?.totalTokens ?? 0 };
