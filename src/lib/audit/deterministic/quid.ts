@@ -29,7 +29,7 @@ function toRecetteInput(input: AuditInput): IngredientRecetteInput[] {
 /** 1.1 — DENOM_THE_51: ≥ 51 % Camellia sinensis by weight. */
 export function checkDenomThe51(input: AuditInput): DeterministicVerdict {
   if (input.ingredients.length === 0) {
-    return { statut: "WARNING", justification: "Aucune recette : % Camellia non calculable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Aucune recette : % Camellia non calculable." };
   }
   const totalKg = input.ingredients.reduce((s, i) => s + i.quantiteKg, 0);
   const camelliaKg = input.ingredients
@@ -63,7 +63,7 @@ export function checkDenomThe51(input: AuditInput): DeterministicVerdict {
  */
 export function checkQuid(input: AuditInput): DeterministicVerdict {
   if (input.ingredients.length === 0) {
-    return { statut: "WARNING", justification: "Aucune recette : QUID non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Aucune recette : QUID non vérifiable." };
   }
   // A real error: an ingredient with no % that Marie did NOT choose to mask.
   const manquants = input.ingredients.filter(
@@ -92,7 +92,7 @@ export function checkQuid(input: AuditInput): DeterministicVerdict {
 /** 3.2 — ROUNDING: stored label % reproduce the engine's largest-remainder result. */
 export function checkRounding(input: AuditInput): DeterministicVerdict {
   if (input.ingredients.length === 0) {
-    return { statut: "WARNING", justification: "Aucune recette : arrondi non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Aucune recette : arrondi non vérifiable." };
   }
   const stored = input.ingredients.map((i) => i.pourcentageEtiquette);
   const recetteInput = toRecetteInput(input);
@@ -123,7 +123,7 @@ export function checkRounding(input: AuditInput): DeterministicVerdict {
 /** 3.3 — QUID_AJUSTEMENT_100: declared percentages sum to exactly 100. */
 export function checkQuidAjustement100(input: AuditInput): DeterministicVerdict {
   if (input.ingredients.length === 0) {
-    return { statut: "WARNING", justification: "Aucune recette : total non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Aucune recette : total non vérifiable." };
   }
   const total = input.ingredients.reduce((s, i) => s + i.pourcentageEtiquette, 0);
   const totalArrondi = Math.round(total * 100) / 100;

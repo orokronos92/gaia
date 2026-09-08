@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import { auth } from "@/auth"
 import { getAuditInputForFiche } from "@/db/queries/audit"
-import { auditDeterministic } from "@/lib/audit/deterministic"
+import { compterResteAFaire, construireChecklist, type ResteAFaire } from "@/lib/audit/checklist-complete"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
 import type { ControlResult, ControlStatus } from "@/lib/audit/types"
 
@@ -17,13 +17,18 @@ export interface AuditDeterministeResult {
     error?: string
     overallStatus?: ControlStatus
     counts?: Record<ControlStatus, number>
+    /** Ce qu'il reste à faire, l'axe que Marie lit en premier. */
+    resteAFaire?: ResteAFaire
     results?: ControlResult[]
 }
 
 /**
- * Voie A (deterministic) audit for a single fiche. Read-only — runs the pure
- * lane on freshly loaded data and returns the verdicts. No DB write yet
- * (persistence comes with the UI / Voie C lot). Auth + Zod first (CLAUDE.md §8).
+ * Checklist de contrôle d'une fiche. Lecture seule.
+ *
+ * Elle renvoie les 39 points applicables : ceux que le code sait trancher avec
+ * leur verdict, et les autres avec ce qu'il reste à faire. Marie doit voir la
+ * totalité de son travail sur cette fiche, pas seulement la part automatisable.
+ * Auth + Zod d'abord (CLAUDE.md §8).
  */
 export async function auditDeterministeAction(raw: unknown): Promise<AuditDeterministeResult> {
     const session = await auth()
@@ -35,11 +40,15 @@ export async function auditDeterministeAction(raw: unknown): Promise<AuditDeterm
     const input = await getAuditInputForFiche(parsed.data.ficheId)
     if (!input) return { ok: false, error: "Fiche introuvable." }
 
-    const results = auditDeterministic(input)
+    // La checklist COMPLÈTE : les points déterministes avec leur verdict, et les
+    // points LLM/visuels avec ce qu'il reste à faire. Aucun point du registre ne
+    // reste invisible.
+    const results = construireChecklist(input)
     return {
         ok: true,
         overallStatus: overallStatus(results),
         counts: countByStatus(results),
+        resteAFaire: compterResteAFaire(results),
         results,
     }
 }

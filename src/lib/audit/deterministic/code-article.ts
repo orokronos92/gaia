@@ -25,6 +25,7 @@ import type { AuditInput, DeterministicVerdict } from "../types";
 
 const SANS_CODE: DeterministicVerdict = {
   statut: "WARNING",
+  action: "COMPLETER",
   justification: "Code produit absent ou de forme non reconnue — non vérifiable.",
 };
 
@@ -36,6 +37,7 @@ export function checkCodeConditionnement(input: AuditInput): DeterministicVerdic
   if (!d.conditionnement) {
     return {
       statut: "WARNING",
+      action: "COMPLETER",
       justification: `Le code « ${input.produit.codePf} » s'arrête au numéro d'article : aucun chiffre de conditionnement.`,
       suggestionIa:
         "Codes historiques antérieurs à la règle §2.1.3. À compléter ou à confirmer comme tels avec JDG.",
@@ -63,6 +65,7 @@ export function checkCodePoidsCoherent(input: AuditInput): DeterministicVerdict 
   if (!d.conditionnement) {
     return {
       statut: "WARNING",
+      action: "COMPLETER",
       justification: "Pas de chiffre de conditionnement dans le code — rien à confronter au poids net.",
     };
   }
@@ -74,7 +77,7 @@ export function checkCodePoidsCoherent(input: AuditInput): DeterministicVerdict 
 
   const poidsNet = input.produit.poidsNet;
   if (!poidsNet || poidsNet.trim() === "") {
-    return { statut: "WARNING", justification: "Poids net non renseigné — non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Poids net non renseigné — non vérifiable." };
   }
 
   const grammes = poidsEnGrammes(poidsNet);
@@ -103,7 +106,7 @@ export function checkCodePoidsCoherent(input: AuditInput): DeterministicVerdict 
 export function checkGencodeCoherent(input: AuditInput): DeterministicVerdict {
   const ean = input.produit.codeEan?.trim();
   if (!ean) {
-    return { statut: "WARNING", justification: "Gencode non renseigné — non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Gencode non renseigné — non vérifiable." };
   }
   if (!/^\d{13}$/.test(ean)) {
     return { statut: "FAIL", justification: `Gencode « ${ean} » : 13 chiffres attendus.` };
@@ -146,7 +149,7 @@ export function checkGencodeCoherent(input: AuditInput): DeterministicVerdict {
 export function checkGencodeUnicite(input: AuditInput): DeterministicVerdict {
   const ean = input.produit.codeEan?.trim();
   if (!ean) {
-    return { statut: "WARNING", justification: "Gencode non renseigné — non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Gencode non renseigné — non vérifiable." };
   }
 
   const autres = input.produit.eanPartagePar ?? [];

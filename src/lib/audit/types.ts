@@ -24,6 +24,18 @@ export const CONTROL_STATUSES = ["PASS", "WARNING", "FAIL", "NA"] as const;
 export const ControlStatusSchema = z.enum(CONTROL_STATUSES);
 export type ControlStatus = z.infer<typeof ControlStatusSchema>;
 
+/**
+ * Ce qu'il reste à faire sur un point — l'axe qui compte pour Marie.
+ *
+ * Le statut dit ce que le contrôle a trouvé ; l'action dit ce qu'elle doit
+ * faire. Un même WARNING peut vouloir dire « complète la fiche » ou « regarde
+ * le BAT », et ce ne sont pas les mêmes gestes. L'écran d'audit n'est pas un
+ * rapport, c'est sa liste de travail.
+ */
+export const CONTROL_ACTIONS = ["RIEN", "COMPLETER", "VERIFIER", "CORRIGER"] as const;
+export const ControlActionSchema = z.enum(CONTROL_ACTIONS);
+export type ControlAction = z.infer<typeof ControlActionSchema>;
+
 /** Sections of PRO-QHS-013, in document order. */
 export const CONTROL_SECTIONS = [
   "DENOMINATION",
@@ -144,6 +156,8 @@ export const ControlResultSchema = z.object({
   typeControle: ControlTypeSchema,
   mode: ControlModeSchema,
   statut: ControlStatusSchema,
+  /** Ce qu'il reste à faire. Déduit du statut si le contrôle ne le précise pas. */
+  action: ControlActionSchema.optional(),
   justification: z.string().optional(),
   suggestionIa: z.string().optional(),
 });
@@ -208,6 +222,19 @@ export interface AuditInput {
 /** Verdict an individual deterministic check returns (joined into a ControlResult). */
 export interface DeterministicVerdict {
   statut: ControlStatus;
+  /**
+   * À préciser quand le statut seul ne dit pas le geste attendu — typiquement
+   * `COMPLETER` sur un WARNING dû à une donnée absente de la fiche, par
+   * opposition à `VERIFIER` sur une donnée présente mais douteuse.
+   */
+  action?: ControlAction;
   justification: string;
   suggestionIa?: string;
+}
+
+/** Action par défaut quand un contrôle ne la précise pas. */
+export function actionParDefaut(statut: ControlStatus): ControlAction {
+  if (statut === "FAIL") return "CORRIGER";
+  if (statut === "WARNING") return "VERIFIER";
+  return "RIEN";
 }

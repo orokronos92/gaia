@@ -19,7 +19,7 @@ const CONSERVATION_TOKENS = ["abri", "humidite", "lumiere", "chaleur"] as const;
 export function checkQteNetteUnite(input: AuditInput): DeterministicVerdict {
   const poids = input.produit.poidsNet;
   if (!poids || poids.trim() === "") {
-    return { statut: "WARNING", justification: "Poids net non renseigné — à compléter." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Poids net non renseigné — à compléter." };
   }
   if (MASS_UNIT_PATTERN.test(poids)) {
     return { statut: "PASS", justification: `Quantité nette en unité de masse (« ${poids.trim()} »).` };
@@ -37,7 +37,7 @@ export function checkQteNetteUnite(input: AuditInput): DeterministicVerdict {
 export function checkConservationMention(input: AuditInput): DeterministicVerdict {
   const mention = input.fiche.mentionConservation;
   if (!mention || mention.trim() === "") {
-    return { statut: "WARNING", justification: "Mention de conservation absente — à compléter." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Mention de conservation absente — à compléter." };
   }
   const normalized = normalize(mention);
   if (CONSERVATION_TOKENS.every((t) => normalized.includes(t))) {
@@ -54,7 +54,7 @@ export function checkConservationMention(input: AuditInput): DeterministicVerdic
 export function checkFabricantAdresse(input: AuditInput): DeterministicVerdict {
   const mention = input.fiche.mentionFabricant;
   if (!mention || mention.trim() === "") {
-    return { statut: "WARNING", justification: "Adresse fabricant absente — à compléter." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Adresse fabricant absente — à compléter." };
   }
   const normalized = normalize(mention);
   const manquants = FABRICANT_JDG_TOKENS.filter((t) => !normalized.includes(t));
@@ -71,7 +71,7 @@ export function checkFabricantAdresse(input: AuditInput): DeterministicVerdict {
 export function checkCodeEtiquette(input: AuditInput): DeterministicVerdict {
   const code = input.fiche.codeEtiquette;
   if (!code || code.trim() === "") {
-    return { statut: "WARNING", justification: "Code étiquette absent — à compléter." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Code étiquette absent — à compléter." };
   }
   return { statut: "PASS", justification: `Code étiquette présent (${code.trim()}).` };
 }

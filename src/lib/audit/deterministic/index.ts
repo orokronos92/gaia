@@ -9,6 +9,7 @@ import { buildAuditContext } from "../build-context";
 import { CONTROL_CHECKLIST } from "../control-checklist";
 import {
   ControlResultSchema,
+  actionParDefaut,
   type AuditContext,
   type AuditInput,
   type ControlPoint,
@@ -63,13 +64,24 @@ const CHECKS: Record<string, CheckFn> = {
 function evaluate(control: ControlPoint, input: AuditInput, ctx: AuditContext): ControlResult {
   const base = { id: control.id, typeControle: control.typeControle, mode: control.mode };
   if (control.applicableSi && !control.applicableSi(ctx)) {
-    return ControlResultSchema.parse({ ...base, statut: "NA", justification: "Non applicable à ce produit." });
+    return ControlResultSchema.parse({
+      ...base,
+      statut: "NA",
+      action: "RIEN",
+      justification: "Non applicable à ce produit.",
+    });
   }
   const fn = CHECKS[control.id];
   const verdict: DeterministicVerdict = fn
     ? fn(input)
     : { statut: "WARNING", justification: "Contrôle déterministe non implémenté." };
-  return ControlResultSchema.parse({ ...base, ...verdict });
+  // Le contrôle précise l'action quand le statut seul ne dit pas le geste
+  // attendu ; sinon on la déduit.
+  return ControlResultSchema.parse({
+    ...base,
+    ...verdict,
+    action: verdict.action ?? actionParDefaut(verdict.statut),
+  });
 }
 
 /** Runs the deterministic checks among the given control points. */

@@ -12,8 +12,8 @@ import { AuditResultList } from "./audit-result-list"
 import type { SousResultatAudit } from "./audit-synthese"
 
 const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string; icon: typeof ShieldCheck }> = {
-    PASS: { title: "Conforme", box: "bg-emerald-50/60 border-emerald-200", tone: "text-emerald-700", icon: ShieldCheck },
-    WARNING: { title: "Vérifications requises", box: "bg-orange-50/60 border-orange-200", tone: "text-orange-700", icon: AlertTriangle },
+    PASS: { title: "Rien à signaler", box: "bg-emerald-50/60 border-emerald-200", tone: "text-emerald-700", icon: ShieldCheck },
+    WARNING: { title: "Travail restant", box: "bg-orange-50/60 border-orange-200", tone: "text-orange-700", icon: AlertTriangle },
     FAIL: { title: "Non conforme", box: "bg-red-50/60 border-red-200", tone: "text-red-700", icon: XCircle },
     NA: { title: "Non applicable", box: "bg-stone-50 border-stone-200", tone: "text-stone-500", icon: ShieldCheck },
 }
@@ -38,7 +38,7 @@ export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: Det
     }
 
     const overall = data?.ok && data.overallStatus ? OVERALL[data.overallStatus] : null
-    const counts = data?.counts
+    const reste = data?.resteAFaire
 
     return (
         <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
@@ -48,10 +48,11 @@ export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: Det
                         <Badge variant="outline" className="p-1 h-8 w-8 rounded-lg bg-emerald-100 border-none flex items-center justify-center">
                             <Cpu className="h-5 w-5 text-emerald-700" />
                         </Badge>
-                        Audit déterministe (Voie A)
+                        Contrôle de la fiche
                     </CardTitle>
                     <CardDescription className="ml-10">
-                        Contrôles vérifiés par calcul — reproductibles, sans IA (PRO-QHS-013).
+                        Les 39 points de PRO-QHS-013 et MOP-PRO-029 — ce qui est vérifié par calcul,
+                        et ce qui vous reste à faire.
                     </CardDescription>
                 </div>
                 <Button
@@ -67,8 +68,8 @@ export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: Det
                 {!data && !pending && (
                     <div className="flex flex-col items-center justify-center text-center h-40 opacity-70">
                         <Cpu className="h-14 w-14 text-stone-300 mb-3 stroke-[1.5]" />
-                        <p className="text-stone-600 font-medium">Audit déterministe non lancé.</p>
-                        <p className="text-stone-400 text-sm mt-1">Vérifie QUID, mentions, codes et allergènes par calcul.</p>
+                        <p className="text-stone-600 font-medium">Contrôle non lancé.</p>
+                        <p className="text-stone-400 text-sm mt-1">Affiche tout ce qui reste à contrôler sur cette fiche.</p>
                     </div>
                 )}
 
@@ -84,9 +85,16 @@ export function DeterministicAuditPanel({ ficheId, data, onData, onResult }: Det
                             <overall.icon className={cn("h-9 w-9 shrink-0", overall.tone)} />
                             <div>
                                 <h3 className={cn("font-black text-xl uppercase tracking-tight", overall.tone)}>{overall.title}</h3>
-                                {counts && (
+                                {reste && (
                                     <p className="text-sm text-stone-600 mt-1 font-medium">
-                                        {counts.PASS} conforme(s) · {counts.WARNING} à vérifier · {counts.FAIL} non conforme(s) · {counts.NA} N/A
+                                        {reste.corriger > 0 && (
+                                            <span className="text-red-700">{reste.corriger} à corriger · </span>
+                                        )}
+                                        {reste.completer > 0 && (
+                                            <span className="text-sky-700">{reste.completer} à compléter · </span>
+                                        )}
+                                        {reste.verifier} à vérifier · {reste.fait} vérifié(s)
+                                        {reste.nonApplicable > 0 && ` · ${reste.nonApplicable} sans objet`}
                                     </p>
                                 )}
                             </div>

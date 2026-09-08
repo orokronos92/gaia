@@ -10,7 +10,7 @@ import type { AuditInput, DeterministicVerdict } from "../types";
 /** 2.2 — INGR_ORDRE_DECROISSANT: descending weight order along ordreTri. */
 export function checkIngrOrdreDecroissant(input: AuditInput): DeterministicVerdict {
   if (input.ingredients.length === 0) {
-    return { statut: "WARNING", justification: "Aucune recette : ordre non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Aucune recette : ordre non vérifiable." };
   }
   const tries = [...input.ingredients].sort((a, b) => a.ordreTri - b.ordreTri);
   for (let i = 1; i < tries.length; i++) {
@@ -30,7 +30,7 @@ export function checkIngrMono(input: AuditInput): DeterministicVerdict {
     return { statut: "NA", justification: "Produit multi-ingrédients." };
   }
   if (input.ingredients.length === 0) {
-    return { statut: "WARNING", justification: "Aucune recette : cas mono-ingrédient non vérifiable." };
+    return { statut: "WARNING", action: "COMPLETER", justification: "Aucune recette : cas mono-ingrédient non vérifiable." };
   }
   return {
     statut: "WARNING",
