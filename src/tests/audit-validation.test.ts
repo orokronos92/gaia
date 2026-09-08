@@ -7,6 +7,7 @@ import {
   refusMotif,
   type ValidationControle,
 } from "../lib/audit/validation";
+import { verdictChecklist } from "../lib/audit/synthesis";
 import type { ControlResult } from "../lib/audit/types";
 
 const point = (
@@ -99,5 +100,59 @@ describe("recevabilité d'une décision", () => {
 
   it("n'exige rien pour cocher une alerte", () => {
     expect(refusMotif("VERIFIE", "WARNING", null)).toBeNull();
+  });
+});
+
+describe("verdict de la checklist", () => {
+  const ligne = (
+    statut: ControlResult["statut"],
+    action: NonNullable<ControlResult["action"]>,
+    derogation = false
+  ) => ({
+    statut,
+    action,
+    validation: derogation
+      ? { decision: "DEROGATION" as const, perimee: false }
+      : undefined,
+  });
+
+  it("reste NON CONFORME tant qu'une correction est ouverte", () => {
+    expect(
+      verdictChecklist([ligne("FAIL", "CORRIGER"), ligne("PASS", "RIEN")]).verdict
+    ).toBe("NON_CONFORME");
+  });
+
+  it("annonce le travail restant quand il ne reste qu'à vérifier", () => {
+    expect(verdictChecklist([ligne("WARNING", "VERIFIER")]).verdict).toBe("TRAVAIL_RESTANT");
+  });
+
+  it("passe CONFORME quand tout est clos sans dérogation", () => {
+    // Le statut mesuré reste WARNING : une validation ne réécrit pas le
+    // constat, elle dit qu'il a été traité.
+    expect(verdictChecklist([ligne("WARNING", "RIEN"), ligne("PASS", "RIEN")]).verdict).toBe(
+      "CONFORME"
+    );
+  });
+
+  it("distingue une conformité obtenue par dérogation", () => {
+    const s = verdictChecklist([ligne("FAIL", "RIEN", true), ligne("PASS", "RIEN")]);
+    expect(s.verdict).toBe("CONFORME_SOUS_DEROGATION");
+    expect(s.derogations).toBe(1);
+  });
+
+  it("ne compte pas une dérogation périmée : sa ligne est rouverte", () => {
+    const perimee = {
+      statut: "FAIL" as const,
+      action: "CORRIGER" as const,
+      validation: { decision: "DEROGATION" as const, perimee: true },
+    };
+    const s = verdictChecklist([perimee]);
+    expect(s.verdict).toBe("NON_CONFORME");
+    expect(s.derogations).toBe(0);
+  });
+
+  it("ignore les points sans objet", () => {
+    expect(verdictChecklist([ligne("NA", "RIEN"), ligne("PASS", "RIEN")]).verdict).toBe("CONFORME");
+    expect(verdictChecklist([ligne("NA", "RIEN")]).verdict).toBe("SANS_OBJET");
   });
 });

@@ -1,24 +1,37 @@
 "use client"
 
 import { useTransition } from "react"
-import { Cpu, Loader2, ShieldCheck, AlertTriangle, XCircle } from "lucide-react"
+import { Cpu, Loader2, ShieldCheck, AlertTriangle, XCircle, ShieldAlert, MinusCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { auditDeterministeAction, type AuditDeterministeResult } from "@/app/actions/audit"
-import type { ControlStatus } from "@/lib/audit/types"
+import { verdictChecklist, type VerdictChecklist } from "@/lib/audit/synthesis"
 import { AuditResultList } from "./audit-result-list"
 import { fusionner } from "@/lib/audit/fusion-bat"
 import { compterResteAFaire } from "@/lib/audit/checklist-complete"
 import type { BatTextCheck } from "@/lib/audit/visual/text-robot"
 import type { SousResultatAudit } from "./audit-synthese"
 
-const OVERALL: Record<ControlStatus, { title: string; box: string; tone: string; icon: typeof ShieldCheck }> = {
-    PASS: { title: "Rien à signaler", box: "bg-emerald-50/60 border-emerald-200", tone: "text-emerald-700", icon: ShieldCheck },
-    WARNING: { title: "Travail restant", box: "bg-orange-50/60 border-orange-200", tone: "text-orange-700", icon: AlertTriangle },
-    FAIL: { title: "Non conforme", box: "bg-red-50/60 border-red-200", tone: "text-red-700", icon: XCircle },
-    NA: { title: "Non applicable", box: "bg-stone-50 border-stone-200", tone: "text-stone-500", icon: ShieldCheck },
+/**
+ * Où en est la fiche, lu sur ce qu'il RESTE À FAIRE.
+ *
+ * L'ancien bandeau lisait le pire statut : une fois toutes les lignes traitées,
+ * il continuait d'annoncer « non conforme » à côté de « 0 anomalie », parce que
+ * la mesure, elle, n'avait pas changé — et elle ne doit pas changer, une
+ * validation ne réécrit pas un constat.
+ *
+ * « Conforme sous dérogation » est un état à part entière, pas une politesse :
+ * une non-conformité assumée reste une non-conformité assumée, et la fondre
+ * dans du vert effacerait la décision qu'on vient précisément d'enregistrer.
+ */
+const VERDICT: Record<VerdictChecklist, { title: string; box: string; tone: string; icon: typeof ShieldCheck }> = {
+    NON_CONFORME: { title: "Non conforme", box: "bg-red-50/60 border-red-200", tone: "text-red-700", icon: XCircle },
+    TRAVAIL_RESTANT: { title: "Travail restant", box: "bg-orange-50/60 border-orange-200", tone: "text-orange-700", icon: AlertTriangle },
+    CONFORME_SOUS_DEROGATION: { title: "Conforme sous dérogation", box: "bg-emerald-50/60 border-amber-300", tone: "text-emerald-700", icon: ShieldAlert },
+    CONFORME: { title: "Conforme", box: "bg-emerald-50/60 border-emerald-200", tone: "text-emerald-700", icon: ShieldCheck },
+    SANS_OBJET: { title: "Aucun contrôle applicable", box: "bg-stone-50 border-stone-200", tone: "text-stone-500", icon: MinusCircle },
 }
 
 interface DeterministicAuditPanelProps {
@@ -49,7 +62,10 @@ export function DeterministicAuditPanel({ ficheId, batChecks, data, onData, onRe
             ? fusionner(data.results, batChecks)
             : data.results
         : undefined
-    const overall = data?.ok && data.overallStatus ? OVERALL[data.overallStatus] : null
+    // Le verdict se recalcule sur la liste affichée : les preuves du BAT et les
+    // décisions de la Qualité peuvent l'avoir déplacée depuis le calcul serveur.
+    const synthese = resultats ? verdictChecklist(resultats) : data?.synthese
+    const overall = data?.ok && synthese ? VERDICT[synthese.verdict] : null
     const reste = resultats ? compterResteAFaire(resultats) : data?.resteAFaire
 
     return (
@@ -96,7 +112,14 @@ export function DeterministicAuditPanel({ ficheId, batChecks, data, onData, onRe
                         <div className={cn("p-5 rounded-2xl border-2 flex items-center gap-4", overall.box)}>
                             <overall.icon className={cn("h-9 w-9 shrink-0", overall.tone)} />
                             <div>
-                                <h3 className={cn("font-black text-xl uppercase tracking-tight", overall.tone)}>{overall.title}</h3>
+                                <h3 className={cn("font-black text-xl uppercase tracking-tight", overall.tone)}>
+                                    {overall.title}
+                                    {synthese && synthese.derogations > 0 && synthese.verdict === "CONFORME_SOUS_DEROGATION" && (
+                                        <span className="ml-2 text-sm font-bold normal-case text-amber-700">
+                                            ({synthese.derogations})
+                                        </span>
+                                    )}
+                                </h3>
                                 {reste && (
                                     <p className="text-sm text-stone-600 mt-1 font-medium">
                                         {reste.corriger > 0 && (
