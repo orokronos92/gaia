@@ -6,8 +6,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { computeRecette } from "@/lib/business-rules/recette";
 import { genererListeIngredients } from "@/lib/recette/liste-ingredients";
-import { validerRecette } from "@/db/queries/recettes";
-import { alignerListeIngredients } from "@/db/queries/fiches";
+import { getRecetteOutputForProduit, validerRecette } from "@/db/queries/recettes";
+import { alignerListeIngredients, getIngredientsFrFiche } from "@/db/queries/fiches";
+import { ecartsDeDenomination } from "@/lib/recette/differentiel";
 import { CopilotAgent } from "@/agents/copilot-agent";
 
 const IngredientPayload = z.object({
@@ -78,16 +79,71 @@ export async function validerRecetteAction(input: unknown) {
   // list, which also closes the composition differential (ready for audit).
   // Decision 2026-06-18: the canonical printed/audited list is the MASKED one
   // (what actually goes on the label) — masked ingredients print without their %.
+  //
+  // Décision 2026-09-08 : la réécriture reste le comportement normal, mais elle
+  // ne s'exécute plus en silence quand elle change les DÉNOMINATIONS. La recette
+  // porte aujourd'hui des désignations fournisseur (« SORWATHE OP1 ») là où
+  // l'étiquette imprime « thé noir » : écraser la liste déclarée revient alors à
+  // dégrader la donnée même que l'audit compare au BAT. Un écart de pourcentage,
+  // lui, c'est l'arrondi — il ne mérite aucune question.
   if (data.ficheId) {
-    const ingredientsFr = genererListeIngredients(
-      calc.ingredients,
-      etiquettesEffectives,
-      masques
+    const proposee = genererListeIngredients(calc.ingredients, etiquettesEffectives, masques);
+    const actuelle = await getIngredientsFrFiche(data.ficheId);
+    const ecarts = ecartsDeDenomination(
+      actuelle,
+      calc.ingredients.map((i, n) => ({
+        designation: i.designation,
+        pourcentage: masques[n] ? null : (etiquettesEffectives[n] ?? null),
+      }))
     );
-    await alignerListeIngredients(data.ficheId, ingredientsFr);
-    revalidatePath(`/etiquettes/${data.ficheId}`);
+
+    if (ecarts.length === 0) {
+      await alignerListeIngredients(data.ficheId, proposee);
+      revalidatePath(`/etiquettes/${data.ficheId}`);
+      return { ok: true as const, recetteId, listeAlignee: true as const };
+    }
+
+    return {
+      ok: true as const,
+      recetteId,
+      listeAlignee: false as const,
+      proposition: { avant: actuelle ?? "", apres: proposee, ecarts },
+    };
   }
-  return { ok: true as const, recetteId };
+  return { ok: true as const, recetteId, listeAlignee: true as const };
+}
+
+
+const AppliquerPayload = z.object({
+  ficheId: z.string().uuid(),
+  produitId: z.string().uuid(),
+});
+
+/**
+ * Marie tranche : la liste déclarée devient celle de la recette.
+ *
+ * Le texte n'est **pas reçu du client**. Il est régénéré ici depuis la recette
+ * courante, sinon l'appelant pourrait faire enregistrer n'importe quelle
+ * composition sous couvert d'une proposition — et c'est cette liste que l'audit
+ * oppose ensuite au BAT.
+ */
+export async function appliquerListeRecetteAction(input: unknown) {
+  const data = AppliquerPayload.parse(input);
+
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const recette = await getRecetteOutputForProduit(data.produitId);
+  if (!recette) return { ok: false as const, error: "Aucune recette à reporter." };
+
+  const texte = genererListeIngredients(
+    recette.ingredients,
+    undefined,
+    recette.ingredients.map((i) => i.masquerEtiquette)
+  );
+  await alignerListeIngredients(data.ficheId, texte);
+  revalidatePath(`/etiquettes/${data.ficheId}`);
+  return { ok: true as const, texte };
 }
 
 const SuggererPayload = z.object({

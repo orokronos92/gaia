@@ -26,6 +26,7 @@ import { kgVersPct, normaliserVersKg } from "@/lib/recette/conversion";
 import { validerRecetteAction } from "@/app/actions/recette";
 import { differentielDepuisTexte } from "@/lib/recette/differentiel";
 import { DifferentielBanner } from "@/components/recette/DifferentielBanner";
+import { ListeDeclareeDiff, type PropositionListe } from "@/components/recette/ListeDeclareeDiff";
 import type { EtatCalculatrice } from "@/lib/recette/types";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 
@@ -59,6 +60,9 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
   const c = useCalculatrice(initial);
   const sugg = useSuggestionsRecette(produitId);
   const [validating, setValidating] = useState(false);
+  // Ce que la recette voudrait écrire sur la fiche, quand elle n'y nomme pas les
+  // mêmes matières : Marie tranche, la liste déclarée n'a pas été touchée.
+  const [proposition, setProposition] = useState<PropositionListe | null>(null);
   const { etat, resultat } = c;
   const masseLot = c.masseLot;
 
@@ -119,7 +123,10 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
       overrideEtiquette: etat.lignes[i].overrideEtiquette,
       masquerEtiquette: etat.lignes[i].masquerEtiquette,
     }));
-    await validerRecetteAction({ produitId, ficheId, pas: etat.pas, ingredients });
+    const r = await validerRecetteAction({ produitId, ficheId, pas: etat.pas, ingredients });
+    // La recette est enregistrée dans tous les cas ; ce qui reste en suspens,
+    // c'est la liste déclarée quand elle ne nomme pas les mêmes matières.
+    setProposition(r.listeAlignee ? null : r.proposition ?? null);
     return { saved: true };
   };
 
@@ -153,6 +160,15 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
       />
 
       <DifferentielBanner ecarts={ecarts} />
+
+      {proposition && ficheId && (
+        <ListeDeclareeDiff
+          ficheId={ficheId}
+          produitId={produitId}
+          proposition={proposition}
+          onClos={() => setProposition(null)}
+        />
+      )}
 
       {c.masseRequise && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">

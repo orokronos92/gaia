@@ -49,6 +49,15 @@ export async function alignerListeIngredients(ficheId: string, ingredientsFr: st
     .where(eq(fichesEtiquettes.id, ficheId));
 }
 
+/** La liste d'ingrédients déclarée sur une fiche, telle qu'elle est stockée. */
+export const getIngredientsFrFiche = cache(async (ficheId: string): Promise<string | null> => {
+  const fiche = await db.query.fichesEtiquettes.findFirst({
+    where: eq(fichesEtiquettes.id, ficheId),
+    columns: { ingredientsFr: true },
+  });
+  return fiche?.ingredientsFr ?? null;
+});
+
 /** Resolves a fiche's product id server-side (never trust a client-sent id). */
 export const getFicheProduitId = cache(async (ficheId: string): Promise<string | null> => {
   const fiche = await db.query.fichesEtiquettes.findFirst({
