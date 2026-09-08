@@ -1,0 +1,277 @@
+# Visite Les Jardins de Gaïa — vendredi 11 septembre 2026
+
+> Questions en suspens, classées **par interlocuteur** : on repart avec des
+> réponses, pas avec des notes à trier.
+>
+> Ouvert le 8 septembre. Évolue jusqu'au **jeudi 10 au soir**, arrêt du
+> développement pour cette itération.
+>
+> 🔴 bloque un chantier · 🟠 fausse un résultat · 🟡 à clarifier
+
+---
+
+## Marie Maillot — Qualité
+
+*Rédactrice de PRO-QHS-013. C'est elle qui tranche tout ce qui touche la règle.*
+
+### 🔴 M1. L'arrondi QUID : la procédure et les fiches recette ne disent pas la même chose
+
+PRO-QHS-013 §2.2 énonce : *« un chiffre après la virgule […] si le total est
+supérieur à 100 %, l'ajustement se fera sur la matière en quantité la plus
+importante »*.
+
+Appliquée à MT265, cette règle donne **99,9 %** — et sa clause de correction ne
+couvre que le cas « supérieur à 100 ». La fiche recette, elle, affiche **100 %** :
+
+| | Maté | Gingembre | Guarana | Hibiscus | HE orange | Menthe | Ginseng | Stevia |
+|---|---|---|---|---|---|---|---|---|
+| **§2.2 littéral** | 62,2 | 15,5 | 6,2 | 6,2 | 3,7 | 3,7 | 1,9 | 0,5 |
+| **Fiche R&D** | 62 | 15,5 | 6 | 6 | 4 | 4 | 2 | 0,5 |
+
+Et sur TA7372 la fiche arrondit à l'entier (38 / 32 / 19 / 5 / 4 / 1 / 1) là où
+MT265 garde des demis. **Le pas d'arrondi change selon le produit.**
+
+- Quelle règle fait foi ?
+- Qui remplit la colonne « % pour liste d'ingrédient » — est-elle calculée ou saisie ?
+- Doit-on lire cette colonne plutôt que recalculer ?
+
+*Conséquence directe : l'application affiche aujourd'hui 38,5 / 19,5 / 4,5 / 0,5
+sur TA7372 là où la fiche dit 38 / 19 / 5 / 1.*
+
+### 🟠 M2. Deux codes-barres portés chacun par deux produits différents
+
+```
+3582811005223   TH5226 La tisane d'hiver   |  TH5296 La tisane de Noël
+3582810920923   TR2092 Lumière d'étoiles   |  TR2482 Lumière d'étoiles
+```
+
+Deux produits distincts ne peuvent pas partager un GTIN : ils sont
+indistinguables en caisse. Erreur de saisie, ou produits qui n'en font qu'un ?
+
+*Aucune des 150 clés de contrôle EAN-13 du catalogue n'est fausse — le problème
+n'est pas la construction du code, c'est son affectation.*
+
+### 🟠 M3. Quatre conditionnements incohérents avec le poids net
+
+MOP-PRO-029 §2.1.3 fixe la correspondance. Quatre produits s'en écartent :
+
+| Code | Produit | Chiffre | Attendu | Poids déclaré |
+|---|---|---|---|---|
+| `TJ9051` | Matcha Tradition | 1 | 1,5 kg vrac | 30 g |
+| `BT3542` | Poésie en rose | 2 | ≥ 80 g | « 3 pièces » |
+| `TH0632` | La souplesse du dragon | 2 | ≥ 80 g | 70 g |
+| `TU0025` | Peace, Love & Tea | 5 | 500 g | 125 g |
+
+Erreurs, ou cas particuliers qui échappent à la règle ?
+
+### 🟡 M4. Dix-sept produits sans chiffre de conditionnement
+
+`MT265`, `TH200`, `TH440`, `TH501`, `TH509`, `TH511`, `TH520`, `TH521`, `TH530`,
+`TH540`, `TH577`, `TH701`, `TH974`, `TH208`, `TH209`, `TB720`, `TA737`.
+
+Leur EAN suit d'ailleurs un **format plus ancien** (numéro d'article sur quatre
+chiffres, sans conditionnement). Codes historiques à conserver tels quels, ou à
+compléter ?
+
+### 🟡 M5. La mention réglisse a deux seuils, notre contrôle n'en connaît qu'un
+
+§3.3 distingue **≥ 10 mg/l** (« Contient de la réglisse ») et **≥ 50 mg/l**
+(mention complète avec l'avertissement hypertension). L'application applique la
+seconde à tous les produits contenant de la réglisse.
+
+C'est aussi ce que dit votre procédure — *« aux Jardins de Gaïa nous utilisons la
+mention pour tous les produits qui contiennent de la réglisse »*. Confirmez-vous
+que la simplification est volontaire ?
+
+### 🟡 M6. Deux produits portent le même nom commercial
+
+`TH5296` et `TU5226` s'appellent tous deux « La tisane de Noël ». Voulu ?
+
+### 🟡 M7. Température et temps d'infusion : deux notions, un seul champ
+
+La fiche dégustation de TA7372 porte **95 °C / 4 mn** (protocole de dégustation),
+le BAT imprime **90 °C / 3 min** (conseil au consommateur). L'import recopie
+aujourd'hui le premier dans le champ destiné au second.
+
+Confirmez-vous que ce sont bien deux données distinctes, à ne jamais confondre ?
+
+---
+
+## Aurélie Rohmer — R&D / développement recettes
+
+*Signataire des fiches ENR-PRO-023 et ENR-PRO-024.*
+
+### 🔴 A1. Comment traiter une substitution d'ingrédient
+
+Le classeur TA7372 raconte ceci :
+
+| Version | Descriptif | Raison | Effet |
+|---|---|---|---|
+| v.1 — 25/09/2023 | modification de la base de thé | utilisation du stock de TN407B | SORWATHE 6 → 5 kg, **+ 1 kg DIAN HONG** |
+| v.2 — 08/02/2024 | fin du stock à écouler | retour à la recette d'origine | retour à 6 kg SORWATHE |
+
+Deux thés noirs différents, la liste déclarée reste « Thé noir », le BAT ne bouge
+pas. C'est légitime — mais l'application doit savoir le **prouver**.
+
+- La case « incidence sur : ÉTIQUETAGE / DLUO » de la fiche est-elle cochée à
+  chaque modification ? Par qui ?
+- Existe-t-il des règles écrites de substitution acceptable, ou est-ce au cas par cas ?
+
+### 🔴 A2. Le référentiel matière première — la donnée qui débloque trois chantiers
+
+La recette dit `TN592 SORWATHE OP1`, l'étiquette doit dire `Thé noir`. **Rien ne
+relie les deux.** Sans cette correspondance :
+
+- le contrôle d'ingrédients de l'audit échoue sur **chaque** produit ;
+- impossible de dire si une substitution change la liste déclarée ;
+- impossible de générer les étoiles bio.
+
+**Existe-t-il un export PMI du référentiel matière** (code article → dénomination
+légale, bio, Demeter, équitable, allergènes) ? Une cinquantaine de matières
+suffirait pour l'échantillon actuel.
+
+### 🟡 A3. L'étoile bio n'est pas dans la fiche recette
+
+PRO-QHS-013 §11.1 impose `*` pour les ingrédients bio et `**` pour les Demeter.
+Or la fiche recette n'a **aucune colonne BIO** — elle ne porte que Demeter et
+commerce équitable. Nous supposons donc « bio par défaut ».
+
+Sur le BAT de TA7372, `arôme naturel de (figue 5%, miel* 4%)` : le miel a une
+étoile, **la figue non**, alors que les deux sont nommés « AROME BIO 2022 » dans
+la recette. Qui décide, et sur quelle base ?
+
+---
+
+## Fabrice — Graphisme
+
+### 🔴 F1. Le nom du dossier ne porte pas le code complet
+
+MOP-PRO-029 §2.1.3 définit le chiffre de conditionnement, et la base produit le
+respecte. **148 dossiers sur 149 l'omettent.**
+
+```
+Base produit  TA6122     Dossier  « TA612 - LA BALADE DU HÉRISSON »
+Base produit  TB4016     Dossier  « TB401 WHITE MONKEY »
+Base produit  TA7372     Dossier  « TA7372 - Malin comme un chimpanzé »  ✅
+```
+
+C'est ce décalage qui oblige l'application à rapprocher les fichiers par
+ressemblance de nom — et c'est ainsi que l'audit de *Malin comme un chimpanzé* a
+analysé deux faces de *Light my fire*.
+
+Peut-on renommer les dossiers avec le code complet ?
+
+### 🟠 F2. À quoi correspond le `V5` des noms de fichiers ?
+
+Aucune procédure ne le décrit. Version d'étiquette, révision graphique, millésime ?
+
+Et **21 fichiers sur 276 n'en portent aucun**. Quand un dossier contient une V5 et
+une V6, laquelle fait foi ?
+
+### 🟡 F3. Trois séparateurs, et des dossiers qui portent un nom de fichier
+
+Sur 149 dossiers : 112 avec une espace, 30 avec un tiret, 7 avec un tiret bas. Et
+quelques cas qui ne suivent aucune règle :
+
+```
+BT3542 - POÉSIE EN ROSE            contient  ETTUTO3542…      (BT ≠ TO)
+TV1346 JADE DEW                    contient  TV134_… et TV1346_…
+TV113_ETVN113V3FF22 Huang Ya Cha   le dossier EST un nom de fichier
+TUTJ0706 TUTJ0706 Gyokuro          le code est écrit deux fois
+```
+
+### 🟡 F4. Un dossier en double et deux références sans fichier
+
+- `TN5482 - Perles du Laos` et `TN5482_Perles du Laos` : même contenu, deux dossiers.
+- `TN2412` (Moon Light Glory) et `TN5472` (Noir du Laos) n'ont **aucun fichier**.
+  BAT manquants, ou codes erronés ?
+- Cinq produits n'ont que des fichiers Illustrator, aucun PDF : `TH5296`,
+  `TU5226`, `TU2092`, `TR2472`, `TB720`.
+
+### 🟡 F5. Deux mentions introuvables sur le BAT de TA7372
+
+Ni la mention de conservation ni l'adresse fabricant n'apparaissent dans le texte
+des deux faces analysées. Trois explications possibles, très différentes :
+
+- elles sont là et notre extraction les a manquées ;
+- elles n'y sont pas — non-conformité réelle ;
+- elles sont sur une **troisième face** que nous n'avons pas.
+
+---
+
+## Karrame — Direction
+
+### 🟡 K1. Qui voit l'écran Archives ?
+
+Un produit supprimé n'est jamais détruit : il rejoint un registre avec son motif,
+son auteur et son horodatage. **Aucun retour n'est possible depuis
+l'application** — c'est ce qui en fait une trace et non une corbeille.
+
+L'écran est aujourd'hui visible par tous. Faut-il le réserver à la direction ?
+
+*À savoir avant de décider : il affiche **qui** a supprimé quoi, nominativement.*
+
+### 🟡 K2. Qui a le droit de supprimer un produit ?
+
+Aujourd'hui tout le monde, avec motif obligatoire et saisie du code à confirmer.
+À restreindre ?
+
+### 🟡 K3. Sauvegardes
+
+L'archivage protège d'une mauvaise manipulation **dans l'application**. Il ne
+protège pas d'un accès direct à la base. La réponse à ce risque-là, ce sont les
+sauvegardes PostgreSQL — sujet distinct, à cadrer.
+
+---
+
+## Informatique — Jordan Andrade / Denis Muckensturm
+
+*Rédacteur et vérificateur de MOP-PRO-029.*
+
+### 🔴 I1. Export du référentiel matière première depuis PMI
+
+Voir A2. Format libre : CSV, Excel, extraction directe.
+
+### 🟡 I2. Deux générations de GENCODE coexistent
+
+Le format documenté (§3) est `35 + 8281 + famille(2) + article(3) +
+conditionnement(1) + clé`. Un second format, plus ancien, porte l'article sur
+**quatre chiffres sans conditionnement**.
+
+Mesuré sur 150 EAN : **86 % concordent** avec le code produit. Le second format
+est-il officiel, ou en voie d'extinction ?
+
+### 🟡 I3. La famille du thé dans le GENCODE
+
+TA7372 porte la famille `04` = « Thé noir parfumé + Aromatisé », alors que la base
+le décrit comme « Thé noir aromatisé » — famille `02` selon la table §3. Comment
+choisir entre 02 et 04 ?
+
+---
+
+## Points internes SPC — à trancher avec Ouro, pas avec le client
+
+- 🔴 **L'audit BAT n'a jamais été validé** depuis le remplacement de
+  `pixtral-large` par `mistral-medium` — le modèle qui avait halluciné un logo AB
+  en juin. Le contre-examen ne relit que les verdicts négatifs : un logo
+  obligatoire déclaré présent à tort n'est jamais revu.
+- 🟠 Le bucket `label-assets` répond aux GET **et aux LIST anonymes**.
+- 🟡 `MT265` porte **17 fiches étiquettes** et une recette de **16 lignes pour
+  8 ingrédients** — deux imports superposés.
+- 🟡 Le chemin de création d'import écrase par `null` tout champ que l'extraction
+  ne trouve pas ; la réintégration, elle, préserve.
+- 🟡 `code_ean`, `poids_tasse`, `nb_tasses`, `sous_gamme` et les traductions EN ne
+  peuvent **jamais** être remplis par un import.
+- 🟡 Dette §15 (messages d'erreur IA) et §16 (agents morts).
+
+---
+
+## Ce qu'on peut montrer, en face
+
+Pour équilibrer : ces questions existent parce que l'application les a trouvées.
+
+- **181 événements** tracés depuis le 8 juin, tous nominatifs.
+- **604 liens** produit ↔ fichier enregistrés, là où l'association était devinée.
+- Les documents source d'un import sont désormais **conservés** — un import raté
+  reste rejouable.
+- Le coût d'un import complet, mesuré : **0,006 $**.
