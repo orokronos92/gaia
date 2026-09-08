@@ -71,9 +71,6 @@ export function AuditSynthese({ donnees, visuel }: AuditSyntheseProps) {
                 <Ligne icon={Cpu} libelle="Données fiche" res={donnees} />
                 <Ligne icon={ScanText} libelle="Étiquettes (BAT)" res={visuel} />
             </div>
-            {!visuel && (
-                <p className="text-xs text-stone-400 mt-3">L'audit visuel se lance dans l'onglet « BAT & Fichiers ».</p>
-            )}
         </div>
     )
 }
