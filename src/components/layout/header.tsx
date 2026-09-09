@@ -39,9 +39,14 @@ export function Header() {
      * repassait en `static` au-delà de 640 px : les notifications disparaissaient
      * dès qu'on descendait dans une fiche. Le fond opaque va avec — transparent,
      * le contenu défilerait visiblement dessous.
+     *
+     * Sa hauteur est FIXE — `h-16`, bordure comprise — et non `h-auto` : ce qui
+     * se colle en dessous doit connaître ce nombre. En `h-auto` il valait 65 px
+     * sur grand écran, l'ancrage suivant était calé à 60, et les 5 px d'écart
+     * laissaient voir le contenu défiler dans la fente.
      */
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-stone-200/60 bg-stone-50/85 px-4 py-3 backdrop-blur-xl sm:h-auto sm:px-8 dark:border-stone-800 dark:bg-stone-900/85">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-stone-200/60 bg-stone-50/85 px-4 backdrop-blur-xl sm:px-8 dark:border-stone-800 dark:bg-stone-900/85">
             <Button size="icon" variant="outline" className="sm:hidden bg-white/50 backdrop-blur-md">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle Menu</span>
