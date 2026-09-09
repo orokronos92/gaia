@@ -3,6 +3,10 @@
 > Questions en suspens, classées **par interlocuteur** : on repart avec des
 > réponses, pas avec des notes à trier.
 >
+> Elles s'adressent aux **Jardins de Gaïa**, pas aux personnes. Les noms disent
+> qui sait répondre, pas qui décide : un poste change de titulaire, et les
+> réponses doivent survivre à ce changement.
+>
 > Ouvert le 8 septembre. Évolue jusqu'au **jeudi 10 au soir**, arrêt du
 > développement pour cette itération.
 >
@@ -152,6 +156,22 @@ ont-elles un autre format d'emballage ?
 qui la porte, et les deux manquantes restent à expliquer.
 
 À lire avec F5, F8 et M9.
+
+### 🟠 M12. Sur quel support sont imprimés la DDM et le numéro de lot ?
+
+La table du §12 de votre procédure liste la **date de durabilité minimale**
+parmi les mentions obligatoires, et cela dans **toutes** les tranches de surface
+— y compris sous 10 cm², où les autres mentions peuvent être fournies autrement.
+
+Constat : aucun BAT n'en porte, et l'application n'a **aucun champ** ni pour la
+DDM ni pour le numéro de lot.
+
+- Sur quel support sont-ils apposés ? Jet d'encre sur le sachet, sur le tube,
+  sur l'étui ?
+- Souhaitez-vous que l'application enregistre ce support ?
+
+Tant que ce n'est pas déclaré, l'application ne peut ni les contrôler, ni
+expliquer pourquoi elle ne les contrôle pas. Même famille que M11.
 
 ### 🟠 M8. Un code fabricant erroné dans un Gencode
 
