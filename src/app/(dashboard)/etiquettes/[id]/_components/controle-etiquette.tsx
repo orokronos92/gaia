@@ -164,8 +164,8 @@ export function ControleEtiquette({
                                 variant="outline"
                                 onClick={lancerIa}
                                 disabled={pending}
-                                className="rounded-xl border-stone-300 font-bold text-stone-700"
-                                title="Reconnaissance des logos et jugement de l'allégation — consomme des jetons. Lance le contrôle s'il ne l'a pas été."
+                                className="h-11 w-full rounded-xl border-stone-300 bg-white font-bold text-stone-700 hover:bg-stone-50"
+                                title="Reconnaissance des logos et jugement de l'allégation. Lance le contrôle s'il ne l'a pas été."
                             >
                                 {pending ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

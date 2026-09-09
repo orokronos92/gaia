@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { auditDeterministeAction, type AuditDeterministeResult } from "@/app/actions/audit"
+import { CONTROL_CHECKLIST } from "@/lib/audit/control-checklist"
 import { verdictChecklist, type VerdictChecklist } from "@/lib/audit/synthesis"
 import { AuditResultList } from "./audit-result-list"
 import { fusionner } from "@/lib/audit/fusion-bat"
@@ -75,31 +76,35 @@ export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onD
 
     return (
         <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
-            <CardHeader className="pb-4 flex flex-row items-center justify-between bg-emerald-50/40 border-b border-emerald-100">
-                <div>
-                    <CardTitle className="text-lg font-bold text-emerald-950 flex items-center gap-2">
-                        <Badge variant="outline" className="p-1 h-8 w-8 rounded-lg bg-emerald-100 border-none flex items-center justify-center">
+            {/* Le geste principal en premier et au-dessus : c'est celui qu'on
+                fait à chaque fiche. L'analyse IA vient en second, et le compte
+                des points se lit dans le registre plutôt que dans une phrase
+                qui se périme au prochain contrôle ajouté. */}
+            <CardHeader className="flex flex-col gap-4 border-b border-emerald-100 bg-emerald-50/40 pb-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                    <CardTitle className="flex items-center gap-2 text-lg font-bold text-emerald-950">
+                        <Badge variant="outline" className="flex h-8 w-8 items-center justify-center rounded-lg border-none bg-emerald-100 p-1">
                             <Cpu className="h-5 w-5 text-emerald-700" />
                         </Badge>
                         Contrôle de la fiche
                     </CardTitle>
-                    <CardDescription className="ml-10">
-                        Les 39 points de PRO-QHS-013 et MOP-PRO-029. <strong>Contrôler</strong> mesure
-                        tout ce qui se mesure, BAT compris — gratuit et immédiat.{" "}
-                        <strong>Analyse IA</strong> ajoute la reconnaissance des logos et le jugement
-                        de l&apos;allégation, et consomme des jetons.
+                    <CardDescription className="ml-10 max-w-prose leading-relaxed">
+                        Les {CONTROL_CHECKLIST.length} points de PRO-QHS-013 et MOP-PRO-029.{" "}
+                        <strong>Contrôler l&apos;étiquette</strong> mesure tout ce qui se mesure, sur
+                        la fiche comme sur le BAT. <strong>Analyse IA</strong> ajoute la
+                        reconnaissance des logos et le jugement de l&apos;allégation.
                     </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                {actions}
-                <Button
-                    onClick={run}
-                    disabled={pending}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-700/20 rounded-xl font-bold px-6"
-                >
-                    {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Cpu className="mr-2 h-4 w-4" />}
-                    {data?.ok ? "Recontrôler" : "Contrôler"}
-                </Button>
+                <div className="flex w-full shrink-0 flex-col gap-2 sm:w-60">
+                    <Button
+                        onClick={run}
+                        disabled={pending}
+                        className="h-11 w-full rounded-xl bg-emerald-600 font-bold text-white shadow-sm shadow-emerald-700/20 hover:bg-emerald-700"
+                    >
+                        {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Cpu className="mr-2 h-4 w-4" />}
+                        {data?.ok ? "Recontrôler l'étiquette" : "Contrôler l'étiquette"}
+                    </Button>
+                    {actions}
                 </div>
             </CardHeader>
             <CardContent className="p-6 sm:p-8">
