@@ -145,7 +145,18 @@ function DataPointEdit({ icon: Icon, label, field, value, suffix, section }: { i
 }
 
 function DataPoint({ icon: Icon, label, value, suffix = "" }: { icon: any, label: string, value: any, suffix?: string }) {
-    if (!value && value !== false && value !== 0) return null;
+    // Un champ vide ne disparaît plus. Il disparaissait en lecture et
+    // réapparaissait en édition : le nombre de tasses n'existait donc que pour
+    // qui pensait à cliquer « Modifier ».
+    //
+    // On ne peut pas se servir ici du test de vide de la page : il compte
+    // « non » comme un vide, et « Plusieurs infusions : Non » est une réponse.
+    const brut = value === null || value === undefined || String(value).trim() === "" ? null : String(value).trim();
+
+    // Le suffixe ne s'ajoute qu'à un nombre nu : la fiche porte parfois déjà son
+    // unité, et « 3 mn » devenait « 3 mn min ».
+    const affiche = brut !== null && suffix && /^[\d.,\s/-]+$/.test(brut) ? `${brut} ${suffix}` : brut;
+
     return (
         <div className="flex items-center gap-3 p-3 bg-stone-50/80 rounded-xl border border-stone-100">
             <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-stone-100/50 shrink-0">
@@ -153,7 +164,7 @@ function DataPoint({ icon: Icon, label, value, suffix = "" }: { icon: any, label
             </div>
             <div className="min-w-0">
                 <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">{label}</div>
-                <div className="text-sm font-medium text-stone-800 truncate">{value} {suffix}</div>
+                <div className="text-sm font-medium text-stone-800 truncate">{affiche ?? <NonRenseigne />}</div>
             </div>
         </div>
     )
