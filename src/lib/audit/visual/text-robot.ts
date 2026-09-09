@@ -268,8 +268,9 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
   const results: (BatTextCheck | null)[] = [
     checkIngredients(batN, input),
     checkPresence(batN, input.denomination, {
-      id: "TXT_DENOMINATION", rubrique: "Dénomination", libelle: "Dénomination présente sur le BAT ?",
-      absent: "Dénomination non retrouvée sur les faces analysées — à vérifier.",
+      id: "TXT_DENOMINATION", checklistId: "1.5", rubrique: "Dénomination",
+      libelle: "Dénomination de la fiche imprimée à l'identique sur le BAT ?",
+      absent: "Dénomination de la fiche non retrouvée à l'identique sur les faces analysées. Le §1 interdit qu'un nom commercial tienne lieu de dénomination de la denrée.",
     }),
     checkPresence(batN, input.poidsNet, {
       id: "TXT_POIDS_NET", checklistId: "6.1", rubrique: "Quantité nette", libelle: "Poids net présent sur le BAT ?",
@@ -297,6 +298,19 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
   // produces false warnings — judging that equivalence is the LLM's job, and the
   // graphic emphasis the visual robot's. Handled in a later lot (input.allegation
   // is kept for them).
+  // §3.1 : sans liste d'ingrédients sur l'étiquette, l'allergène se déclare par
+  // « contient … ». Le cas existe : un mono-ingrédient omet légitimement sa
+  // liste (§2.1), et l'allergène doit alors être annoncé autrement.
+  if (declares(input.allergenes) && !batN.includes("ingredient")) {
+    results.push(
+      checkTokens(batN, ["contient"], {
+        id: "TXT_ALLERGENE_CONTIENT", checklistId: "5.1", rubrique: "Particularités",
+        libelle: "Allergène annoncé par « contient … » en l'absence de liste d'ingrédients ?",
+        absent: "Aucune liste d'ingrédients sur le BAT et aucune mention « contient » — le §3.1 impose l'une ou l'autre.",
+      })
+    );
+  }
+
   if (declares(input.allergenes)) {
     results.push(checkPresence(batN, input.allergenes, {
       id: "TXT_ALLERGENES", checklistId: "5.1", rubrique: "Particularités", libelle: "Allergènes déclarés présents sur le BAT ?",
@@ -307,6 +321,17 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
   // Les mentions conditionnelles. Les chercher sur tous les produits remplirait
   // la liste de Marie d'« absent » sur des produits que la mention ne concerne
   // pas — et une liste où tout est orange ne se lit plus.
+  // §5 : « il est important d'envisager les 2 situations : avant et après
+  // l'ouverture de l'emballage ». La mention JDG n'en distingue aucune — le
+  // constat le dit, il ne condamne pas.
+  results.push(
+    checkTokens(batN, ["apres ouverture"], {
+      id: "TXT_CONSERVATION_OUVERTURE", checklistId: "7.2", rubrique: "Conservation",
+      libelle: "Conservation après ouverture précisée sur le BAT ?",
+      absent: "Aucune mention distinguant la conservation APRÈS ouverture — le §5 demande d'envisager les deux situations.",
+    })
+  );
+
   if (contientReglisse(input.ingredients)) {
     results.push(checkTokens(batN, REGLISSE_TOKENS, {
       id: "TXT_REGLISSE", checklistId: "5.3", rubrique: "Particularités",

@@ -25,6 +25,8 @@ import {
 import { checkIngrMono, checkIngrOrdreDecroissant } from "./ingredients";
 import {
   checkCodeEtiquette,
+  checkNomUsuelInfusion,
+  checkNombreTasses,
   checkConservationMention,
   checkFabricantAdresse,
   checkQteNetteUnite,
@@ -37,6 +39,7 @@ type CheckFn = (input: AuditInput) => DeterministicVerdict;
 /** Registry id → deterministic check. Keys must stay in sync with the checklist. */
 const CHECKS: Record<string, CheckFn> = {
   "1.1": checkDenomThe51,
+  "1.6": checkNomUsuelInfusion,
   // 2.1 (INGR_MENTION) is manual now — the "Ingrédients :" prefix is BAT-only,
   // not stored data. See control-checklist.ts.
   "2.2": checkIngrOrdreDecroissant,
@@ -47,6 +50,7 @@ const CHECKS: Record<string, CheckFn> = {
   "5.1": checkAllergen,
   "5.3": checkReglisse,
   "6.1": checkQteNetteUnite,
+  "6.3": checkNombreTasses,
   "7.2": checkConservationMention,
   "9.1": checkFabricantAdresse,
   // 10.1 (gencode) and 13.2 (code OC) are BAT controls now — not in the fiche.

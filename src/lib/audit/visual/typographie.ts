@@ -256,6 +256,50 @@ function controlerExemptionNutritionnelle(surfaceCm2: number, tranche: TrancheSu
 }
 
 /**
+ * §10.2 — régime de dématérialisation de l'Info-Tri, selon la surface.
+ *
+ * Le décret 2022-975 art. 2 ne pose pas une règle unique : entre 20 et 40 cm²
+ * le Triman reste obligatoire mais le cartouche peut être dématérialisé ; sous
+ * 20 cm² tout peut l'être, à condition que l'information figure sur le site du
+ * producteur. Au-dessus, les deux sont exigés sur l'emballage.
+ *
+ * Le décret vise l'emballage **cylindrique ou sphérique** : la forme, nous ne
+ * la connaissons pas. Le contrôle livre donc la surface mesurée et le régime
+ * qu'elle ouvre, et laisse la Qualité conclure. C'est une mesure, pas un
+ * verdict — mais elle évite de réclamer un cartouche que la loi n'exige pas.
+ */
+function controlerDematerialisationInfoTri(surfaceCm2: number): BatTextCheck {
+  const base = {
+    id: "TYPO_DEMAT_INFOTRI",
+    origine: "texte" as const,
+    rubrique: "Pictogrammes",
+    libelle: "Le cartouche Info-Tri est-il exigé sur cet emballage ?",
+    checklistId: "12.2",
+  };
+  const face = `Face la plus grande ${surfaceCm2} cm².`;
+
+  if (surfaceCm2 < 20) {
+    return {
+      ...base,
+      statut: "PASS",
+      justification: `${face} Sous 20 cm², le décret 2022-975 art. 2 autorise une dématérialisation totale — Triman comme cartouche — si l'information figure sur le site du producteur. À confirmer pour un emballage cylindrique ou sphérique.`,
+    };
+  }
+  if (surfaceCm2 <= 40) {
+    return {
+      ...base,
+      statut: "WARNING",
+      justification: `${face} Entre 20 et 40 cm², le décret 2022-975 art. 2 maintient le Triman sur l'emballage mais autorise à dématérialiser le cartouche Info-Tri. À confirmer pour un emballage cylindrique ou sphérique.`,
+    };
+  }
+  return {
+    ...base,
+    statut: "WARNING",
+    justification: `${face} Au-delà de 40 cm², aucune dématérialisation n'est prévue : Triman et cartouche Info-Tri sont attendus sur l'emballage.`,
+  };
+}
+
+/**
  * Les contrôles typographiques d'un produit, mesurés sur ses BAT.
  * Sans zone de coupe exploitable, aucun seuil n'est déterminable : on le dit,
  * plutôt que de retenir une surface de page qui inclurait le fond perdu.
@@ -285,6 +329,7 @@ export function controlerTypographie(analyses: AnalyseBat[], entree: EntreeTypo)
     checks.push(controlerHauteurX(analyses, entree, tranche, surfaceCm2));
     const nutri = controlerExemptionNutritionnelle(surfaceCm2, tranche);
     if (nutri) checks.push(nutri);
+    checks.push(controlerDematerialisationInfoTri(surfaceCm2));
   }
 
   const chiffres = controlerHauteurChiffres(analyses, entree);

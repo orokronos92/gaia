@@ -69,6 +69,7 @@ export const getAuditInputForFiche = cache(
         denominationFr: produit.denominationFr,
         estAromatise: produit.estAromatise,
         poidsNet: produit.poidsNet,
+        nbTasses: produit.nbTasses,
         codeOc: produit.codeOc,
         contientReglisse: produit.contientReglisse,
         allergenesMp: produit.allergenesMp,

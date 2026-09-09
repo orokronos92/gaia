@@ -86,6 +86,8 @@ export const CONTROL_TYPES = [
   "DENOM_AROMATISE",
   "DENOM_PARFUME",
   "DENOM_CHAMP_VISUEL",
+  "DENOM_IDENTIQUE_BAT",
+  "DENOM_NOM_USUEL",
   "INGR_MENTION",
   "INGR_ORDRE_DECROISSANT",
   "INGR_MONO",
@@ -100,6 +102,7 @@ export const CONTROL_TYPES = [
   "REGLISSE",
   "QTE_NETTE_UNITE",
   "QTE_NETTE_HAUTEUR",
+  "QTE_NETTE_TASSES",
   "CONSERVATION_MODE_EMPLOI",
   "CONSERVATION_MENTION",
   "ORIGINE_SOUS_CODE_OC",
@@ -131,7 +134,9 @@ export type ControlType = z.infer<typeof ControlTypeSchema>;
  */
 export interface AuditContext {
   typeTheFr?: string | null;
-  contientThe?: boolean; // at least one Camellia sinensis ingredient
+  contientThe?: boolean;
+  /** Aucun thé nulle part — le §1.3 (noms usuels d'infusion) s'applique. */
+  estInfusion?: boolean; // at least one Camellia sinensis ingredient
   estAromatise?: boolean;
   estParfumeEnfleurage?: boolean;
   ingredients?: string | null;
@@ -241,6 +246,8 @@ export interface AuditProduitData {
   denominationFr?: string | null;
   estAromatise?: boolean;
   poidsNet?: string | null;
+  /** Nombre de tasses annoncé — §3.2 le calcule sur 2 g par tasse. */
+  nbTasses?: string | null;
   codeOc?: string | null;
   contientReglisse?: boolean;
   allergenesMp?: string | null;

@@ -56,8 +56,8 @@ describe("qui répond à quoi — répartition du registre", () => {
     // le point, et si les constats du BAT ont le droit de le trancher. Un
     // reclassement silencieux casserait l'un ou l'autre.
     const par = partitionByMode(CONTROL_CHECKLIST);
-    expect(par.deterministic).toHaveLength(16);
-    expect(par.bat).toHaveLength(10);
+    expect(par.deterministic).toHaveLength(18);
+    expect(par.bat).toHaveLength(11);
     expect(par.llm).toHaveLength(9);
     expect(par.manual).toHaveLength(4);
   });

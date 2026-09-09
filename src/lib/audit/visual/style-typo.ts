@@ -20,6 +20,8 @@ import { repereMot, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
 
 export interface EntreeStyle {
+  /** Dénomination déclarée — sert à retrouver ses mots sur le BAT. */
+  denomination?: string | null;
   /** Allergènes déclarés sur la fiche, tels quels. */
   allergenes?: string | null;
   /** Liste d'ingrédients déclarée, qui sert de style de référence. */
@@ -189,10 +191,57 @@ export function controlerDemeterGrasItalique(
   };
 }
 
+/**
+ * §1 — « La dénomination de la denrée doit être imprimée en caractères droits. »
+ *
+ * Une exigence de forme, mesurable : l'italique se lit dans la police du PDF,
+ * comme le gras du §11.1. On ne juge que les mots assez longs pour être
+ * identifiants — un « à » ou un « de » en italique appartient à la mise en page,
+ * pas à la dénomination.
+ */
+export function controlerDenominationDroite(
+  analyses: AnalyseBat[],
+  entree: EntreeStyle
+): BatTextCheck | null {
+  const base = {
+    id: "TYPO_DENOM_DROITE",
+    origine: "texte" as const,
+    rubrique: "Dénomination",
+    libelle: "Dénomination imprimée en caractères droits ?",
+    checklistId: "1.4",
+  };
+
+  const mots = normCmp(entree.denomination ?? "")
+    .split(/[\s,.;:()]+/)
+    .filter((m) => m.length >= 4);
+  if (mots.length === 0) return null;
+
+  const occurrences = motsStyles(analyses).filter((m) => mots.includes(normCmp(m.texte)));
+  if (occurrences.length === 0) return null;
+
+  const penchees = occurrences.filter((m) => estItalique(m.police));
+  if (penchees.length === 0) {
+    return {
+      ...base,
+      statut: "PASS",
+      justification: `${occurrences.length} mot(s) de la dénomination mesurés, tous en caractères droits.`,
+    };
+  }
+  return {
+    ...base,
+    statut: "FAIL",
+    reperes: penchees.map((m) => ({ ...m.repere, libelle: `${m.texte} — italique` })),
+    justification: `${penchees
+      .map((m) => `« ${m.texte} » en ${m.police.nom} (italique)`)
+      .join(" ; ")} — le §1 impose des caractères droits pour la dénomination.`,
+  };
+}
+
 /** Les contrôles de style d'un produit, mesurés sur ses BAT. */
 export function controlerStyle(analyses: AnalyseBat[], entree: EntreeStyle): BatTextCheck[] {
   return [
     controlerAllergeneEnEvidence(analyses, entree),
     controlerDemeterGrasItalique(analyses, entree),
+    controlerDenominationDroite(analyses, entree),
   ].filter((c): c is BatTextCheck => c !== null);
 }

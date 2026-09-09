@@ -46,14 +46,14 @@ const INGREDIENTS_TEXTE =
 
 describe("Voie A déterministe — golden MT265", () => {
   // 12 points PRO-QHS-013 + 4 points MOP-PRO-029 (code article et Gencode).
-  it("couvre les 16 points déterministes et valide chaque verdict (Zod)", () => {
+  it("couvre les 18 points déterministes et valide chaque verdict (Zod)", () => {
     const input: AuditInput = {
       fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
       produit: { typeTheFr: "Mélange de plantes", estAromatise: true },
       ingredients: buildIngredients(),
     };
     const r = auditDeterministic(input);
-    expect(r).toHaveLength(16);
+    expect(r).toHaveLength(18);
     // Every verdict carries a justification and a valid status.
     for (const c of r) {
       expect(c.mode).toBe("deterministic");
@@ -221,5 +221,56 @@ describe("Voie A déterministe — golden MT265", () => {
     };
     const r = auditDeterministic(input);
     expect(byId(r, "1.1").statut).toBe("PASS"); // ≥ 51 % Camellia
+  });
+});
+
+describe("§1.3 — le nom usuel d'une infusion", () => {
+  const infusion = (denominationLegale: string | null) =>
+    auditDeterministic({
+      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non", denominationLegale },
+      produit: { typeTheFr: "Mélange de plantes" },
+      ingredients: buildIngredients(),
+    }).find((c) => c.id === "1.6");
+
+  it("accepte un nom usuel de la liste fermée du §1.3", () => {
+    expect(infusion("Infusion aux plantes")?.statut).toBe("PASS");
+    expect(infusion("Tisane de Noël")?.statut).toBe("PASS");
+  });
+
+  it("refuse un nom commercial — le §1 interdit qu'il tienne lieu de dénomination", () => {
+    const r = infusion("Magie des bois");
+    expect(r?.statut).toBe("WARNING");
+    expect(r?.action).toBe("COMPLETER");
+    expect(r?.justification).toContain("nom commercial");
+  });
+
+  it("demande de compléter quand la dénomination légale est vide", () => {
+    expect(infusion(null)?.action).toBe("COMPLETER");
+  });
+});
+
+describe("§3.2 — le nombre de tasses suit le poids net", () => {
+  const tasses = (poidsNet: string | null, nbTasses: string | null) =>
+    auditDeterministic({
+      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
+      produit: { typeTheFr: "Mélange de plantes", poidsNet, nbTasses },
+      ingredients: buildIngredients(),
+    }).find((c) => c.id === "6.3");
+
+  it("valide 50 tasses pour 100 g — la dose de référence est 2 g", () => {
+    expect(tasses("100 g", "50")?.statut).toBe("PASS");
+  });
+
+  it("signale une dose implicite différente, et rappelle le logo tasse", () => {
+    // Deux produits du catalogue annoncent 25 tasses pour 100 g, soit 4 g.
+    const r = tasses("100 g", "25");
+    expect(r?.statut).toBe("WARNING");
+    expect(r?.justification).toContain("4 g par tasse");
+    expect(r?.justification).toContain("logo tasse");
+  });
+
+  it("ne conclut rien quand une des deux valeurs manque", () => {
+    expect(tasses("100 g", null)?.action).toBe("COMPLETER");
+    expect(tasses(null, "50")?.action).toBe("COMPLETER");
   });
 });

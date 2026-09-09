@@ -10,6 +10,7 @@ import {
   MASS_UNIT_PATTERN,
   normalize,
 } from "../canonical";
+import { poidsEnGrammes } from "../code-article";
 import type { AuditInput, DeterministicVerdict } from "../types";
 
 const VOLUME_PATTERN = /\d+([.,]\d+)?\s*(ml|cl|l)\b/i;
@@ -74,4 +75,85 @@ export function checkCodeEtiquette(input: AuditInput): DeterministicVerdict {
     return { statut: "WARNING", action: "COMPLETER", justification: "Code étiquette absent — à compléter." };
   }
   return { statut: "PASS", justification: `Code étiquette présent (${code.trim()}).` };
+}
+
+/**
+ * §1.3 — noms usuels utilisables pour une plante à infusion.
+ *
+ * La réglementation ne définit aucune dénomination légale pour les infusions :
+ * la procédure ferme donc elle-même la liste. Un nom commercial — « Magie des
+ * bois » — n'en fait pas partie, et le §1 interdit explicitement qu'il tienne
+ * lieu de dénomination.
+ */
+const NOMS_USUELS_INFUSION = [
+  "tisane",
+  "infusion",
+  "preparation de plantes",
+  "preparations de plantes",
+  "melange de plantes",
+  "melanges de plantes",
+] as const;
+
+/** 1.6 — DENOM_NOM_USUEL : la dénomination d'une infusion est-elle un nom usuel ? */
+export function checkNomUsuelInfusion(input: AuditInput): DeterministicVerdict {
+  const denom = input.fiche.denominationLegale;
+  if (!denom || denom.trim() === "") {
+    return {
+      statut: "WARNING",
+      action: "COMPLETER",
+      justification: "Dénomination légale absente de la fiche — à compléter (§1.3).",
+    };
+  }
+  const n = normalize(denom);
+  const trouve = NOMS_USUELS_INFUSION.find((u) => n.includes(u));
+  if (trouve) {
+    return { statut: "PASS", justification: `Dénomination « ${denom.trim()} » : nom usuel « ${trouve} » (§1.3).` };
+  }
+  return {
+    statut: "WARNING",
+    action: "COMPLETER",
+    justification: `« ${denom.trim()} » ne contient aucun des noms usuels du §1.3 (tisane, infusion, préparation ou mélange de plantes). Le §1 interdit qu'un nom commercial tienne lieu de dénomination de la denrée.`,
+  };
+}
+
+/** La dose de référence du §3.2, en grammes par tasse. */
+const GRAMMES_PAR_TASSE = 2;
+
+/** Un nombre de tasses écrit « 50 », « 50 tasses », « environ 50 ». */
+function nombreDeTasses(valeur?: string | null): number | null {
+  const m = /(\d+)/.exec(valeur ?? "");
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * 6.3 — QTE_NETTE_TASSES : le nombre de tasses suit-il le poids net ?
+ *
+ * §3.2 : « nombre de tasses calculé avec 2 g par tasse ». Un écart ne prouve
+ * pas une erreur — la dose peut être autre — mais alors le § impose « x g » sur
+ * le logo tasse. Dans les deux cas, la Qualité doit le regarder : d'où un
+ * constat qui dit la dose implicite plutôt qu'un verdict sec.
+ */
+export function checkNombreTasses(input: AuditInput): DeterministicVerdict {
+  const tasses = nombreDeTasses(input.produit.nbTasses);
+  const grammes = poidsEnGrammes(input.produit.poidsNet ?? "");
+  if (tasses === null || grammes === null) {
+    const manque = tasses === null ? "le nombre de tasses" : "la quantité nette";
+    return { statut: "WARNING", action: "COMPLETER", justification: `Comparaison impossible : ${manque} n'est pas renseigné.` };
+  }
+  if (tasses <= 0) {
+    return { statut: "WARNING", action: "COMPLETER", justification: "Nombre de tasses non exploitable." };
+  }
+
+  // Une demi-tasse ne s'imprime pas : 125 g donnent 62,5 tasses, l'étiquette en
+  // annonce 63. L'arrondi de l'étiquetage n'est pas un écart de dose.
+  const attendu = grammes / GRAMMES_PAR_TASSE;
+  if (Math.abs(attendu - tasses) <= 0.5) {
+    return { statut: "PASS", justification: `${tasses} tasses pour ${grammes} g : ${GRAMMES_PAR_TASSE} g par tasse (§3.2).` };
+  }
+  const dose = Math.round((grammes / tasses) * 100) / 100;
+  return {
+    statut: "WARNING",
+    action: "VERIFIER",
+    justification: `${tasses} tasses pour ${grammes} g, soit ${dose} g par tasse au lieu de ${GRAMMES_PAR_TASSE} g (${attendu} tasses attendues). Si la dose est bien de ${dose} g, « ${dose} g » doit figurer sur le logo tasse (§3.2).`,
+  };
 }
