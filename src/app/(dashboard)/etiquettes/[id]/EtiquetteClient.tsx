@@ -376,6 +376,23 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         },
     })
 
+    /**
+     * L'état déployé de chaque carte.
+     *
+     * Le bouton « Modifier » ne s'affiche que carte ouverte : replié, un
+     * en-tête n'a plus à proposer d'agir sur ce qu'il cache. Et une carte en
+     * cours d'édition reste ouverte de force — se replier sur une saisie en
+     * cours ferait perdre le brouillon sans rien dire.
+     */
+    const deploye = {
+        identite: cartes.identite.ouvert || identiteSection.editing,
+        preparation: cartes.preparation.ouvert || prepSection.editing,
+        vigilance: cartes.vigilance.ouvert || vigilanceSection.editing,
+        degustation: cartes.degustation.ouvert || degustationSection.editing,
+        documentaire: cartes.documentaire.ouvert || textesSection.editing || declinaisonsSection.editing,
+        mentions: cartes.mentions.ouvert || mentionsSection.editing,
+    }
+
     // Save the fiche's current state as a new version snapshot.
     const [savingVersion, setSavingVersion] = useState(false)
     const recetteRef = useRef<RecetteCalculatorHandle>(null)
@@ -643,12 +660,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             Identité & Sourcing
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <EditButtons section={identiteSection} />
-                                            <BoutonRepli ouvert={cartes.identite.ouvert} basculer={cartes.identite.basculer} vides={cartes.identite.vides} ton="text-emerald-600/70" />
+                                            {deploye.identite && <EditButtons section={identiteSection} />}
+                                            <BoutonRepli ouvert={deploye.identite} basculer={cartes.identite.basculer} vides={cartes.identite.vides} ton="text-emerald-600/70" />
                                         </div>
                                     </CardTitle>
                                 </CardHeader>
-                                {cartes.identite.ouvert && (
+                                {deploye.identite && (
                                 <CardContent className="p-5">
                                     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                                         <DataPointEdit section={identiteSection} icon={Leaf} label="Type de Thé" field="typeTheFr" value={labelData.typeTheFr} />
@@ -752,12 +769,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             Conseils de Préparation
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <EditButtons section={prepSection} />
-                                            <BoutonRepli ouvert={cartes.preparation.ouvert} basculer={cartes.preparation.basculer} vides={cartes.preparation.vides} ton="text-orange-600/70" />
+                                            {deploye.preparation && <EditButtons section={prepSection} />}
+                                            <BoutonRepli ouvert={deploye.preparation} basculer={cartes.preparation.basculer} vides={cartes.preparation.vides} ton="text-orange-600/70" />
                                         </div>
                                     </CardTitle>
                                 </CardHeader>
-                                {cartes.preparation.ouvert && (
+                                {deploye.preparation && (
                                 <CardContent className="p-5">
                                     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                                         <DataPointEdit section={prepSection} icon={Clock} label="Infusion" field="tempsInfusion" value={labelData.tempsInfusion} suffix="min" />
@@ -781,12 +798,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                 Points de Vigilance Qualité
                                             </div>
                                             <div className="flex items-center gap-1">
-                                            <EditButtons section={vigilanceSection} />
-                                            <BoutonRepli ouvert={cartes.vigilance.ouvert} basculer={cartes.vigilance.basculer} vides={cartes.vigilance.vides} ton="text-orange-600/70" />
+                                            {deploye.vigilance && <EditButtons section={vigilanceSection} />}
+                                            <BoutonRepli ouvert={deploye.vigilance} basculer={cartes.vigilance.basculer} vides={cartes.vigilance.vides} ton="text-orange-600/70" />
                                         </div>
                                         </CardTitle>
                                     </CardHeader>
-                                    {cartes.vigilance.ouvert && (
+                                    {deploye.vigilance && (
                                     <CardContent className="p-5 space-y-4 relative z-10">
                                         {!vigilanceSection.editing && !hasVigilance && (
                                             <EmptyState
@@ -883,12 +900,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                     <span>{deg.dateDegustation || "Date non précisée"}</span>
                                                 </div>
                                             )}
-                                            <EditButtons section={degustationSection} />
-                                            <BoutonRepli ouvert={cartes.degustation.ouvert} basculer={cartes.degustation.basculer} vides={cartes.degustation.vides} ton="text-pink-600/70" />
+                                            {deploye.degustation && <EditButtons section={degustationSection} />}
+                                            <BoutonRepli ouvert={deploye.degustation} basculer={cartes.degustation.basculer} vides={cartes.degustation.vides} ton="text-pink-600/70" />
                                         </div>
                                     </CardTitle>
                                 </CardHeader>
-                                {cartes.degustation.ouvert && (
+                                {deploye.degustation && (
                                 <CardContent className="p-6 flex flex-col gap-5">
 
                                     {degustationSection.editing ? (
@@ -970,10 +987,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </Badge>
                                             Base Documentaire & Ingrédients
                                         </div>
-                                        <BoutonRepli ouvert={cartes.documentaire.ouvert} basculer={cartes.documentaire.basculer} vides={cartes.documentaire.vides} />
+                                        <BoutonRepli ouvert={deploye.documentaire} basculer={cartes.documentaire.basculer} vides={cartes.documentaire.vides} />
                                     </CardTitle>
                                 </CardHeader>
-                                {cartes.documentaire.ouvert && (
+                                {deploye.documentaire && (
                                 <CardContent className="p-6 flex flex-col gap-6">
 
                                     {/* Textes Marketing */}
@@ -1067,12 +1084,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             Mentions Légales Obligatoires
                                         </div>
                                         <div className="flex items-center gap-1">
-                                            <EditButtons section={mentionsSection} />
-                                            <BoutonRepli ouvert={cartes.mentions.ouvert} basculer={cartes.mentions.basculer} vides={cartes.mentions.vides} ton="text-indigo-600/70" />
+                                            {deploye.mentions && <EditButtons section={mentionsSection} />}
+                                            <BoutonRepli ouvert={deploye.mentions} basculer={cartes.mentions.basculer} vides={cartes.mentions.vides} ton="text-indigo-600/70" />
                                         </div>
                                     </CardTitle>
                                 </CardHeader>
-                                {cartes.mentions.ouvert && (
+                                {deploye.mentions && (
                                 <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/50">
                                     <div className="p-4 bg-indigo-50/80 rounded-2xl border border-indigo-100/80 shadow-sm">
                                         <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Thermometer className="w-3.5 h-3.5" /> Conservation</div>
