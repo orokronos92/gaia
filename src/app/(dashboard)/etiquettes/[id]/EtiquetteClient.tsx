@@ -522,12 +522,16 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
     return (
         // `data-wide` : cette page demande au layout de desserrer sa laisse de
         // 1280 px, sans quoi le `max-w-[1600px]` ci-dessous ne sert à rien.
-        <div data-wide className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1600px] mx-auto pb-20">
+        //
+        // L'animation d'entrée ne translate plus : `slide-in-from-bottom` laisse
+        // un `transform` sur cet élément, et un ancêtre transformé fausse le
+        // calcul d'un enfant `sticky`. Le fondu seul n'agit que sur l'opacité.
+        <div data-wide className="flex flex-col gap-4 animate-in fade-in duration-700 max-w-[1600px] mx-auto pb-20">
             <Tabs defaultValue="dossier" className="w-full flex flex-col gap-4">
                 {/* Titre et onglets ne font qu'un bloc collant. Deux ancrages
                     séparés obligeraient à connaître la hauteur du premier pour
                     caler le second, et elle change avec le nombre de badges. */}
-                <div className="sticky top-16 z-20 -mx-2 flex flex-col gap-3 bg-stone-50/85 px-2 pb-2 pt-2 backdrop-blur-md">
+                <div className="sticky top-16 z-20 -mx-2 flex flex-col gap-3 bg-stone-50 px-2 pb-2 pt-2">
             {/* En-tête condensé : collé, il devient du décor permanent, et
                 chaque ligne qu'il garde est une ligne de contenu en moins. Le
                 retour au pipeline rejoint le fil d'ariane, dont il est le

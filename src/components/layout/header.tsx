@@ -38,7 +38,10 @@ export function Header() {
      * Le header est collant sur TOUS les écrans. Il l'était déjà sur mobile et
      * repassait en `static` au-delà de 640 px : les notifications disparaissaient
      * dès qu'on descendait dans une fiche. Le fond opaque va avec — transparent,
-     * le contenu défilerait visiblement dessous.
+     * le contenu défilerait visiblement dessous. Le fond est OPAQUE et non
+     * translucide : deux couches à 85 % empilées au raccord laissaient
+     * transparaître le contenu qui défile dessous, et ce scintillement se lit
+     * comme un saut.
      *
      * Sa hauteur est FIXE — `h-16`, bordure comprise — et non `h-auto` : ce qui
      * se colle en dessous doit connaître ce nombre. En `h-auto` il valait 65 px
@@ -46,7 +49,7 @@ export function Header() {
      * laissaient voir le contenu défiler dans la fente.
      */
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-stone-200/60 bg-stone-50/85 px-4 backdrop-blur-xl sm:px-8 dark:border-stone-800 dark:bg-stone-900/85">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-stone-200/60 bg-stone-50 px-4 sm:px-8 dark:border-stone-800 dark:bg-stone-900">
             <Button size="icon" variant="outline" className="sm:hidden bg-white/50 backdrop-blur-md">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle Menu</span>
