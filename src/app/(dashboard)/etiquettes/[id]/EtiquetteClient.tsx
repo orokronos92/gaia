@@ -48,6 +48,7 @@ import { RecetteListeCards } from "./_components/recette-liste-cards"
 import { StatutSelect } from "./_components/statut-select"
 import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
 import { EmptyState } from "@/components/atoms/empty-state"
+import { BoutonRepli, compterVides, useRepli } from "./_components/carte-repliable"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 import { ControleEtiquette } from "./_components/controle-etiquette"
 import type { AuditDeterministeResult } from "@/app/actions/audit"
@@ -248,6 +249,49 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         ficheId: labelData.id,
         champs: { declinaisons: labelData.declinaisons },
     })
+
+    // Le repli de chaque carte du dossier, et ce qu'il reste à renseigner
+    // dedans : c'est la seule chose qu'une carte repliée doit continuer à dire.
+    const cartes = {
+        identite: {
+            ...useRepli("identite"),
+            vides: compterVides([
+                labelData.typeTheFr, labelData.origine, labelData.conditionnement, labelData.poidsNet,
+                labelData.mentionEcocert, labelData.infoProducteur, labelData.origineMpa,
+                labelData.epoqueRecolte, labelData.techniqueRecolte, labelData.grade,
+                Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? "x" : null,
+            ]),
+        },
+        preparation: {
+            ...useRepli("preparation"),
+            vides: compterVides([labelData.tempsInfusion, labelData.tempInfusion, labelData.nbTasses]),
+        },
+        vigilance: {
+            ...useRepli("vigilance"),
+            vides: compterVides([labelData.allergenes, labelData.allegationsSanteFr]),
+        },
+        degustation: {
+            ...useRepli("degustation"),
+            vides: compterVides([
+                labelData.degustation?.feuillesSechesAspect, labelData.degustation?.feuillesSechesCouleur,
+                labelData.degustation?.feuillesSechesSenteur, labelData.degustation?.feuillesInfuseesAspect,
+                labelData.degustation?.feuillesInfuseesCouleur, labelData.degustation?.feuillesInfuseesSenteur,
+                labelData.degustation?.infusionAspectCouleur, labelData.degustation?.infusionParfum,
+                labelData.degustation?.saveurBouche,
+            ]),
+        },
+        documentaire: {
+            ...useRepli("documentaire"),
+            vides: compterVides([
+                labelData.texteCommercialFr, labelData.phraseWftoFr,
+                labelData.sousDesignationFr, labelData.declinaisons,
+            ]),
+        },
+        mentions: {
+            ...useRepli("mentions"),
+            vides: compterVides([labelData.mentionConservation, labelData.mentionFabricant]),
+        },
+    }
 
     // Editable commercial texts (fiche fields).
     const textesSection = useEditableSection({
@@ -581,10 +625,13 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
 
                 {/* 1. DOSSIER PRODUIT (Merged Tab) */}
                 <TabsContent value="dossier" className="mt-0 focus-visible:outline-none">
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-
-                        {/* LEFT COLUMN: Identity & Prep (The "Bento" Grid) */}
-                        <div className="xl:col-span-5 space-y-6">
+                    {/* Une seule colonne, un seul ordre de lecture.
+                        Les deux colonnes du bento n'appariaient rien : elles
+                        répartissaient pour remplir, laissaient le bas de page en
+                        dents de scie, et personne ne savait s'il fallait lire en
+                        colonnes ou en zigzag. */}
+                    <div className="space-y-6">
+                        <div className="space-y-6">
 
                             {/* Card: Identité & Origine */}
                             <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
@@ -596,11 +643,15 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </Badge>
                                             Identité & Sourcing
                                         </div>
-                                        <EditButtons section={identiteSection} />
+                                        <div className="flex items-center gap-1">
+                                            <EditButtons section={identiteSection} />
+                                            <BoutonRepli ouvert={cartes.identite.ouvert} basculer={cartes.identite.basculer} vides={cartes.identite.vides} ton="text-emerald-600/70" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
+                                {cartes.identite.ouvert && (
                                 <CardContent className="p-5">
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                                         <DataPointEdit section={identiteSection} icon={Leaf} label="Type de Thé" field="typeTheFr" value={labelData.typeTheFr} />
                                         <DataPointEdit section={identiteSection} icon={Globe2} label="Origine" field="origine" value={labelData.origine || "Non spécifiée"} />
                                         <DataPointEdit section={identiteSection} icon={Package} label="Conditionnement" field="conditionnement" value={labelData.conditionnement} />
@@ -642,7 +693,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         </div>
 
                                     {/* NOUVEAU: Données Brutes PMI Extensives */}
-                                    <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 grid grid-cols-2 gap-3">
+                                    <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 grid grid-cols-2 gap-3 lg:grid-cols-4">
                                             <ChampPmi section={identiteSection} label="Époque Récolte" field="epoqueRecolte" value={labelData.epoqueRecolte} />
                                             <ChampPmi section={identiteSection} label="Technique" field="techniqueRecolte" value={labelData.techniqueRecolte} />
                                             <ChampPmi section={identiteSection} label="Grade / Granulométrie" field="grade" value={labelData.grade} />
@@ -688,6 +739,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         )}
                                     </div>
                                 </CardContent>
+                                )}
                             </Card>
 
                             {/* Card: Préparation */}
@@ -700,17 +752,22 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </Badge>
                                             Conseils de Préparation
                                         </div>
-                                        <EditButtons section={prepSection} />
+                                        <div className="flex items-center gap-1">
+                                            <EditButtons section={prepSection} />
+                                            <BoutonRepli ouvert={cartes.preparation.ouvert} basculer={cartes.preparation.basculer} vides={cartes.preparation.vides} ton="text-orange-600/70" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
+                                {cartes.preparation.ouvert && (
                                 <CardContent className="p-5">
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                                         <DataPointEdit section={prepSection} icon={Clock} label="Infusion" field="tempsInfusion" value={labelData.tempsInfusion} suffix="min" />
                                         <DataPointEdit section={prepSection} icon={Thermometer} label="Température" field="tempInfusion" value={labelData.tempInfusion} suffix="°C" />
                                         <DataPointEdit section={prepSection} icon={Coffee} label="Tasses / Cuillères" field="nbTasses" value={labelData.nbTasses} />
                                         <DataPoint icon={Info} label="Plusieurs Infusions" value={labelData.plusieursInfusions ? "Oui" : "Non"} />
                                     </div>
                                 </CardContent>
+                                )}
                             </Card>
 
                             {/* Card: Alertes Qualité — toujours visible, état vide explicite si rien à signaler */}
@@ -724,9 +781,13 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                 <ShieldAlert className="h-5 w-5 text-orange-600" />
                                                 Points de Vigilance Qualité
                                             </div>
+                                            <div className="flex items-center gap-1">
                                             <EditButtons section={vigilanceSection} />
+                                            <BoutonRepli ouvert={cartes.vigilance.ouvert} basculer={cartes.vigilance.basculer} vides={cartes.vigilance.vides} ton="text-orange-600/70" />
+                                        </div>
                                         </CardTitle>
                                     </CardHeader>
+                                    {cartes.vigilance.ouvert && (
                                     <CardContent className="p-5 space-y-4 relative z-10">
                                         {!vigilanceSection.editing && !hasVigilance && (
                                             <EmptyState
@@ -799,11 +860,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </div>
                                         )}
                                     </CardContent>
+                                    )}
                                 </Card>
                         </div>
 
                         {/* RIGHT COLUMN: Texts & Translations */}
-                        <div className="xl:col-span-7 space-y-6">
+                        <div className="space-y-6">
 
                             {/* Card: Déclarations Légales par Langue */}
                             <Card className="border border-blue-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl flex flex-col">
@@ -825,8 +887,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                 </div>
                                             )}
                                             <EditButtons section={degustationSection} />
+                                            <BoutonRepli ouvert={cartes.degustation.ouvert} basculer={cartes.degustation.basculer} vides={cartes.degustation.vides} ton="text-pink-600/70" />
                                         </div>
                                     </div>
+                                    {cartes.degustation.ouvert && (<>
 
                                     {degustationSection.editing ? (
                                         <div className="space-y-4">
@@ -894,6 +958,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </div>
                                         </div>
                                     )}
+                                    </>)}
                                 </div>
 
                                 <CardHeader className="bg-blue-500/10 border-b border-blue-100 pb-4">
@@ -904,8 +969,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </Badge>
                                             Base Documentaire & Ingrédients
                                         </div>
+                                        <BoutonRepli ouvert={cartes.documentaire.ouvert} basculer={cartes.documentaire.basculer} vides={cartes.documentaire.vides} />
                                     </CardTitle>
                                 </CardHeader>
+                                {cartes.documentaire.ouvert && (
                                 <CardContent className="p-6 flex flex-col gap-6">
 
                                     {/* Textes Marketing */}
@@ -985,6 +1052,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                     </div>
 
                                 </CardContent>
+                                )}
                             </Card>
 
                             {/* Card: Mentions Légales */}
@@ -997,9 +1065,13 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </Badge>
                                             Mentions Légales Obligatoires
                                         </div>
-                                        <EditButtons section={mentionsSection} />
+                                        <div className="flex items-center gap-1">
+                                            <EditButtons section={mentionsSection} />
+                                            <BoutonRepli ouvert={cartes.mentions.ouvert} basculer={cartes.mentions.basculer} vides={cartes.mentions.vides} ton="text-indigo-600/70" />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
+                                {cartes.mentions.ouvert && (
                                 <CardContent className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/50">
                                     <div className="p-4 bg-indigo-50/80 rounded-2xl border border-indigo-100/80 shadow-sm">
                                         <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Thermometer className="w-3.5 h-3.5" /> Conservation</div>
@@ -1024,6 +1096,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         />
                                     </div>
                                 </CardContent>
+                                )}
                             </Card>
 
                         </div>
