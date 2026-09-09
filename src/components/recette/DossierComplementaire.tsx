@@ -19,6 +19,7 @@ import { ArbitrerBadge } from "@/components/provenance/ArbitrerBadge";
 import { EmptyState } from "@/components/atoms/empty-state";
 import { DossierEditForm } from "@/components/recette/dossier-edit-form";
 import { updateDossierAction } from "@/app/actions/fiche-champs";
+import { BoutonRepli, compterVides, useRepli } from "@/components/etiquettes/carte-repliable";
 
 export interface DossierComplementaireProps {
   ficheId: string;
@@ -75,6 +76,16 @@ function Bloc({
 export function DossierComplementaire(props: DossierComplementaireProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  // Même geste que les six cartes du dossier : repli mémorisé, compteur de
+  // champs vides dans l'en-tête, et une carte en cours d'édition reste ouverte.
+  const repli = useRepli("complementaire");
+  const deploye = repli.ouvert || editing;
+  const vides = compterVides([
+    props.floId, props.nomLatin, props.dateMiseMarche, props.organismeCertificateur,
+    props.fournisseur, props.producteurJardin, props.infoProducteur, props.typeProducteur,
+    props.numeroDeLot, props.allegationChoisie, props.nbTassesAllegation,
+    props.labelsClient && props.labelsClient.length > 0 ? "x" : null,
+  ]);
   const [saving, setSaving] = useState(false);
 
   const seed = (): Record<string, string> => ({
@@ -146,7 +157,8 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
             </Badge>
             Données complémentaires & arbitrages
           </div>
-          {editing ? (
+          <div className="flex items-center gap-1">
+          {!deploye ? null : editing ? (
             <div className="flex items-center gap-1.5">
               <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={saving} className="h-7 gap-1.5 rounded-lg text-stone-500 hover:text-red-600">
                 <X className="size-3.5" /> Annuler
@@ -160,9 +172,12 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
               <Pencil className="size-3.5" /> Modifier
             </Button>
           )}
+          <BoutonRepli ouvert={deploye} basculer={repli.basculer} vides={vides} />
+          </div>
         </CardTitle>
       </CardHeader>
 
+      {deploye && (
       <CardContent className="space-y-6 p-5">
         {editing ? (
           <DossierEditForm draft={draft} setField={setField} />
@@ -251,6 +266,7 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
           </>
         )}
       </CardContent>
+      )}
     </Card>
   );
 }
