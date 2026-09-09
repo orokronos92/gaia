@@ -26,7 +26,8 @@ import {
     ArrowLeft,
     Copy,
     Save,
-    History
+    History,
+    MinusCircle
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -56,6 +57,20 @@ import { ReintegrerDocumentMenu } from "./_components/reintegrer-recette"
 import type { RecetteCalculatorHandle } from "@/components/recette/RecetteCalculator"
 
 // --- Helper pour vérifier si un champ "vide" Excel contient une vraie valeur
+/**
+ * Ce qu'on affiche à la place d'un champ vide.
+ *
+ * Un champ masqué quand il est vide n'existe pas : personne ne sait qu'il
+ * existe, donc personne ne le remplit — et la structure de la page change d'un
+ * produit à l'autre sans qu'on comprenne pourquoi. Le vide se dit.
+ */
+const NonRenseigne = () => (
+    <span className="font-normal italic text-stone-400">non renseigné</span>
+);
+
+const valeurOu = (val: string | null | undefined) =>
+    hasRealValue(val) ? val : <NonRenseigne />;
+
 const hasRealValue = (val: string | null | undefined) => {
     if (!val) return false;
     const clean = val.trim().toLowerCase();
@@ -443,11 +458,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                         <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
                             Gamme: <span className="text-stone-900 ml-1">{labelData.gamme}</span>
                         </Badge>
-                        {labelData.sousGamme && (
-                            <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
-                                Sous-Gamme: <span className="text-stone-900 ml-1">{labelData.sousGamme}</span>
-                            </Badge>
-                        )}
+                        <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
+                            Sous-Gamme: <span className="text-stone-900 ml-1">{valeurOu(labelData.sousGamme)}</span>
+                        </Badge>
                         <span className="text-stone-300 mx-1">•</span>
                         <span className="text-sm font-medium text-stone-500 flex items-center gap-1.5 border border-stone-100 bg-stone-50 px-2 py-0.5 rounded-md">
                             <Clock className="h-3.5 w-3.5" /> Modifié le {labelData.date ?? 'N/A'}
@@ -530,64 +543,61 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         <DataPointEdit section={identiteSection} icon={AlignLeft} label="Poids Net" field="poidsNet" value={labelData.poidsNet} suffix="g" />
                                     </div>
 
-                                    {labelData.mentionEcocert && (
-                                        <div className="mt-4 p-3.5 bg-emerald-50 rounded-xl border border-emerald-100/50 flex items-start gap-3">
-                                            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest mb-0.5">Certification Active</p>
-                                                <p className="text-sm font-semibold text-emerald-950">{labelData.mentionEcocert}</p>
-                                            </div>
+                                    {/* La coche verte AFFIRME une certification : sans valeur,
+                                        l'encart reste neutre plutôt que de la suggérer. */}
+                                    <div className={cn("mt-4 p-3.5 rounded-xl border flex items-start gap-3", hasRealValue(labelData.mentionEcocert) ? "bg-emerald-50 border-emerald-100/50" : "bg-stone-50 border-stone-100")}>
+                                        {hasRealValue(labelData.mentionEcocert)
+                                            ? <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                                            : <MinusCircle className="h-5 w-5 text-stone-300 shrink-0 mt-0.5" />}
+                                        <div>
+                                            <p className={cn("text-[10px] font-bold uppercase tracking-widest mb-0.5", hasRealValue(labelData.mentionEcocert) ? "text-emerald-800" : "text-stone-400")}>Certification Active</p>
+                                            <p className={cn("text-sm font-semibold", hasRealValue(labelData.mentionEcocert) ? "text-emerald-950" : "text-stone-500")}>{valeurOu(labelData.mentionEcocert)}</p>
                                         </div>
-                                    )}
+                                    </div>
 
-                                    {(labelData.infoProducteur || labelData.typeProducteur || labelData.origineMpa) && (
-                                        <div className="mt-4 p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
+                                    <div className="mt-4 p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
                                             <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-1.5"><Globe2 className="w-3 h-3" /> Détails Producteur & MPA</h4>
                                             <div className="space-y-2">
-                                                {labelData.infoProducteur && <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Producteur:</span> {labelData.infoProducteur} {labelData.typeProducteur && `(${labelData.typeProducteur})`}</p>}
-                                                {labelData.origineMpa && <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Origine MPA:</span> {labelData.origineMpa}</p>}
+                                                <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Producteur:</span> {valeurOu(labelData.infoProducteur)} {labelData.typeProducteur && `(${labelData.typeProducteur})`}</p>
+                                                <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Origine MPA:</span> {valeurOu(labelData.origineMpa)}</p>
                                             </div>
                                         </div>
-                                    )}
 
                                     {/* NOUVEAU: Données Brutes PMI Extensives */}
-                                    {(labelData.techniqueRecolte || labelData.grade || labelData.volumineux !== null || labelData.epoqueRecolte) && (
-                                        <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 grid grid-cols-2 gap-3">
-                                            {labelData.epoqueRecolte && (
-                                                <div>
-                                                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Époque Récolte</p>
-                                                    <p className="text-xs font-semibold text-blue-950">{labelData.epoqueRecolte}</p>
-                                                </div>
-                                            )}
-                                            {labelData.techniqueRecolte && (
-                                                <div>
-                                                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Technique</p>
-                                                    <p className="text-xs font-semibold text-blue-950">{labelData.techniqueRecolte}</p>
-                                                </div>
-                                            )}
-                                            {labelData.grade && (
-                                                <div>
-                                                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Grade / Granulométrie</p>
-                                                    <p className="text-xs font-semibold text-blue-950">{labelData.grade}</p>
-                                                </div>
-                                            )}
-                                            {labelData.volumineux !== null && (
-                                                <div>
-                                                    <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Volumineux</p>
+                                    <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 grid grid-cols-2 gap-3">
+                                            <div>
+                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Époque Récolte</p>
+                                                <p className="text-xs font-semibold text-blue-950">{valeurOu(labelData.epoqueRecolte)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Technique</p>
+                                                <p className="text-xs font-semibold text-blue-950">{valeurOu(labelData.techniqueRecolte)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Grade / Granulométrie</p>
+                                                <p className="text-xs font-semibold text-blue-950">{valeurOu(labelData.grade)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Volumineux</p>
+                                                {labelData.volumineux === null || labelData.volumineux === undefined ? (
+                                                    <p className="text-xs font-semibold text-blue-950"><NonRenseigne /></p>
+                                                ) : (
                                                     <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 uppercase border-none", labelData.volumineux ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800")}>
                                                         {labelData.volumineux ? "OUI" : "NON"}
                                                     </Badge>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-                                    {labelData.labelsMP && Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 && (
-                                        <div className="mt-3 flex flex-wrap gap-1.5">
-                                            {labelData.labelsMP.map((lbl: string, i: number) => (
+                                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Labels matière première</span>
+                                        {Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? (
+                                            labelData.labelsMP.map((lbl: string, i: number) => (
                                                 <Badge key={i} variant="outline" className="bg-white border-stone-200 text-[10px] text-stone-600 font-bold">{lbl}</Badge>
-                                            ))}
-                                        </div>
-                                    )}
+                                            ))
+                                        ) : (
+                                            <span className="text-xs"><NonRenseigne /></span>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
 
@@ -768,15 +778,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             <div className="bg-white rounded-2xl border border-stone-200/60 shadow-sm p-4 space-y-3">
                                                 <h4 className="text-xs font-bold text-stone-400 uppercase tracking-widest flex items-center gap-1.5"><Leaf className="w-3.5 h-3.5" /> Feuilles Sèches</h4>
                                                 <div className="space-y-2">
-                                                    {labelData.degustation.feuillesSechesAspect && (
-                                                        <div><span className="text-[10px] font-bold text-stone-400 uppercase">Aspect</span><p className="text-sm text-stone-800 font-medium italic">{labelData.degustation.feuillesSechesAspect}</p></div>
-                                                    )}
-                                                    {labelData.degustation.feuillesSechesCouleur && (
-                                                        <div><span className="text-[10px] font-bold text-stone-400 uppercase">Couleur</span><p className="text-sm text-stone-800 font-medium italic">{labelData.degustation.feuillesSechesCouleur}</p></div>
-                                                    )}
-                                                    {labelData.degustation.feuillesSechesSenteur && (
-                                                        <div className="pt-1 border-t border-stone-100"><span className="text-[10px] font-bold text-pink-500 uppercase flex items-center gap-1"><Wind className="w-3 h-3" /> Senteur / Nez</span><p className="text-sm text-stone-800 font-medium italic">{labelData.degustation.feuillesSechesSenteur}</p></div>
-                                                    )}
+                                                    <div><span className="text-[10px] font-bold text-stone-400 uppercase">Aspect</span><p className="text-sm text-stone-800 font-medium italic">{valeurOu(labelData.degustation.feuillesSechesAspect)}</p></div>
+                                                    <div><span className="text-[10px] font-bold text-stone-400 uppercase">Couleur</span><p className="text-sm text-stone-800 font-medium italic">{valeurOu(labelData.degustation.feuillesSechesCouleur)}</p></div>
+                                                    <div className="pt-1 border-t border-stone-100"><span className="text-[10px] font-bold text-pink-500 uppercase flex items-center gap-1"><Wind className="w-3 h-3" /> Senteur / Nez</span><p className="text-sm text-stone-800 font-medium italic">{valeurOu(labelData.degustation.feuillesSechesSenteur)}</p></div>
                                                 </div>
                                             </div>
 
@@ -784,15 +788,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             <div className="bg-emerald-50/30 rounded-2xl border border-emerald-100/60 shadow-sm p-4 space-y-3">
                                                 <h4 className="text-xs font-bold text-emerald-600/70 uppercase tracking-widest flex items-center gap-1.5"><Droplets className="w-3.5 h-3.5" /> Feuilles Infusées</h4>
                                                 <div className="space-y-2">
-                                                    {labelData.degustation.feuillesInfuseesAspect && (
-                                                        <div><span className="text-[10px] font-bold text-emerald-600/60 uppercase">Aspect</span><p className="text-sm text-emerald-950 font-medium italic">{labelData.degustation.feuillesInfuseesAspect}</p></div>
-                                                    )}
-                                                    {labelData.degustation.feuillesInfuseesCouleur && (
-                                                        <div><span className="text-[10px] font-bold text-emerald-600/60 uppercase">Couleur</span><p className="text-sm text-emerald-950 font-medium italic">{labelData.degustation.feuillesInfuseesCouleur}</p></div>
-                                                    )}
-                                                    {labelData.degustation.feuillesInfuseesSenteur && (
-                                                        <div className="pt-1 border-t border-emerald-200/50"><span className="text-[10px] font-bold text-pink-500 uppercase flex items-center gap-1"><Wind className="w-3 h-3" /> Senteur / Nez</span><p className="text-sm text-emerald-950 font-medium italic">{labelData.degustation.feuillesInfuseesSenteur}</p></div>
-                                                    )}
+                                                    <div><span className="text-[10px] font-bold text-emerald-600/60 uppercase">Aspect</span><p className="text-sm text-emerald-950 font-medium italic">{valeurOu(labelData.degustation.feuillesInfuseesAspect)}</p></div>
+                                                    <div><span className="text-[10px] font-bold text-emerald-600/60 uppercase">Couleur</span><p className="text-sm text-emerald-950 font-medium italic">{valeurOu(labelData.degustation.feuillesInfuseesCouleur)}</p></div>
+                                                    <div className="pt-1 border-t border-emerald-200/50"><span className="text-[10px] font-bold text-pink-500 uppercase flex items-center gap-1"><Wind className="w-3 h-3" /> Senteur / Nez</span><p className="text-sm text-emerald-950 font-medium italic">{valeurOu(labelData.degustation.feuillesInfuseesSenteur)}</p></div>
                                                 </div>
                                             </div>
 
@@ -800,15 +798,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             <div className="bg-amber-50/50 rounded-2xl border border-amber-200/60 shadow-sm p-4 space-y-3">
                                                 <h4 className="text-xs font-bold text-amber-700/70 uppercase tracking-widest flex items-center gap-1.5"><Coffee className="w-3.5 h-3.5" /> En Tasse (Liqueur)</h4>
                                                 <div className="space-y-2">
-                                                    {labelData.degustation.infusionAspectCouleur && (
-                                                        <div><span className="text-[10px] font-bold text-amber-700/60 uppercase">Aspect & Couleur</span><p className="text-sm text-amber-950 font-medium italic">{labelData.degustation.infusionAspectCouleur}</p></div>
-                                                    )}
-                                                    {labelData.degustation.infusionParfum && (
-                                                        <div className="pt-1 border-t border-amber-200/50"><span className="text-[10px] font-bold text-amber-700/60 uppercase flex items-center gap-1"><Wind className="w-3 h-3" /> Parfum</span><p className="text-sm text-amber-950 font-medium italic">{labelData.degustation.infusionParfum}</p></div>
-                                                    )}
-                                                    {labelData.degustation.saveurBouche && (
-                                                        <div className="pt-1 border-t border-amber-200/50 bg-amber-100/30 -mx-2 px-2 pb-1 rounded-lg"><span className="text-[10px] font-bold text-orange-600 uppercase flex items-center gap-1 pt-1"><Utensils className="w-3 h-3" /> Saveur en bouche</span><p className="text-sm text-amber-950 font-semibold italic">{labelData.degustation.saveurBouche}</p></div>
-                                                    )}
+                                                    <div><span className="text-[10px] font-bold text-amber-700/60 uppercase">Aspect & Couleur</span><p className="text-sm text-amber-950 font-medium italic">{valeurOu(labelData.degustation.infusionAspectCouleur)}</p></div>
+                                                    <div className="pt-1 border-t border-amber-200/50"><span className="text-[10px] font-bold text-amber-700/60 uppercase flex items-center gap-1"><Wind className="w-3 h-3" /> Parfum</span><p className="text-sm text-amber-950 font-medium italic">{valeurOu(labelData.degustation.infusionParfum)}</p></div>
+                                                    <div className="pt-1 border-t border-amber-200/50 bg-amber-100/30 -mx-2 px-2 pb-1 rounded-lg"><span className="text-[10px] font-bold text-orange-600 uppercase flex items-center gap-1 pt-1"><Utensils className="w-3 h-3" /> Saveur en bouche</span><p className="text-sm text-amber-950 font-semibold italic">{valeurOu(labelData.degustation.saveurBouche)}</p></div>
                                                 </div>
                                             </div>
                                         </div>
