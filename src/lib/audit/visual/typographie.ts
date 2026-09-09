@@ -129,6 +129,13 @@ function controlerHauteurX(
   }
   const reserve = reserves.length > 0 ? ` ${reserves.join(" ")}` : "";
 
+  // Toutes les réserves ne retiennent pas le point. Une mention ABSENTE des
+  // faces relève de son propre contrôle de présence — la retenir ici mettait
+  // 14.1 en orange pour une raison qui n'est pas la sienne. Une mesure
+  // PARTIELLE, elle, le retient : un mot non mesuré peut être plus petit que le
+  // seuil, et on ne conclut pas sur ce qu'on n'a pas vu.
+  const retiennent = partielles.length > 0 || nonRattachees.length > 0;
+
   if (mesures.length === 0) {
     return {
       ...base,
@@ -162,7 +169,7 @@ function controlerHauteurX(
   const marge = Math.min(...mesures.map((m) => m.hauteurXmm)) - tranche.seuilHauteurXmm;
   return {
     ...base,
-    statut: reserves.length > 0 ? "WARNING" : "PASS",
+    statut: retiennent ? "WARNING" : "PASS",
     reperes,
     justification: `${contexte} Conforme, marge ${marge.toFixed(3)} mm. Mesuré : ${detail}.${reserve}`,
   };

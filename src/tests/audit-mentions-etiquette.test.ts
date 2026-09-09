@@ -147,7 +147,17 @@ describe("7.1 — mode d'emploi rédigé", () => {
     expect(controlerModeEmploi([mots("Thé", "noir")]).statut).toBe("WARNING");
   });
 
-  it("alerte sur un mode d'emploi partiel", () => {
-    expect(controlerModeEmploi([mots("3min")]).statut).toBe("WARNING");
+  it("un seul élément en toutes lettres suffit — le §5 n'interdit que les symboles seuls", () => {
+    // La procédure liste dose, température et durée comme exemples, et ne pose
+    // qu'une interdiction : « n'utiliser QUE des symboles ». Réclamer les trois
+    // laissait en orange des étiquettes conformes.
+    const r = controlerModeEmploi([mots("3min")]);
+    expect(r.statut).toBe("PASS");
+    expect(r.justification).toContain("Non retrouvé en toutes lettres");
+    expect(r.justification).toContain("température");
+  });
+
+  it("alerte quand aucun élément n'est rédigé", () => {
+    expect(controlerModeEmploi([mots("Thé", "vert")]).statut).toBe("WARNING");
   });
 });

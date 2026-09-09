@@ -31,6 +31,17 @@ export function checkQteNetteUnite(input: AuditInput): DeterministicVerdict {
       justification: `Quantité nette exprimée en volume (« ${poids.trim()} ») — une unité de masse est requise.`,
     };
   }
+  // Le catalogue stocke le grammage sans unité sur 149 produits sur 152. La
+  // convention est connue et déjà appliquée ailleurs (§16.2, §3.2) ; réclamer
+  // ici une unité que la fiche ne porte jamais mettait une ligne orange sur
+  // presque tout le catalogue, sans rien apprendre à personne.
+  const grammes = poidsEnGrammes(poids);
+  if (grammes !== null) {
+    return {
+      statut: "PASS",
+      justification: `Quantité nette « ${poids.trim()} » lue comme ${grammes} g — unité implicite, convention du catalogue.`,
+    };
+  }
   return { statut: "WARNING", justification: `Unité du poids net « ${poids.trim()} » non reconnue — à vérifier.` };
 }
 
@@ -155,5 +166,79 @@ export function checkNombreTasses(input: AuditInput): DeterministicVerdict {
     statut: "WARNING",
     action: "VERIFIER",
     justification: `${tasses} tasses pour ${grammes} g, soit ${dose} g par tasse au lieu de ${GRAMMES_PAR_TASSE} g (${attendu} tasses attendues). Si la dose est bien de ${dose} g, « ${dose} g » doit figurer sur le logo tasse (§3.2).`,
+  };
+}
+
+/**
+ * §2.3 — les catégories que Les Jardins de Gaïa déclarent exemptées.
+ *
+ * La procédure les nomme une par une : infusions aux plantes ou aux fruits,
+ * thés, mélanges de thé, mélanges de thé et infusion, mélanges d'infusion et
+ * d'épices, thé à inclusions de fruits, thé aromatisé, infusion aromatisée.
+ * C'est une liste fermée, donc une comparaison — pas un jugement de modèle.
+ */
+const CATEGORIES_EXEMPTEES = ["the", "infusion", "tisane", "rooibos", "mate", "matcha", "melange"] as const;
+
+/**
+ * §2.3 — les ingrédients qui font sortir de l'exemption.
+ *
+ * L'exemption vaut « sous réserve que l'aromatisation ne modifie pas la valeur
+ * nutritionnelle » ; la procédure cite le caramel. On reste sur un noyau dont
+ * l'apport est incontestable : au moindre doute le point demande à être
+ * regardé, il ne conclut pas à la faute.
+ */
+const INGREDIENTS_NUTRITIFS = ["caramel", "sucre", "chocolat", "cacao", "confit", "sirop"] as const;
+
+function texteComposition(input: AuditInput): string {
+  return normalize(
+    [input.fiche.ingredientsFr ?? "", ...input.ingredients.map((i) => i.designation)].join(" | ")
+  );
+}
+
+/** 4.1 — NUTRITION_EXEMPTION : le produit relève-t-il d'une catégorie exemptée ? */
+export function checkExemptionNutritionnelle(input: AuditInput): DeterministicVerdict {
+  // « Sauf en cas de présence d'une allégation de santé » : l'exception prime
+  // sur la catégorie, et elle se lit sur la fiche.
+  const allegation = input.fiche.allegationsSanteFr?.trim();
+  if (allegation && normalize(allegation) !== "aucune" && normalize(allegation) !== "non") {
+    return {
+      statut: "WARNING",
+      action: "VERIFIER",
+      justification: `Allégation déclarée (« ${allegation} ») : le §2.3 lève l'exemption. Les valeurs nutritionnelles deviennent obligatoires.`,
+    };
+  }
+
+  const categorie = input.produit.typeTheFr?.trim();
+  if (!categorie) {
+    return { statut: "WARNING", action: "COMPLETER", justification: "Catégorie de produit non renseignée — exemption §2.3 indéterminable." };
+  }
+  const n = normalize(categorie);
+  if (CATEGORIES_EXEMPTEES.some((c) => n.includes(c))) {
+    return { statut: "PASS", justification: `« ${categorie} » relève des catégories exemptées de déclaration nutritionnelle (§2.3).` };
+  }
+  return {
+    statut: "WARNING",
+    action: "VERIFIER",
+    justification: `« ${categorie} » ne figure pas parmi les catégories exemptées listées au §2.3 — à trancher.`,
+  };
+}
+
+/** 4.2 — NUTRITION_MENTION : l'aromatisation modifie-t-elle la valeur nutritionnelle ? */
+export function checkMentionNutritionnelle(input: AuditInput): DeterministicVerdict {
+  const composition = texteComposition(input);
+  if (composition.trim() === "") {
+    return { statut: "WARNING", action: "COMPLETER", justification: "Composition inconnue — impossible de dire si l'aromatisation modifie la valeur nutritionnelle." };
+  }
+  const trouves = INGREDIENTS_NUTRITIFS.filter((k) => composition.includes(k));
+  if (trouves.length === 0) {
+    return {
+      statut: "PASS",
+      justification: "Aucun ingrédient de nature à modifier la valeur nutritionnelle (§2.3) : la mention n'est pas requise.",
+    };
+  }
+  return {
+    statut: "WARNING",
+    action: "VERIFIER",
+    justification: `Composition contenant ${trouves.map((t) => `« ${t} »`).join(", ")} : si l'aromatisation modifie la valeur nutritionnelle, la mention « Informations nutritionnelles moyennes pour 100 ml… » devient obligatoire (§2.3).`,
   };
 }

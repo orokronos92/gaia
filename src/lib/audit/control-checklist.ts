@@ -111,12 +111,12 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   // 4. DÉCLARATION NUTRITIONNELLE
   {
-    id: "4.1", ordre: 15, section: "NUTRITION", typeControle: "NUTRITION_EXEMPTION", mode: "llm",
+    id: "4.1", ordre: 15, section: "NUTRITION", typeControle: "NUTRITION_EXEMPTION", mode: "deterministic",
     libelle: "Le produit relève-t-il d'une catégorie exemptée (infusions, thés, mélanges sans modification de la valeur nutritionnelle) ?",
     reference: "PRO-QHS-013 §2.3 ; annexe 1",
   },
   {
-    id: "4.2", ordre: 16, section: "NUTRITION", typeControle: "NUTRITION_MENTION", mode: "llm",
+    id: "4.2", ordre: 16, section: "NUTRITION", typeControle: "NUTRITION_MENTION", mode: "deterministic",
     libelle: "Si l'aromatisation modifie la valeur nutritionnelle (ex. caramel) : la mention « Informations nutritionnelles moyennes pour 100 ml… » figure-t-elle ?",
     reference: "PRO-QHS-013 §2.3",
   },

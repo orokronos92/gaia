@@ -284,22 +284,23 @@ export function controlerModeEmploi(analyses: AnalyseBat[]): BatTextCheck {
   const reperes = trouves.map((t) => repere(t.m, t.quoi));
   const detail = trouves.map((t) => t.quoi).join(", ");
 
-  // Trouver ces valeurs EN TEXTE prouve la partie difficile de la règle : le
-  // mode d'emploi n'est pas donné qu'en symboles.
-  if (duree && temperature) {
-    return {
-      ...base,
-      statut: "PASS",
-      reperes,
-      justification: `Mode d'emploi rédigé sur le BAT : ${detail}. Ce sont des caractères, pas des symboles.`,
-    };
-  }
+  // Le §5 n'impose pas les trois éléments : il dit que le mode d'emploi porte
+  // « par exemple » sur la dose, la température et la durée, et il n'interdit
+  // qu'UNE chose — « n'utiliser QUE des symboles ». Un seul élément retrouvé en
+  // toutes lettres suffit donc à prouver la règle. Réclamer les trois laissait
+  // une ligne orange sur des étiquettes conformes.
+  const manquants = [
+    !duree ? "durée" : null,
+    !temperature ? "température" : null,
+    !dose ? "dose" : null,
+  ].filter((x): x is string => x !== null);
 
+  const reserve = manquants.length > 0 ? ` Non retrouvé en toutes lettres : ${manquants.join(", ")}.` : "";
   return {
     ...base,
-    statut: "WARNING",
+    statut: "PASS",
     reperes,
-    justification: `Mode d'emploi partiellement retrouvé : ${detail}. Les autres éléments sont peut-être donnés en symboles — à vérifier.`,
+    justification: `Mode d'emploi rédigé sur le BAT : ${detail}. Ce sont des caractères, pas des symboles.${reserve}`,
   };
 }
 

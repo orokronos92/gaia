@@ -46,14 +46,14 @@ const INGREDIENTS_TEXTE =
 
 describe("Voie A déterministe — golden MT265", () => {
   // 12 points PRO-QHS-013 + 4 points MOP-PRO-029 (code article et Gencode).
-  it("couvre les 18 points déterministes et valide chaque verdict (Zod)", () => {
+  it("couvre les 20 points déterministes et valide chaque verdict (Zod)", () => {
     const input: AuditInput = {
       fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
       produit: { typeTheFr: "Mélange de plantes", estAromatise: true },
       ingredients: buildIngredients(),
     };
     const r = auditDeterministic(input);
-    expect(r).toHaveLength(18);
+    expect(r).toHaveLength(20);
     // Every verdict carries a justification and a valid status.
     for (const c of r) {
       expect(c.mode).toBe("deterministic");

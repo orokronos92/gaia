@@ -67,11 +67,14 @@ export function seuilHauteurChiffresMm(grammes: number): number {
 }
 
 /** Le poids net d'une fiche, en grammes. Null si non exprimé en masse. */
-export function poidsNetEnGrammes(poidsNet: string): number | null {
-  const m = /(-?[\d]+(?:[.,]\d+)?)\s*(kg|g)\b/i.exec(poidsNet.trim());
-  if (!m) return null;
-  const valeur = Number(m[1].replace(",", "."));
-  if (!Number.isFinite(valeur)) return null;
-  return m[2].toLowerCase() === "kg" ? valeur * 1000 : valeur;
-}
+/**
+ * Le poids net en grammes — réexporté depuis la couche code article.
+ *
+ * Il en existait une seconde lecture ici, qui exigeait l'unité écrite. Le
+ * catalogue n'en porte presque jamais : 149 produits sur 152 stockent « 40 » ou
+ * « 100 ». Résultat, deux contrôles lisaient le même champ différemment — 6.3
+ * calculait sur 40 g quand 6.2 déclarait le seuil indéterminable. Une seule
+ * lecture, et la convention (≤ 10 → kilos) tient à un seul endroit.
+ */
+export { poidsEnGrammes as poidsNetEnGrammes } from "../code-article";
 
