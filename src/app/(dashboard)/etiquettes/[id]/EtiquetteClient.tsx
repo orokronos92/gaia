@@ -631,7 +631,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                         dents de scie, et personne ne savait s'il fallait lire en
                         colonnes ou en zigzag. */}
                     <div className="space-y-6">
-                        <div className="space-y-6">
 
                             {/* Card: Identité & Origine */}
                             <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
@@ -862,23 +861,21 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                     </CardContent>
                                     )}
                                 </Card>
-                        </div>
 
-                        {/* RIGHT COLUMN: Texts & Translations */}
-                        <div className="space-y-6">
-
-                            {/* Card: Déclarations Légales par Langue */}
-                            <Card className="border border-blue-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl flex flex-col">
-
-                                {/* Grille Organoleptique (Dégustation) — éditable, toujours visible */}
-                                <div className="bg-stone-50/50 border-b border-stone-100 p-6 flex flex-col gap-5">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                            {/* Deux sujets, deux cartes. Elles étaient soudées dans un
+                                seul cadre : chacune se repliait de son côté mais la
+                                bordure disait qu'elles allaient ensemble, ce qui n'est
+                                pas le cas — l'une décrit ce qu'on goûte, l'autre ce
+                                qu'on imprime. */}
+                            <Card className="border border-pink-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
+                                <CardHeader className="bg-pink-500/10 border-b border-pink-100 pb-4">
+                                    <CardTitle className="text-lg font-bold text-stone-800 flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
                                             <Badge variant="outline" className="p-1 h-7 w-7 rounded-lg bg-pink-100 border-none flex items-center justify-center">
                                                 <Eye className="h-4 w-4 text-pink-700" />
                                             </Badge>
                                             Grille Organoleptique & Dégustation
-                                        </h3>
+                                        </div>
                                         <div className="flex items-center gap-3">
                                             {!degustationSection.editing && deg && (
                                                 <div className="flex items-center gap-2 text-[10px] font-bold text-stone-500 uppercase">
@@ -889,8 +886,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             <EditButtons section={degustationSection} />
                                             <BoutonRepli ouvert={cartes.degustation.ouvert} basculer={cartes.degustation.basculer} vides={cartes.degustation.vides} ton="text-pink-600/70" />
                                         </div>
-                                    </div>
-                                    {cartes.degustation.ouvert && (<>
+                                    </CardTitle>
+                                </CardHeader>
+                                {cartes.degustation.ouvert && (
+                                <CardContent className="p-6 flex flex-col gap-5">
 
                                     {degustationSection.editing ? (
                                         <div className="space-y-4">
@@ -958,9 +957,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </div>
                                         </div>
                                     )}
-                                    </>)}
-                                </div>
+                                </CardContent>
+                                )}
+                            </Card>
 
+                            <Card className="border border-blue-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">
                                 <CardHeader className="bg-blue-500/10 border-b border-blue-100 pb-4">
                                     <CardTitle className="text-lg font-bold text-emerald-950 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
@@ -1098,8 +1099,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                 </CardContent>
                                 )}
                             </Card>
-
-                        </div>
                     </div>
 
                     {/* SPEC-03 §6 — bloc additif : champs complémentaires + arbitrages */}
