@@ -36,6 +36,14 @@ export function useEditableSection(opts: {
   /** Needed to create a dégustation when none exists. */
   produitId?: string;
   champs: Record<string, string | null>;
+  /**
+   * Enregistre sans annoncer ni rafraîchir.
+   *
+   * Sert quand une carte porte deux blocs sauvegardés d'un même geste : deux
+   * « Modifications enregistrées » pour un seul clic ne disent pas deux fois
+   * plus, ils font douter qu'il se soit passé deux choses.
+   */
+  discret?: boolean;
 }): EditableSection {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -63,9 +71,9 @@ export function useEditableSection(opts: {
         ficheId: opts.ficheId,
         champs: draft,
       });
-      toast.success("Modifications enregistrées.");
+      if (!opts.discret) toast.success("Modifications enregistrées.");
       setEditing(false);
-      router.refresh();
+      if (!opts.discret) router.refresh();
     } catch (e) {
       toast.error("Échec de l'enregistrement", {
         description: e instanceof Error ? e.message : undefined,

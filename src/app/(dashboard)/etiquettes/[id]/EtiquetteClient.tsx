@@ -248,6 +248,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         entityId: labelData.produitId,
         ficheId: labelData.id,
         champs: { declinaisons: labelData.declinaisons },
+        discret: true,
     })
 
     // Le repli de chaque carte du dossier, et ce qu'il reste à renseigner
@@ -375,6 +376,32 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             saveurBouche: deg?.saveurBouche ?? null,
         },
     })
+
+    /**
+     * La carte « Base documentaire » porte deux blocs sauvegardés dans deux
+     * tables : les textes sur la fiche, les déclinaisons sur le produit. Elle
+     * n'a pourtant qu'un sujet, donc qu'un bouton — comme les cinq autres. Ce
+     * relais ouvre et enregistre les deux d'un seul geste ; les déclinaisons
+     * s'enregistrent en silence pour qu'une seule confirmation s'affiche.
+     */
+    const documentaireSection: EditableSection = {
+        editing: textesSection.editing || declinaisonsSection.editing,
+        saving: textesSection.saving || declinaisonsSection.saving,
+        draft: {},
+        start: () => {
+            textesSection.start()
+            declinaisonsSection.start()
+        },
+        cancel: () => {
+            textesSection.cancel()
+            declinaisonsSection.cancel()
+        },
+        setField: () => {},
+        save: async () => {
+            await declinaisonsSection.save()
+            await textesSection.save()
+        },
+    }
 
     /**
      * L'état déployé de chaque carte.
@@ -987,7 +1014,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </Badge>
                                             Base Documentaire & Ingrédients
                                         </div>
-                                        <BoutonRepli ouvert={deploye.documentaire} basculer={cartes.documentaire.basculer} vides={cartes.documentaire.vides} />
+                                        <div className="flex items-center gap-1">
+                                            {deploye.documentaire && <EditButtons section={documentaireSection} />}
+                                            <BoutonRepli ouvert={deploye.documentaire} basculer={cartes.documentaire.basculer} vides={cartes.documentaire.vides} />
+                                        </div>
                                     </CardTitle>
                                 </CardHeader>
                                 {deploye.documentaire && (
@@ -997,7 +1027,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                     <div className="space-y-4">
                                         <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800 flex justify-between items-center">
                                             Textes Commerciaux
-                                            <EditButtons section={textesSection} />
                                         </h3>
                                         <div className="grid gap-4">
                                             <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
@@ -1037,10 +1066,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 flex items-start gap-3">
                                             <Package className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
                                             <div className="min-w-0 flex-1">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest mb-0.5">Déclinaisons Prévues</h4>
-                                                    <EditButtons section={declinaisonsSection} />
-                                                </div>
+                                                <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest mb-0.5">Déclinaisons Prévues</h4>
                                                 {declinaisonsSection.editing ? (
                                                     <input
                                                         type="text"
