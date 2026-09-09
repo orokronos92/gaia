@@ -523,18 +523,25 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         // `data-wide` : cette page demande au layout de desserrer sa laisse de
         // 1280 px, sans quoi le `max-w-[1600px]` ci-dessous ne sert à rien.
         <div data-wide className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1600px] mx-auto pb-20">
-            {/* HEADER */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-white/60 backdrop-blur-xl p-6 rounded-3xl border border-stone-200/50 shadow-sm">
-                <div className="flex flex-col gap-2">
-                    <Link
-                        href="/etiquettes"
-                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-500 hover:text-emerald-700 transition-colors w-fit -ml-1"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Retour au pipeline
-                    </Link>
-                    <div className="flex items-center gap-2 text-sm text-stone-500 font-medium">
-                        <Badge variant="outline" className="bg-stone-100 border-none text-stone-600 hover:bg-stone-200 cursor-pointer transition-colors">Étiquettes</Badge>
+            <Tabs defaultValue="dossier" className="w-full flex flex-col gap-4">
+                {/* Titre et onglets ne font qu'un bloc collant. Deux ancrages
+                    séparés obligeraient à connaître la hauteur du premier pour
+                    caler le second, et elle change avec le nombre de badges. */}
+                <div className="sticky top-[60px] z-20 -mx-2 flex flex-col gap-3 bg-stone-50/85 px-2 pb-2 pt-1 backdrop-blur-md">
+            {/* En-tête condensé : collé, il devient du décor permanent, et
+                chaque ligne qu'il garde est une ligne de contenu en moins. Le
+                retour au pipeline rejoint le fil d'ariane, dont il est le
+                premier maillon. */}
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 bg-white/60 backdrop-blur-xl p-4 rounded-3xl border border-stone-200/50 shadow-sm">
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-stone-500 font-medium">
+                        <Link
+                            href="/etiquettes"
+                            className="inline-flex items-center gap-1.5 font-semibold text-stone-500 hover:text-emerald-700 transition-colors"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Pipeline
+                        </Link>
                         <ChevronRight className="h-3 w-3" />
                         {dossierSection.editing ? (
                             <span className="inline-flex items-center gap-1.5">
@@ -585,10 +592,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                 value={titreSection.draft.denominationFr ?? ""}
                                 onChange={(e) => titreSection.setField("denominationFr", e.target.value)}
                                 placeholder="Titre du produit"
-                                className="text-3xl font-bold tracking-tight text-emerald-950 bg-white rounded-xl border border-emerald-300 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-300 min-w-[20rem]"
+                                className="text-2xl font-bold tracking-tight text-emerald-950 bg-white rounded-xl border border-emerald-300 px-3 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-300 min-w-[20rem]"
                             />
                         ) : (
-                            <h1 className="text-3xl font-bold tracking-tight text-emerald-950">
+                            <h1 className="text-2xl font-bold tracking-tight text-emerald-950">
                                 {labelData.title}
                             </h1>
                         )}
@@ -648,13 +655,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                     </Button>
                 </div>
             </div>
-
-            <Tabs defaultValue="dossier" className="w-full">
-                {/* Sous le header, jamais dessous : la navigation entre Dossier,
-                    Recette, Contrôle et Historique reste atteignable quelle que
-                    soit la profondeur de défilement. L'enveloppe porte le fond,
-                    sinon le contenu défilerait à côté des onglets. */}
-                <div className="sticky top-[60px] z-20 -mx-2 mb-4 bg-stone-50/85 px-2 py-2 backdrop-blur-md">
                 <TabsList className="bg-stone-100/80 p-1 w-full md:w-auto inline-flex rounded-2xl border border-stone-200/60 shadow-inner">
                     <TabsTrigger value="dossier" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
                         <ScrollText className="w-4 h-4 mr-2" /> Dossier Produit

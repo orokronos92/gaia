@@ -180,9 +180,9 @@ export function ControleEtiquette({
                 </div>
 
                 <div className="order-1 xl:order-2 xl:col-span-5">
-                    {/* Sous le header et la barre d'onglets, tous deux collants :
-                        ancré plus haut, le volet passerait dessous. */}
-                    <div className="sticky top-[124px] z-10">
+                    {/* Sous le chrome collant — header, titre et onglets. Ancré
+                        plus haut, le volet passerait dessous. */}
+                    <div className="sticky top-[248px] z-10">
                         <BatVisionneuse
                             faces={faces}
                             faceActive={faceActive}
