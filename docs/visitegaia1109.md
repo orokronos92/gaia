@@ -118,6 +118,41 @@ consommation journalière, ni la phrase « mode de vie sain ».
 Le produit porte-t-il réellement une allégation santé ? Si oui, l'étiquette est
 incomplète. Sinon, pourquoi les valeurs nutritionnelles y figurent-elles ?
 
+### 🔴 M11. Les mentions introuvables sont-elles portées par le sachet pré-imprimé ?
+
+Hypothèse à confirmer, et elle expliquerait plusieurs constats d'un coup : vos
+étiquettes sont imprimées puis **collées sur des sachets déjà imprimés**, et ce
+sont ces sachets qui portent les mentions que nous ne trouvons jamais sur les
+BAT.
+
+| Mention | Retrouvée sur le BAT |
+|---|---|
+| Conditions de conservation | **0 / 139 produits** |
+| Adresse du fabricant | **5 / 139 produits** |
+| Cartouche Info-Tri | **0 / 139 produits** |
+| Triman | aucune empreinte de tracé sur 45 étiquettes examinées |
+
+**Si l'hypothèse est juste, deux questions suivent.**
+
+*Faut-il que l'application continue de les contrôler ?* Notre recommandation est
+oui. Le jour où l'une de ces mentions passe sur l'étiquette, l'application le
+voit. Les retirer aujourd'hui obligerait à les réintroduire demain — et la
+checklist ne serait plus la transposition exacte de PRO-QHS-013.
+
+*Comment le déclarer ?* Une fois pour toutes par type de conditionnement, ou
+produit par produit ? Dans le second cas, c'est 139 produits × 4 mentions à
+lever à la main.
+
+**Un détail qui ne colle pas.** Si le sachet porte toujours l'adresse, pourquoi
+**5 étiquettes sur 139** l'impriment-elles quand même ? Ces cinq références
+ont-elles un autre format d'emballage ?
+
+**Ce que l'hypothèse n'explique pas.** L'avertissement réglisse (M9) figure sur
+**7 étiquettes sur 9** concernées : pour cette mention-là, c'est bien l'étiquette
+qui la porte, et les deux manquantes restent à expliquer.
+
+À lire avec F5, F8 et M9.
+
 ### 🟠 M8. Un code fabricant erroné dans un Gencode
 
 `TA6692` porte l'EAN `3585810866925`, dont le code fabricant se lit **8581** au
