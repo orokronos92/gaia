@@ -48,10 +48,25 @@ export async function updateChampsAction(input: unknown) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const allowed = WHITELIST[data.table];
-  const champs: Record<string, string | null> = {};
+  const champs: Record<string, string | boolean | string[] | null> = {};
   for (const [k, v] of Object.entries(data.champs)) {
     if (!allowed.has(k)) continue;
     if (data.table === "produit") {
+      // Deux champs du dossier PMI ne sont pas du texte. Le formulaire ne sait
+      // envoyer que des chaînes : la conversion se fait ici, avant l'écriture,
+      // et une valeur vide reste NULL — « non renseigné » n'est pas « non ».
+      if (k === "volumineux") {
+        const val = (v ?? "").trim();
+        champs[k] = val === "" ? null : val === "true";
+        continue;
+      }
+      if (k === "labelsMP") {
+        champs[k] = (v ?? "")
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean);
+        continue;
+      }
       const val = (v ?? "").trim();
       if (k === "denominationFr" && val === "") {
         throw new Error("Le titre ne peut pas être vide.");
@@ -90,7 +105,7 @@ export async function updateChampsAction(input: unknown) {
     entiteId = data.id;
   } else if (data.table === "produit") {
     if (!data.id) throw new Error("Identifiant produit manquant.");
-    ({ avant } = await updateProduitChamps(data.id, champs as Record<"denominationFr", string>));
+    ({ avant } = await updateProduitChamps(data.id, champs));
     entiteId = data.id;
   } else {
     if (!data.produitId) throw new Error("Produit requis pour la dégustation.");

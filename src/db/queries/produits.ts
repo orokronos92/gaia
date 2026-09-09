@@ -41,6 +41,19 @@ export const CHAMPS_PRODUIT_EDITABLES = [
   "tempInfusion",
   "nbTasses",
   "sousDesignationFr",
+  // Champs du dossier PMI. Ils étaient affichés et jamais saisissables : une
+  // donnée que l'import n'avait pas attrapée était perdue pour toujours.
+  "sousGamme",
+  "mentionEcocert",
+  "origineMpa",
+  "epoqueRecolte",
+  "techniqueRecolte",
+  "grade",
+  "declinaisons",
+  // Deux valeurs qui ne sont pas du texte : le formulaire les envoie en chaîne,
+  // l'action serveur les convertit avant écriture.
+  "volumineux",
+  "labelsMP",
 ] as const;
 
 export type ChampProduitEditable = (typeof CHAMPS_PRODUIT_EDITABLES)[number];
@@ -52,7 +65,7 @@ export type ChampProduitEditable = (typeof CHAMPS_PRODUIT_EDITABLES)[number];
  */
 export async function updateProduitChamps(
   produitId: string,
-  champs: Partial<Record<ChampProduitEditable, string>>
+  champs: Partial<Record<ChampProduitEditable, string | boolean | string[] | null>>
 ): Promise<{ avant: Record<string, string | null> }> {
   const before = await db.query.produits.findFirst({
     where: eq(produits.id, produitId),
@@ -62,9 +75,13 @@ export async function updateProduitChamps(
   }
 
   try {
+    // Le typage de Drizzle attend une valeur par colonne ; l'appelant, lui,
+    // transporte un sac de champs déjà filtrés par la liste blanche et déjà
+    // convertis (booléen, tableau). L'assertion est faite ici, à la frontière,
+    // et nulle part ailleurs — même geste que l'import.
     await db
       .update(produits)
-      .set({ ...champs, misAJourLe: new Date() })
+      .set({ ...champs, misAJourLe: new Date() } as Partial<typeof produits.$inferInsert>)
       .where(eq(produits.id, produitId));
   } catch (e) {
     // codePf is UNIQUE — surface a readable message instead of the raw PG error.

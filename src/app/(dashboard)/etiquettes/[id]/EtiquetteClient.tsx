@@ -86,6 +86,41 @@ function DegField({ section, field, label, value }: { section: EditableSection, 
     )
 }
 
+/**
+ * Un champ du dossier PMI : libellé court au-dessus, valeur en dessous.
+ *
+ * En lecture il dit « non renseigné » plutôt que de disparaître ; en édition il
+ * devient une saisie. C'est le même geste que pour les champs déjà éditables —
+ * le rendre visible sans le rendre saisissable ne faisait que la moitié du
+ * chemin : Marie voyait ce qui manque sans pouvoir le combler.
+ */
+function ChampPmi({ label, field, value, section, tonLabel = "text-blue-500", tonValeur = "text-blue-950", placeholder }: {
+    label: string
+    field: string
+    value: string | null | undefined
+    section: EditableSection
+    tonLabel?: string
+    tonValeur?: string
+    placeholder?: string
+}) {
+    return (
+        <div>
+            <p className={cn("text-[9px] font-bold uppercase tracking-widest mb-0.5", tonLabel)}>{label}</p>
+            {section.editing ? (
+                <input
+                    type="text"
+                    value={section.draft[field] ?? ""}
+                    onChange={(e) => section.setField(field, e.target.value)}
+                    placeholder={placeholder}
+                    className="w-full bg-transparent border-b border-emerald-300 text-xs font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
+                />
+            ) : (
+                <p className={cn("text-xs font-semibold", tonValeur)}>{valeurOu(value)}</p>
+            )}
+        </div>
+    )
+}
+
 function DataPointEdit({ icon: Icon, label, field, value, suffix, section }: { icon: any, label: string, field: string, value: any, suffix?: string, section: EditableSection }) {
     if (!section.editing) {
         return <DataPoint icon={Icon} label={label} value={value} suffix={suffix} />
@@ -192,7 +227,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         table: "produit",
         entityId: labelData.produitId,
         ficheId: labelData.id,
-        champs: { codePf: labelData.codePf },
+        champs: { codePf: labelData.codePf, sousGamme: labelData.sousGamme },
     })
 
     // Editable label code — fiche field. Il identifie le BAT (ETCRA2372V6) et
@@ -203,6 +238,15 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         entityId: labelData.id,
         ficheId: labelData.id,
         champs: { codeEtiquette: labelData.code },
+    })
+
+    // Déclinaisons prévues — champ produit, avec son propre bouton comme chaque
+    // bloc éditable de la page.
+    const declinaisonsSection = useEditableSection({
+        table: "produit",
+        entityId: labelData.produitId,
+        ficheId: labelData.id,
+        champs: { declinaisons: labelData.declinaisons },
     })
 
     // Editable commercial texts (fiche fields).
@@ -226,6 +270,15 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             origine: labelData.origine,
             conditionnement: labelData.conditionnement,
             poidsNet: labelData.poidsNet,
+            mentionEcocert: labelData.mentionEcocert,
+            origineMpa: labelData.origineMpa,
+            epoqueRecolte: labelData.epoqueRecolte,
+            techniqueRecolte: labelData.techniqueRecolte,
+            grade: labelData.grade,
+            // Deux valeurs non textuelles, mises à plat pour le formulaire :
+            // l'action serveur les reconvertit avant d'écrire.
+            volumineux: labelData.volumineux === null || labelData.volumineux === undefined ? "" : String(labelData.volumineux),
+            labelsMP: Array.isArray(labelData.labelsMP) ? labelData.labelsMP.join(", ") : "",
         },
     })
 
@@ -459,7 +512,18 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                             Gamme: <span className="text-stone-900 ml-1">{labelData.gamme}</span>
                         </Badge>
                         <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
-                            Sous-Gamme: <span className="text-stone-900 ml-1">{valeurOu(labelData.sousGamme)}</span>
+                            Sous-Gamme:{" "}
+                            {dossierSection.editing ? (
+                                <input
+                                    type="text"
+                                    value={dossierSection.draft.sousGamme ?? ""}
+                                    onChange={(e) => dossierSection.setField("sousGamme", e.target.value)}
+                                    placeholder="sous-gamme"
+                                    className="ml-1 w-32 bg-transparent border-b border-emerald-300 text-stone-900 focus:border-emerald-500 focus:outline-none"
+                                />
+                            ) : (
+                                <span className="text-stone-900 ml-1">{valeurOu(labelData.sousGamme)}</span>
+                            )}
                         </Badge>
                         <span className="text-stone-300 mx-1">•</span>
                         <span className="text-sm font-medium text-stone-500 flex items-center gap-1.5 border border-stone-100 bg-stone-50 px-2 py-0.5 rounded-md">
@@ -551,7 +615,17 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             : <MinusCircle className="h-5 w-5 text-stone-300 shrink-0 mt-0.5" />}
                                         <div>
                                             <p className={cn("text-[10px] font-bold uppercase tracking-widest mb-0.5", hasRealValue(labelData.mentionEcocert) ? "text-emerald-800" : "text-stone-400")}>Certification Active</p>
-                                            <p className={cn("text-sm font-semibold", hasRealValue(labelData.mentionEcocert) ? "text-emerald-950" : "text-stone-500")}>{valeurOu(labelData.mentionEcocert)}</p>
+                                            {identiteSection.editing ? (
+                                                <input
+                                                    type="text"
+                                                    value={identiteSection.draft.mentionEcocert ?? ""}
+                                                    onChange={(e) => identiteSection.setField("mentionEcocert", e.target.value)}
+                                                    placeholder="ex. FR-BIO-01"
+                                                    className="w-full bg-transparent border-b border-emerald-300 text-sm font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
+                                                />
+                                            ) : (
+                                                <p className={cn("text-sm font-semibold", hasRealValue(labelData.mentionEcocert) ? "text-emerald-950" : "text-stone-500")}>{valeurOu(labelData.mentionEcocert)}</p>
+                                            )}
                                         </div>
                                     </div>
 
@@ -559,27 +633,34 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-1.5"><Globe2 className="w-3 h-3" /> Détails Producteur & MPA</h4>
                                             <div className="space-y-2">
                                                 <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Producteur:</span> {valeurOu(labelData.infoProducteur)} {labelData.typeProducteur && `(${labelData.typeProducteur})`}</p>
-                                                <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Origine MPA:</span> {valeurOu(labelData.origineMpa)}</p>
+                                                {identiteSection.editing ? (
+                                                    <ChampPmi section={identiteSection} label="Origine MPA" field="origineMpa" value={labelData.origineMpa} tonLabel="text-stone-400" tonValeur="text-stone-700" />
+                                                ) : (
+                                                    <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Origine MPA:</span> {valeurOu(labelData.origineMpa)}</p>
+                                                )}
                                             </div>
                                         </div>
 
                                     {/* NOUVEAU: Données Brutes PMI Extensives */}
                                     <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 grid grid-cols-2 gap-3">
-                                            <div>
-                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Époque Récolte</p>
-                                                <p className="text-xs font-semibold text-blue-950">{valeurOu(labelData.epoqueRecolte)}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Technique</p>
-                                                <p className="text-xs font-semibold text-blue-950">{valeurOu(labelData.techniqueRecolte)}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Grade / Granulométrie</p>
-                                                <p className="text-xs font-semibold text-blue-950">{valeurOu(labelData.grade)}</p>
-                                            </div>
+                                            <ChampPmi section={identiteSection} label="Époque Récolte" field="epoqueRecolte" value={labelData.epoqueRecolte} />
+                                            <ChampPmi section={identiteSection} label="Technique" field="techniqueRecolte" value={labelData.techniqueRecolte} />
+                                            <ChampPmi section={identiteSection} label="Grade / Granulométrie" field="grade" value={labelData.grade} />
                                             <div>
                                                 <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Volumineux</p>
-                                                {labelData.volumineux === null || labelData.volumineux === undefined ? (
+                                                {identiteSection.editing ? (
+                                                    // Trois états, pas deux : vide veut dire « non renseigné »,
+                                                    // ce qui n'est pas la même chose que « non ».
+                                                    <select
+                                                        value={identiteSection.draft.volumineux ?? ""}
+                                                        onChange={(e) => identiteSection.setField("volumineux", e.target.value)}
+                                                        className="w-full bg-transparent border-b border-emerald-300 text-xs font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
+                                                    >
+                                                        <option value="">non renseigné</option>
+                                                        <option value="true">Oui</option>
+                                                        <option value="false">Non</option>
+                                                    </select>
+                                                ) : labelData.volumineux === null || labelData.volumineux === undefined ? (
                                                     <p className="text-xs font-semibold text-blue-950"><NonRenseigne /></p>
                                                 ) : (
                                                     <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 uppercase border-none", labelData.volumineux ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800")}>
@@ -590,7 +671,15 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         </div>
                                     <div className="mt-3 flex flex-wrap items-center gap-1.5">
                                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Labels matière première</span>
-                                        {Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? (
+                                        {identiteSection.editing ? (
+                                            <input
+                                                type="text"
+                                                value={identiteSection.draft.labelsMP ?? ""}
+                                                onChange={(e) => identiteSection.setField("labelsMP", e.target.value)}
+                                                placeholder="AB, FLO, MH — séparés par des virgules"
+                                                className="min-w-[16rem] flex-1 bg-transparent border-b border-emerald-300 text-xs font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
+                                            />
+                                        ) : Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? (
                                             labelData.labelsMP.map((lbl: string, i: number) => (
                                                 <Badge key={i} variant="outline" className="bg-white border-stone-200 text-[10px] text-stone-600 font-bold">{lbl}</Badge>
                                             ))
@@ -860,20 +949,26 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             </div>
                                         )}
 
-                                        {hasRealValue(labelData.declinaisons) ? (
-                                            <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 flex items-start gap-3">
-                                                <Package className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                                                <div>
+                                        <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100 flex items-start gap-3">
+                                            <Package className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
                                                     <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest mb-0.5">Déclinaisons Prévues</h4>
-                                                    <p className="text-xs text-indigo-900 font-medium">{labelData.declinaisons}</p>
+                                                    <EditButtons section={declinaisonsSection} />
                                                 </div>
+                                                {declinaisonsSection.editing ? (
+                                                    <input
+                                                        type="text"
+                                                        value={declinaisonsSection.draft.declinaisons ?? ""}
+                                                        onChange={(e) => declinaisonsSection.setField("declinaisons", e.target.value)}
+                                                        placeholder="ex. infusette cristal JDG courant 2026"
+                                                        className="w-full bg-transparent border-b border-emerald-300 text-xs font-medium text-stone-800 focus:border-emerald-500 focus:outline-none"
+                                                    />
+                                                ) : (
+                                                    <p className="text-xs text-indigo-900 font-medium">{valeurOu(labelData.declinaisons)}</p>
+                                                )}
                                             </div>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <h4 className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest flex items-center gap-1.5"><Package className="w-3 h-3" /> Déclinaisons Prévues</h4>
-                                                <EmptyState label="Aucune déclinaison prévue renseignée." />
-                                            </div>
-                                        )}
+                                        </div>
                                     </div>
 
                                     {/* Dénominations & listes d'ingrédients — read-only,
