@@ -531,7 +531,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                 {/* Titre et onglets ne font qu'un bloc collant. Deux ancrages
                     séparés obligeraient à connaître la hauteur du premier pour
                     caler le second, et elle change avec le nombre de badges. */}
-                <div className="sticky top-16 z-20 -mx-2 flex flex-col gap-3 bg-stone-50 px-2 pb-2 pt-2">
+                <div className="sticky top-16 z-20 -mx-2 -mt-6 flex flex-col gap-3 bg-stone-50 px-2 pb-2 pt-8">
             {/* En-tête condensé : collé, il devient du décor permanent, et
                 chaque ligne qu'il garde est une ligne de contenu en moins. Le
                 retour au pipeline rejoint le fil d'ariane, dont il est le

@@ -182,7 +182,7 @@ export function ControleEtiquette({
                 <div className="order-1 xl:order-2 xl:col-span-5">
                     {/* Sous le chrome collant — header, titre et onglets. Ancré
                         plus haut, le volet passerait dessous. */}
-                    <div className="sticky top-[256px] z-10">
+                    <div className="sticky top-[372px] z-10">
                         <BatVisionneuse
                             faces={faces}
                             faceActive={faceActive}
