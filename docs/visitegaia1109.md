@@ -83,6 +83,41 @@ C'est aussi ce que dit votre procédure — *« aux Jardins de Gaïa nous utilis
 mention pour tous les produits qui contiennent de la réglisse »*. Confirmez-vous
 que la simplification est volontaire ?
 
+### 🔴 M9. Deux produits à la réglisse sans l'avertissement hypertension
+
+Lecture du texte des BAT de **119 produits** — ceux dont l'étiquette porte du
+texte lisible. **Neuf impriment « réglisse » dans leur liste d'ingrédients, sept
+seulement portent l'avertissement.**
+
+| Avertissement | Produits |
+|---|---|
+| Présent | TH5226 · TF1222 · TA0866 · TF1112 · MT3022 · TM0182 · TA7412 |
+| **Absent** | **TH0632** — La souplesse du dragon · **TN4162** — Mémoire d'Everest |
+
+Contrairement à F5, la lecture n'est pas en cause : sept étiquettes portent bien
+la mention, deux ne la portent pas.
+
+Deux questions. Ces deux références sont-elles concernées — la réglisse y
+dépasse-t-elle le seuil du §3.3 ? Et si oui, les BAT sont-ils à corriger, ou
+existe-t-il une version plus récente que le dossier `RÉFÉRENCES ÉTIQUETTES` ne
+contient pas ?
+
+À traiter avec M5, qui porte sur les seuils.
+
+### 🟠 M10. Une allégation santé incomplète sur l'étiquette
+
+Le §3.2 impose trois mentions avec une allégation : les valeurs nutritionnelles,
+« consommation journalière conseillée : x tasses de 25 cl », et « dans le cadre
+d'un mode de vie sain ».
+
+Dix-huit produits en portent au moins une. **Dix-sept portent les trois.**
+
+**TR2072 — « La voie lactée »** imprime les valeurs nutritionnelles, mais ni la
+consommation journalière, ni la phrase « mode de vie sain ».
+
+Le produit porte-t-il réellement une allégation santé ? Si oui, l'étiquette est
+incomplète. Sinon, pourquoi les valeurs nutritionnelles y figurent-elles ?
+
 ### 🟠 M8. Un code fabricant erroné dans un Gencode
 
 `TA6692` porte l'EAN `3585810866925`, dont le code fabricant se lit **8581** au
@@ -237,6 +272,21 @@ lumière et de la chaleur » ? Et l'adresse de Wittisheim ?
 Tant que ce n'est pas tranché, l'application ne peut pas savoir si elle regarde
 une étiquette incomplète ou un dossier incomplet.
 
+### 🟠 F8. Trois étiquettes portent l'adresse WFTO sans la mention
+
+Sur les 119 produits dont l'étiquette est lisible : **70 impriment `wfto.com`,
+67 impriment « World Fair Trade Organization »**. Aucun ne fait l'inverse.
+
+| Produit | |
+|---|---|
+| **TB3716** | Griffes de Snowview |
+| **TN2156** | Himalayan Secret |
+| **TV1346** | Jade Dew |
+
+Les WFTO Label and Mark Guidelines demandent la mention d'appartenance, pas
+seulement le lien. Est-ce un choix de mise en page — la place manquait — ou un
+oubli à corriger au prochain tirage ?
+
 ### 🔴 F6. Dix-sept Eurofeuilles sous le minimum légal
 
 Mesuré au tracé sur **258 BAT** du catalogue — 141 Eurofeuilles reconnues,
@@ -377,3 +427,6 @@ Pour équilibrer : ces questions existent parce que l'application les a trouvée
 - Les documents source d'un import sont désormais **conservés** — un import raté
   reste rejouable.
 - Le coût d'un import complet, mesuré : **0,006 $**.
+- **Cinq mentions obligatoires** cherchées directement sur le BAT — réglisse,
+  les trois mentions d'allégation, WFTO — en plus de la conservation et de
+  l'adresse. C'est ce qui a produit M9, M10 et F8, sans consommer un jeton.
