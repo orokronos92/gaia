@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 <div className="relative z-10 flex w-full">
                     <Sidebar />
-                    <div className="flex flex-1 flex-col sm:gap-4 sm:py-4 sm:pl-64 relative">
+                    <div className="flex flex-1 flex-col sm:gap-2 sm:pb-4 sm:pl-64 relative">
                         <Header />
                         {/*
                           1280 px conviennent à une page qui se lit en colonne.

@@ -522,7 +522,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
     return (
         // `data-wide` : cette page demande au layout de desserrer sa laisse de
         // 1280 px, sans quoi le `max-w-[1600px]` ci-dessous ne sert à rien.
-        <div data-wide className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 max-w-[1600px] mx-auto pb-20">
+        <div data-wide className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-[1600px] mx-auto pb-20">
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-white/60 backdrop-blur-xl p-6 rounded-3xl border border-stone-200/50 shadow-sm">
                 <div className="flex flex-col gap-2">
@@ -650,7 +650,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             </div>
 
             <Tabs defaultValue="dossier" className="w-full">
-                <TabsList className="bg-stone-100/80 p-1 w-full md:w-auto inline-flex rounded-2xl mb-6 border border-stone-200/60 shadow-inner">
+                {/* Sous le header, jamais dessous : la navigation entre Dossier,
+                    Recette, Contrôle et Historique reste atteignable quelle que
+                    soit la profondeur de défilement. L'enveloppe porte le fond,
+                    sinon le contenu défilerait à côté des onglets. */}
+                <div className="sticky top-[60px] z-20 -mx-2 mb-4 bg-stone-50/85 px-2 py-2 backdrop-blur-md">
+                <TabsList className="bg-stone-100/80 p-1 w-full md:w-auto inline-flex rounded-2xl border border-stone-200/60 shadow-inner">
                     <TabsTrigger value="dossier" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-emerald-800 data-[state=active]:shadow-sm transition-all text-stone-500 font-semibold whitespace-nowrap px-6 py-2">
                         <ScrollText className="w-4 h-4 mr-2" /> Dossier Produit
                     </TabsTrigger>
@@ -666,6 +671,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                         {versions.length > 0 && <span className="ml-2 text-[10px] bg-stone-200 text-stone-600 rounded-full px-1.5 py-0.5">{versions.length}</span>}
                     </TabsTrigger>
                 </TabsList>
+                </div>
 
                 {/* 1. DOSSIER PRODUIT (Merged Tab) */}
                 <TabsContent value="dossier" className="mt-0 focus-visible:outline-none">
