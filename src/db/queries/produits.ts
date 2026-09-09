@@ -47,6 +47,9 @@ export const CHAMPS_PRODUIT_EDITABLES = [
   // Déplacé depuis « Données complémentaires » : il vit désormais dans la carte
   // Identité, à côté de la certification qu'il désigne, et nulle part ailleurs.
   "organismeCertificateur",
+  // Le Gencode : affiché, contrôlé, jugé non conforme sur un produit — et gelé.
+  // Quatre contrôles en dépendent, dont l'unicité du GTIN.
+  "codeEan",
   "mentionEcocert",
   "origineMpa",
   "epoqueRecolte",

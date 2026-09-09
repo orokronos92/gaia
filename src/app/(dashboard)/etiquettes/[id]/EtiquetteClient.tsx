@@ -122,6 +122,29 @@ function ChampPmi({ label, field, value, section, tonLabel = "text-blue-500", to
     )
 }
 
+/**
+ * Une phrase de gamme.
+ *
+ * Quatre zones qui se ressemblent au point que les écrire quatre fois serait
+ * une invitation à les faire diverger. Vide, la zone se dit vide plutôt que de
+ * disparaître : une mention due et absente est précisément ce qu'il faut voir.
+ */
+function ZoneGamme({ section, titre, field, value }: { section: EditableSection; titre: string; field: string; value: string | null | undefined }) {
+    return (
+        <div className="rounded-2xl border border-emerald-100/50 bg-emerald-50/50 p-4">
+            <Badge variant="outline" className="mb-2 border-emerald-200 bg-white text-[10px] font-bold uppercase tracking-widest text-emerald-700">{titre}</Badge>
+            <EditableText
+                section={section}
+                field={field}
+                value={value ?? null}
+                placeholder={`Aucune ${titre.toLowerCase()} renseignée.`}
+                multiline
+                className="text-sm font-medium text-emerald-900"
+            />
+        </div>
+    )
+}
+
 function DataPointEdit({ icon: Icon, label, field, value, suffix, section, suggestions }: { icon: any, label: string, field: string, value: any, suffix?: string, section: EditableSection, suggestions?: string[] }) {
     if (!section.editing) {
         return <DataPoint icon={Icon} label={label} value={value} suffix={suffix} />
@@ -234,32 +257,24 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
     })
 
     // Editable title — produit field (denominationFr). Renames the product in place.
+    // Titre, référence modèle et sous-gamme sont trois champs du même produit,
+    // édités du même geste : une seule section, donc un seul « Modifier » dans
+    // un bloc qui reste maintenant à l'écran en permanence.
     const titreSection = useEditableSection({
         table: "produit",
         entityId: labelData.produitId,
         ficheId: labelData.id,
-        champs: { denominationFr: labelData.title },
+        // `codePf` est l'identité du produit dans toute l'application : le
+        // modifier ici remplace le code provisoire « IMP-… » de l'import, et
+        // renomme le produit pour toutes ses fiches.
+        champs: {
+            denominationFr: labelData.title,
+            codePf: labelData.codePf,
+            sousGamme: labelData.sousGamme,
+        },
     })
+    const dossierSection = titreSection
 
-    // Editable model reference — produit field (codePf), the authoritative product
-    // identity across the app. Lets Marie replace the app-assigned IMP-… placeholder
-    // with the real code (e.g. MT2806). Renames the product in place (all its fiches).
-    const dossierSection = useEditableSection({
-        table: "produit",
-        entityId: labelData.produitId,
-        ficheId: labelData.id,
-        champs: { codePf: labelData.codePf, sousGamme: labelData.sousGamme },
-    })
-
-    // Editable label code — fiche field. Il identifie le BAT (ETCRA2372V6) et
-    // n'était affiché nulle part : les 178 fiches du catalogue sont vides, donc
-    // le point 15.1 réclame une saisie que l'écran ne permettait pas.
-    const codeEtiquetteSection = useEditableSection({
-        table: "fiche",
-        entityId: labelData.id,
-        ficheId: labelData.id,
-        champs: { codeEtiquette: labelData.code },
-    })
 
     // Déclinaisons prévues — champ produit, avec son propre bouton comme chaque
     // bloc éditable de la page.
@@ -267,7 +282,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         table: "produit",
         entityId: labelData.produitId,
         ficheId: labelData.id,
-        champs: { declinaisons: labelData.declinaisons },
+        // Le Gencode voyage avec les déclinaisons : deux champs du produit dans
+        // la même carte, enregistrés du même geste.
+        champs: { declinaisons: labelData.declinaisons, codeEan: labelData.codeEan },
         discret: true,
     })
 
@@ -320,8 +337,17 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         entityId: labelData.id,
         ficheId: labelData.id,
         champs: {
+            // Le code étiquette descend du bloc titre : il vit dans la carte
+            // qui rassemble les identifiants, pas dans un en-tête devenu du
+            // mobilier permanent.
+            codeEtiquette: labelData.code,
             texteCommercialFr: labelData.texteCommercialFr,
+            texteCommercialCourtFr: labelData.texteCommercialCourtFr,
             phraseWftoFr: labelData.phraseWftoFr,
+            phraseDemeterFr: labelData.phraseDemeterFr,
+            phraseAnemosFr: labelData.phraseAnemosFr,
+            phraseEngagesFr: labelData.phraseEngagesFr,
+            mentionNutritionnelleFr: labelData.mentionNutritionnelleFr,
         },
     })
 
@@ -552,64 +578,24 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                     séparés obligeraient à connaître la hauteur du premier pour
                     caler le second, et elle change avec le nombre de badges. */}
                 <div className="sticky top-16 z-20 -mx-2 -mt-6 flex flex-col gap-3 bg-stone-50 px-2 pb-2 pt-8">
-            {/* En-tête condensé : collé, il devient du décor permanent, et
-                chaque ligne qu'il garde est une ligne de contenu en moins. Le
-                retour au pipeline rejoint le fil d'ariane, dont il est le
-                premier maillon. */}
+            {/* En-tête condensé : collé, il devient du décor permanent, et chaque
+                ligne qu'il garde est une ligne de contenu en moins. Deux rangées
+                suffisent — le retour, le titre, la référence et le statut sur la
+                première ; les badges sur la seconde. */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 bg-white/60 backdrop-blur-xl p-4 rounded-3xl border border-stone-200/50 shadow-sm">
                 <div className="flex flex-col gap-1.5">
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-stone-500 font-medium">
+                    {/* Le retour au pipeline rejoint la ligne du titre : seul sur
+                        la sienne, il coûtait une rangée entière dans un bloc qui
+                        reste maintenant à l'écran en permanence. */}
+                    <div className="flex items-center gap-3 flex-wrap">
                         <Link
                             href="/etiquettes"
-                            className="inline-flex items-center gap-1.5 font-semibold text-stone-500 hover:text-emerald-700 transition-colors"
+                            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-stone-500 transition-colors hover:text-emerald-700"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Pipeline
                         </Link>
-                        <ChevronRight className="h-3 w-3" />
-                        {dossierSection.editing ? (
-                            <span className="inline-flex items-center gap-1.5">
-                                <span className="text-emerald-700/70">CodePF :</span>
-                                <input
-                                    type="text"
-                                    value={dossierSection.draft.codePf ?? ""}
-                                    onChange={(e) => dossierSection.setField("codePf", e.target.value)}
-                                    placeholder="Code PF (ex. MT265)"
-                                    className="bg-white rounded-md border border-emerald-300 px-2 py-0.5 text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-300 w-48"
-                                />
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-md">
-                                <span className="text-emerald-700/70">CodePF :</span>
-                                <span className="font-mono font-semibold text-emerald-800">{labelData.codePf}</span>
-                            </span>
-                        )}
-                        <EditButtons section={dossierSection} />
-                        <ChevronRight className="h-3 w-3" />
-                        {codeEtiquetteSection.editing ? (
-                            <span className="inline-flex items-center gap-1.5">
-                                <span className="text-stone-500">Code étiquette :</span>
-                                <input
-                                    type="text"
-                                    value={codeEtiquetteSection.draft.codeEtiquette ?? ""}
-                                    onChange={(e) => codeEtiquetteSection.setField("codeEtiquette", e.target.value.toUpperCase())}
-                                    placeholder="ex. ETCRA2372V6"
-                                    className="bg-white rounded-md border border-stone-300 px-2 py-0.5 text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-300 w-52 font-mono"
-                                />
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1.5 bg-stone-100 px-2 py-0.5 rounded-md">
-                                <span className="text-stone-500">Code étiquette :</span>
-                                {labelData.code ? (
-                                    <span className="font-mono font-semibold text-stone-700">{labelData.code}</span>
-                                ) : (
-                                    <span className="italic text-stone-400">non renseigné</span>
-                                )}
-                            </span>
-                        )}
-                        <EditButtons section={codeEtiquetteSection} />
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-stone-300">|</span>
                         {titreSection.editing ? (
                             <input
                                 type="text"
@@ -622,6 +608,24 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                             <h1 className="text-2xl font-bold tracking-tight text-emerald-950">
                                 {labelData.title}
                             </h1>
+                        )}
+                        {/* La référence modèle remonte du fil d'ariane, où elle
+                            se lisait en 14 px, à côté du titre où la ligne était
+                            à moitié vide. Même hauteur de bloc, code deux fois
+                            plus gros et identifiable au premier coup d'œil. */}
+                        {titreSection.editing ? (
+                            <input
+                                type="text"
+                                value={titreSection.draft.codePf ?? ""}
+                                onChange={(e) => titreSection.setField("codePf", e.target.value)}
+                                placeholder="Réf. modèle"
+                                className="w-40 rounded-xl border border-emerald-300 bg-white px-3 py-1 font-mono text-xl font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                            />
+                        ) : (
+                            <span className="inline-flex items-baseline gap-2 rounded-xl bg-emerald-50 px-3 py-1">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/60">Réf.</span>
+                                <span className="font-mono text-xl font-bold tracking-tight text-emerald-800">{labelData.codePf}</span>
+                            </span>
                         )}
                         <StatutSelect ficheId={labelData.id} statut={labelData.status} />
                         <EditButtons section={titreSection} />
@@ -804,8 +808,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         ce qu'on cherche du regard sur une fiche. Les vrais
                                         logos viendront quand JDG nous aura fourni les
                                         fichiers ; en attendant le texte se lit de loin. */}
-                                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Labels matière première</span>
+                                    {/* Taille de logo, pas de pastille : ces marques tiennent
+                                        lieu des vrais logos en attendant les fichiers de JDG,
+                                        et un label se repère de loin ou ne sert à rien.
+                                        L'intitulé passe au-dessus — à cette taille, une
+                                        légende sur la même ligne ne tient plus. */}
+                                    <div className="mt-4 space-y-2">
+                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest">Labels matière première</span>
+                                        <div className="flex flex-wrap items-center gap-3">
                                         {identiteSection.editing ? (
                                             <input
                                                 type="text"
@@ -816,11 +826,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             />
                                         ) : Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? (
                                             labelData.labelsMP.map((lbl: string, i: number) => (
-                                                <Badge key={i} variant="outline" className="border-stone-300 bg-white px-3 py-1 text-sm font-bold tracking-wide text-stone-700 shadow-sm">{lbl}</Badge>
+                                                <Badge key={i} variant="outline" className="rounded-2xl border-2 border-stone-300 bg-white px-8 py-5 text-3xl font-black tracking-wide text-stone-700 shadow-sm">{lbl}</Badge>
                                             ))
                                         ) : (
                                             <span className="text-xs"><NonRenseigne /></span>
                                         )}
+                                        </div>
                                     </div>
                                 </CardContent>
                                 )}
@@ -1064,6 +1075,39 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                 {deploye.documentaire && (
                                 <CardContent className="p-6 flex flex-col gap-6">
 
+                                    {/* Les identifiants, réunis là où on les cherche.
+                                        Le code étiquette descend du bloc titre — un champ,
+                                        un endroit —, et le Gencode devient saisissable :
+                                        il était affiché, contrôlé, jugé non conforme sur un
+                                        produit, et impossible à corriger. */}
+                                    <div className="space-y-4">
+                                        <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800">
+                                            Identifiants
+                                        </h3>
+                                        <div className="grid gap-4 lg:grid-cols-2">
+                                            <div className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                                                <Badge variant="outline" className="mb-2 border-stone-200 bg-white text-[10px] font-bold uppercase tracking-widest text-stone-500">Code étiquette</Badge>
+                                                <EditableText
+                                                    section={textesSection}
+                                                    field="codeEtiquette"
+                                                    value={labelData.code}
+                                                    placeholder="ex. ETCNA7372V5"
+                                                    className="font-mono text-base font-semibold text-stone-800"
+                                                />
+                                            </div>
+                                            <div className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                                                <Badge variant="outline" className="mb-2 border-stone-200 bg-white text-[10px] font-bold uppercase tracking-widest text-stone-500">Gencode (EAN)</Badge>
+                                                <EditableText
+                                                    section={declinaisonsSection}
+                                                    field="codeEan"
+                                                    value={labelData.codeEan}
+                                                    placeholder="13 chiffres — ex. 3582810866925"
+                                                    className="font-mono text-base font-semibold text-stone-800"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* Textes Marketing */}
                                     <div className="space-y-4">
                                         <h3 className="text-sm font-bold border-b border-stone-100 pb-2 text-stone-800 flex justify-between items-center">
@@ -1081,17 +1125,41 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                     className="text-sm text-stone-700 leading-relaxed"
                                                 />
                                             </div>
+                                            <div className="bg-stone-50 p-4 rounded-2xl border border-stone-100">
+                                                <Badge variant="outline" className="mb-2 bg-white text-[10px] text-stone-500 font-bold uppercase tracking-widest border-stone-200">Texte commercial court</Badge>
+                                                <EditableText
+                                                    section={textesSection}
+                                                    field="texteCommercialCourtFr"
+                                                    value={labelData.texteCommercialCourtFr}
+                                                    placeholder="Aucun texte court renseigné."
+                                                    multiline
+                                                    className="text-sm text-stone-700 leading-relaxed"
+                                                />
+                                            </div>
                                         </div>
 
-                                        <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
-                                            <Badge variant="outline" className="mb-2 bg-white text-[10px] text-emerald-700 font-bold uppercase tracking-widest border-emerald-200">Mention WFTO</Badge>
+                                        {/* Les phrases de gamme. Chaque gamme JDG porte la
+                                            sienne ; seule celle de WFTO existait, les trois
+                                            autres n'avaient nulle part où vivre. */}
+                                        <div className="grid gap-4 lg:grid-cols-2">
+                                            <ZoneGamme section={textesSection} titre="Mention WFTO" field="phraseWftoFr" value={labelData.phraseWftoFr} />
+                                            <ZoneGamme section={textesSection} titre="Mention Demeter" field="phraseDemeterFr" value={labelData.phraseDemeterFr} />
+                                            <ZoneGamme section={textesSection} titre="Mention Anemos" field="phraseAnemosFr" value={labelData.phraseAnemosFr} />
+                                            <ZoneGamme section={textesSection} titre="Mention Les Engagés" field="phraseEngagesFr" value={labelData.phraseEngagesFr} />
+                                        </div>
+
+                                        {/* §2.3 — due quand l'aromatisation modifie la valeur
+                                            nutritionnelle. La procédure en donne le texte au
+                                            mot près : il sert de repère de saisie. */}
+                                        <div className="rounded-2xl border border-sky-100/60 bg-sky-50/40 p-4">
+                                            <Badge variant="outline" className="mb-2 border-sky-200 bg-white text-[10px] font-bold uppercase tracking-widest text-sky-700">Mention nutritionnelle</Badge>
                                             <EditableText
                                                 section={textesSection}
-                                                field="phraseWftoFr"
-                                                value={labelData.phraseWftoFr}
-                                                placeholder="Aucune mention WFTO renseignée."
+                                                field="mentionNutritionnelleFr"
+                                                value={labelData.mentionNutritionnelleFr}
+                                                placeholder="Informations nutritionnelles moyennes pour 100 ml : Energie 3 kJ/1 kcal…"
                                                 multiline
-                                                className="text-sm text-emerald-900 font-medium"
+                                                className="text-sm font-medium text-sky-900"
                                             />
                                         </div>
 

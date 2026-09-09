@@ -120,6 +120,13 @@
       "when": 1788854897310,
       "tag": "0016_crazy_maelstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788971873595,
+      "tag": "0017_ajout_zones_textes",
+      "breakpoints": true
     }
   ]
 }

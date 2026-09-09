@@ -217,7 +217,29 @@ export const fichesEtiquettes = pgTable("fiches_etiquettes", {
     allegationsSanteEn: text("allegations_sante_en"),
     allegationChoisie: varchar("allegation_choisie", { length: 255 }), // allégation retenue par l'équipe qualité
     nbTassesAllegation: varchar("nb_tasses_allegation", { length: 50 }), // "2 tasses par jour" etc.
+    /**
+     * Texte commercial court — la version condensée, pour les faces où la
+     * longue ne tient pas. Distinct de `texteCommercialFr`, qui reste le récit.
+     */
+    texteCommercialCourtFr: text("texte_commercial_court_fr"),
+    /**
+     * Les phrases de gamme.
+     *
+     * Chaque gamme JDG porte sa mention obligatoire — la phrase WFTO en était la
+     * seule modélisée, ce qui laissait Demeter, Anemos et Les Engagés sans
+     * endroit où vivre. Quatre colonnes plutôt qu'une structure : elles se
+     * lisent en SQL, et une cinquième gamme ne coûtera qu'une migration.
+     */
     phraseWftoFr: text("phrase_wfto_fr"),
+    phraseDemeterFr: text("phrase_demeter_fr"),
+    phraseAnemosFr: text("phrase_anemos_fr"),
+    phraseEngagesFr: text("phrase_engages_fr"),
+    /**
+     * Mention nutritionnelle du §2.3, due quand l'aromatisation modifie la
+     * valeur nutritionnelle. La procédure en donne le texte au mot près ; le
+     * champ reste libre, certaines contenances pouvant l'écarter.
+     */
+    mentionNutritionnelleFr: text("mention_nutritionnelle_fr"),
     mentionConservation: varchar("mention_conservation", { length: 255 }).default("À conserver à l'abri de l'humidité de la lumière et de la chaleur"),
     mentionFabricant: varchar("mention_fabricant", { length: 255 }).default("LES JARDINS DE GAÏA – Z.A. – 6, RUE DE L'ÉCLUSE – FR-67820 WITTISHEIM"),
     sousDesignationDe: varchar("sous_designation_de", { length: 255 }),

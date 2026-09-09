@@ -27,6 +27,13 @@ export const CHAMPS_FICHE_EDITABLES = [
   // leur. La colonne est `unique` — l'appelant doit traduire la collision.
   "codeEtiquette",
   "texteCommercialFr",
+  "texteCommercialCourtFr",
+  // Les phrases de gamme : chaque gamme JDG porte la sienne, et seule celle de
+  // WFTO était modélisée.
+  "phraseDemeterFr",
+  "phraseAnemosFr",
+  "phraseEngagesFr",
+  "mentionNutritionnelleFr",
   "ingredientsFr",
   "allergenes",
   "allegationsSanteFr",
