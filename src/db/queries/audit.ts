@@ -147,6 +147,7 @@ export const getBatTextInputForFiche = cache(
         codeEtiquette: fiche.codeEtiquette,
         mentionConservation: fiche.mentionConservation,
         mentionFabricant: fiche.mentionFabricant,
+        phraseWfto: fiche.phraseWftoFr,
       },
     };
   }

@@ -100,3 +100,58 @@ describe("Robot Texte — golden MT265", () => {
     expect(byId(r, "TXT_DENOMINATION").statut).toBe("WARNING");
   });
 });
+
+describe("mentions conditionnelles — cherchées seulement quand elles sont dues", () => {
+  it("ne cherche rien de conditionnel sur un produit qui n'est pas concerné", () => {
+    const r = runTextRobot(BAT_MT265, { ...FICHE_MT265, allegation: null });
+    expect(r.find((c) => c.id === "TXT_REGLISSE")).toBeUndefined();
+    expect(r.find((c) => c.id === "TXT_ALLEG_MODE_VIE")).toBeUndefined();
+    expect(r.find((c) => c.id === "TXT_WFTO")).toBeUndefined();
+  });
+
+  it("réclame l'avertissement hypertension dès qu'il y a de la réglisse", () => {
+    const avec = { ...FICHE_MT265, ingredients: "réglisse* 20%, menthe poivrée*." };
+    const absent = runTextRobot(BAT_MT265, avec);
+    expect(byId(absent, "TXT_REGLISSE").statut).toBe("WARNING");
+    expect(byId(absent, "TXT_REGLISSE").checklistId).toBe("5.3");
+
+    const present = runTextRobot(
+      `${BAT_MT265}\nContient de la réglisse – les personnes souffrant d'hypertension doivent éviter toute consommation excessive.`,
+      avec
+    );
+    expect(byId(present, "TXT_REGLISSE").statut).toBe("PASS");
+  });
+
+  it("réclame les trois mentions d'une allégation, et dit laquelle manque", () => {
+    // Le BAT réel de MT265 imprime la consommation journalière, mais ni la
+    // phrase « mode de vie sain » ni les valeurs nutritionnelles.
+    const r = runTextRobot(BAT_MT265, FICHE_MT265);
+    expect(byId(r, "TXT_ALLEG_TASSES").statut).toBe("PASS");
+    expect(byId(r, "TXT_ALLEG_MODE_VIE").statut).toBe("WARNING");
+    expect(byId(r, "TXT_ALLEG_NUTRI").statut).toBe("WARNING");
+    for (const id of ["TXT_ALLEG_TASSES", "TXT_ALLEG_MODE_VIE", "TXT_ALLEG_NUTRI"]) {
+      expect(byId(r, id).checklistId).toBe("5.2");
+    }
+  });
+});
+
+describe("mention WFTO — deux marqueurs, pas un verdict", () => {
+  const wfto = { ...FICHE_MT265, phraseWfto: "Membre certifié World Fair Trade Organization…" };
+
+  it("valide quand la mention et l'adresse sont imprimées", () => {
+    expect(byId(runTextRobot(BAT_MT265, wfto), "TXT_WFTO").statut).toBe("PASS");
+  });
+
+  it("signale l'adresse seule — le cas mesuré sur deux étiquettes du catalogue", () => {
+    const sansMention = BAT_MT265.replace("World Fair Trade Organization", "commerce équitable");
+    const c = byId(runTextRobot(sansMention, wfto), "TXT_WFTO");
+    expect(c.statut).toBe("WARNING");
+    expect(c.justification).toContain("wfto.com est imprimée");
+  });
+
+  it("traite « / » comme la convention JDG pour « non concerné »", () => {
+    // 51 fiches du catalogue portent « / » : les compter comme WFTO ferait
+    // apparaître une non-conformité sur des produits qui n'en revendiquent pas.
+    expect(runTextRobot(BAT_MT265, { ...FICHE_MT265, phraseWfto: "/" }).find((c) => c.id === "TXT_WFTO")).toBeUndefined();
+  });
+});

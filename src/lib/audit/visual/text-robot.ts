@@ -20,6 +20,95 @@ import type { ControlStatus } from "../types";
 /** JDG mandatory conservation mention — invariant tokens. */
 const CONSERVATION_TOKENS = ["abri", "humidite", "lumiere", "chaleur"] as const;
 
+/**
+ * Les mentions qu'une condition seule rend exigibles.
+ *
+ * On cherche des **fragments invariants**, jamais la phrase entière : JDG ne
+ * l'écrit pas toujours au mot près, et poppler colle la ponctuation au texte.
+ * « reglisse » + « hypertension » retrouve l'avertissement quelle que soit sa
+ * tournure ; la phrase complète le raterait sur une virgule.
+ */
+const REGLISSE_TOKENS = ["reglisse", "hypertension"] as const;
+
+/** §3.2 — les trois mentions qui accompagnent obligatoirement une allégation. */
+const MENTIONS_ALLEGATION = [
+  {
+    id: "TXT_ALLEG_MODE_VIE",
+    tokens: ["mode de vie sain"] as const,
+    libelle: "Mention « …dans le cadre d'un mode de vie sain » présente sur le BAT ?",
+    absent: "Mention « mode de vie sain » non retrouvée sur les faces analysées — obligatoire avec une allégation.",
+  },
+  {
+    id: "TXT_ALLEG_TASSES",
+    tokens: ["consommation journaliere"] as const,
+    libelle: "Mention « Consommation journalière conseillée » présente sur le BAT ?",
+    absent: "Mention « consommation journalière conseillée » non retrouvée — obligatoire avec une allégation.",
+  },
+  {
+    id: "TXT_ALLEG_NUTRI",
+    tokens: ["informations nutritionnelles"] as const,
+    libelle: "Valeurs nutritionnelles présentes sur le BAT ?",
+    absent: "Mention « Informations nutritionnelles moyennes » non retrouvée — obligatoire avec une allégation.",
+  },
+] as const;
+
+/** Le produit porte-t-il de la réglisse, d'après sa composition déclarée ? */
+function contientReglisse(ingredients?: string | null): boolean {
+  return normalize(ingredients ?? "").includes("reglisse");
+}
+
+/**
+ * Le produit revendique-t-il WFTO ?
+ *
+ * Le champ « labels client » ne le déclare que sur 2 produits du catalogue : il
+ * est inutilisable. Le champ « Mention WFTO » de la fiche, lui, est tenu — 96
+ * fiches portent la phrase JDG au mot près et 51 portent « / », la convention
+ * maison pour « non concerné ». On s'en sert comme drapeau, pas comme référence.
+ */
+function revendiqueWfto(phrase?: string | null): boolean {
+  return !/^[\s/–—-]*$/.test(phrase ?? "");
+}
+
+/**
+ * §11.2 — la mention WFTO, en deux marqueurs plutôt qu'un verdict.
+ *
+ * Mesuré sur le catalogue : deux étiquettes impriment l'adresse `wfto.com` sans
+ * la mention « Membre certifié World Fair Trade Organization », jamais
+ * l'inverse. Un contrôle qui exigerait les deux ensemble répondrait « absent »
+ * sans dire que la moitié y est — or c'est précisément la moitié qui manque
+ * qui pose question au regard des règles WFTO.
+ */
+function checkWfto(batN: string): BatTextCheck {
+  const base = {
+    id: "TXT_WFTO",
+    origine: "texte" as const,
+    checklistId: "13.3",
+    rubrique: "Labels",
+    libelle: "Mention WFTO complète sur le BAT ?",
+  };
+  const mention = batN.includes("world fair trade");
+  const adresse = batN.includes("wfto.com");
+
+  if (mention && adresse) {
+    return { ...base, statut: "PASS", justification: "Mention WFTO et adresse wfto.com présentes sur le BAT." };
+  }
+  if (adresse) {
+    return {
+      ...base,
+      statut: "WARNING",
+      justification:
+        "L'adresse wfto.com est imprimée, mais la mention « Membre certifié World Fair Trade Organization » n'a pas été retrouvée — à vérifier au regard des règles WFTO.",
+    };
+  }
+  return {
+    ...base,
+    statut: "WARNING",
+    justification: mention
+      ? "La mention « World Fair Trade Organization » est imprimée, mais l'adresse wfto.com n'a pas été retrouvée."
+      : "Mention WFTO non retrouvée sur les faces analysées, alors que la fiche la déclare.",
+  };
+}
+
 export interface BatTextInput {
   denomination?: string | null;
   ingredients?: string | null;
@@ -29,6 +118,8 @@ export interface BatTextInput {
   codeEtiquette?: string | null;
   mentionConservation?: string | null;
   mentionFabricant?: string | null;
+  /** Champ « Mention WFTO » de la fiche — sert de drapeau, pas de référence. */
+  phraseWfto?: string | null;
 }
 
 export interface BatTextCheck {
@@ -211,6 +302,29 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
       id: "TXT_ALLERGENES", checklistId: "5.1", rubrique: "Particularités", libelle: "Allergènes déclarés présents sur le BAT ?",
       absent: "Allergène déclaré sur la fiche mais non retrouvé sur le BAT — à vérifier.",
     }));
+  }
+
+  // Les mentions conditionnelles. Les chercher sur tous les produits remplirait
+  // la liste de Marie d'« absent » sur des produits que la mention ne concerne
+  // pas — et une liste où tout est orange ne se lit plus.
+  if (contientReglisse(input.ingredients)) {
+    results.push(checkTokens(batN, REGLISSE_TOKENS, {
+      id: "TXT_REGLISSE", checklistId: "5.3", rubrique: "Particularités",
+      libelle: "Avertissement réglisse / hypertension présent sur le BAT ?",
+      absent: "Réglisse dans la composition, mais l'avertissement hypertension n'a pas été retrouvé sur les faces analysées.",
+    }));
+  }
+
+  if (declares(input.allegation)) {
+    for (const m of MENTIONS_ALLEGATION) {
+      results.push(checkTokens(batN, m.tokens, {
+        id: m.id, checklistId: "5.2", rubrique: "Particularités", libelle: m.libelle, absent: m.absent,
+      }));
+    }
+  }
+
+  if (revendiqueWfto(input.phraseWfto)) {
+    results.push(checkWfto(batN));
   }
 
   return results.filter((c): c is BatTextCheck => c !== null);
