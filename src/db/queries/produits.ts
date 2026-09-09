@@ -44,6 +44,9 @@ export const CHAMPS_PRODUIT_EDITABLES = [
   // Champs du dossier PMI. Ils étaient affichés et jamais saisissables : une
   // donnée que l'import n'avait pas attrapée était perdue pour toujours.
   "sousGamme",
+  // Déplacé depuis « Données complémentaires » : il vit désormais dans la carte
+  // Identité, à côté de la certification qu'il désigne, et nulle part ailleurs.
+  "organismeCertificateur",
   "mentionEcocert",
   "origineMpa",
   "epoqueRecolte",
@@ -63,6 +66,25 @@ export type ChampProduitEditable = (typeof CHAMPS_PRODUIT_EDITABLES)[number];
  * (for the audit diff). Caller (Server Action) guarantees the keys are allowed.
  * Note: editing a produit field affects EVERY fiche of that product.
  */
+/**
+ * Les conditionnements déjà employés dans le catalogue.
+ *
+ * Sert de suggestions, pas de liste fermée : figer une liste sur ce qu'on
+ * observe reviendrait à interdire les valeurs qu'on n'a pas encore vues, et à
+ * graver une supposition. Les propositions viennent de la base, donc rien n'est
+ * inventé — et Marie reste libre d'écrire la sienne.
+ */
+export const getConditionnementsConnus = cache(async (): Promise<string[]> => {
+  const lignes = await db
+    .selectDistinct({ valeur: produits.conditionnement })
+    .from(produits)
+    .where(isNull(produits.archiveLe));
+  return lignes
+    .map((l) => l.valeur?.trim())
+    .filter((v): v is string => !!v)
+    .sort((a, b) => a.localeCompare(b, "fr"));
+});
+
 export async function updateProduitChamps(
   produitId: string,
   champs: Partial<Record<ChampProduitEditable, string | boolean | string[] | null>>

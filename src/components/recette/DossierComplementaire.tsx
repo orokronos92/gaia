@@ -29,7 +29,6 @@ export interface DossierComplementaireProps {
   nomLatin?: string | null;
   dateMiseMarche?: string | null;
   labelsClient?: string[] | null;
-  organismeCertificateur?: string | null;
   estAromatise?: boolean | null;
   fournisseur?: string | null;
   producteurJardin?: string | null;
@@ -81,8 +80,7 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
   const repli = useRepli("complementaire");
   const deploye = repli.ouvert || editing;
   const vides = compterVides([
-    props.floId, props.nomLatin, props.dateMiseMarche, props.organismeCertificateur,
-    props.fournisseur, props.producteurJardin, props.infoProducteur, props.typeProducteur,
+    props.floId, props.nomLatin, props.dateMiseMarche,     props.fournisseur, props.producteurJardin, props.infoProducteur, props.typeProducteur,
     props.numeroDeLot, props.allegationChoisie, props.nbTassesAllegation,
     props.labelsClient && props.labelsClient.length > 0 ? "x" : null,
   ]);
@@ -92,7 +90,6 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
     floId: props.floId ?? "",
     nomLatin: props.nomLatin ?? "",
     dateMiseMarche: props.dateMiseMarche ?? "",
-    organismeCertificateur: props.organismeCertificateur ?? "",
     fournisseur: props.fournisseur ?? "",
     producteurJardin: props.producteurJardin ?? "",
     infoProducteur: props.infoProducteur ?? "",
@@ -205,11 +202,6 @@ export function DossierComplementaire(props: DossierComplementaireProps) {
               {labels.length > 0 && (
                 <ChampTrace label="Labels client" provenance="EXTRAIT">
                   {labels.join(", ")}
-                </ChampTrace>
-              )}
-              {hasVal(props.organismeCertificateur) && (
-                <ChampTrace label="Organisme certificateur" provenance="EXTRAIT">
-                  {props.organismeCertificateur}
                 </ChampTrace>
               )}
               <ChampTrace label="Aromatisé / parfumé" provenance="EXTRAIT">

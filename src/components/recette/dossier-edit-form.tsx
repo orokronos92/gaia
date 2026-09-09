@@ -60,7 +60,6 @@ export function DossierEditForm({
         <h4 className={titre}>Certification & labels</h4>
         <div className={grid}>
           <ChampInput label="Labels client (séparés par des virgules)" value={draft.labelsClient} onChange={(v) => setField("labelsClient", v)} placeholder="AB, WFTO" className="sm:col-span-2" />
-          <ChampInput label="Organisme certificateur" value={draft.organismeCertificateur} onChange={(v) => setField("organismeCertificateur", v)} />
           <div className="space-y-1">
             <label className={`block ${titre}`}>Aromatisé / parfumé</label>
             <div className="flex gap-2">

@@ -173,6 +173,61 @@ DDM ni pour le numéro de lot.
 Tant que ce n'est pas déclaré, l'application ne peut ni les contrôler, ni
 expliquer pourquoi elle ne les contrôle pas. Même famille que M11.
 
+### 🟠 M13. Un organisme certificateur autrichien, et un contrôle qui l'ignore
+
+Trois colonnes de l'application décrivent la certification. Une seule porte de
+la donnée, sur **2 produits sur 152** : `CERES` et `AT-BIO-301`.
+
+`AT-BIO-301` est un code autrichien. Or le §11.1 exige le code de l'organisme du
+**dernier opérateur** — vous conditionnez en Alsace, donc `FR-BIO-01` sur
+l'étiquette.
+
+- `AT-BIO-301` désigne-t-il l'organisme de la **matière première** ?
+- Ou certains produits relèvent-ils réellement d'un autre organisme ?
+
+**L'enjeu est direct** : notre contrôle 13.2 cherche `FR-BIO-01` en dur sur le
+BAT. Si la seconde réponse est la bonne, il est faux sur ces produits.
+
+### 🟡 M14. Quels labels figurent sur l'étiquette ?
+
+L'application distingue les labels de la **matière première** (`AB` sur la
+plupart des produits) et ceux du **produit fini** (`AB`, `AB + WFTO`, renseignés
+sur 2 produits seulement).
+
+Lesquels apparaissent sur l'étiquette, et qui décide de la différence ? Nous
+affichons aujourd'hui les premiers, sans certitude que ce soit les bons.
+
+*(Et si vous nous fournissez les logos vectoriels — AB, Eurofeuille, Demeter,
+WFTO, Fairtrade, Elephant Friendly, Fair for Life —, l'application peut les
+afficher plutôt que leur sigle. Leur usage étant encadré par vos annexes 6 et 7,
+c'est votre autorisation qu'il nous faut, pas seulement les fichiers.)*
+
+### 🟡 M15. La liste des conditionnements
+
+Le champ contient aujourd'hui quatre valeurs : `Vrac` (127 produits),
+`Sachet format GC SA9205` (21), `Sachet format volumineux` (2), `paquet` (1).
+
+Deux questions :
+
+- **Quelle est la liste des types de contenant ?** Marie écrit « tube / sachet »
+  dans ses notes, et la fiche de dégustation d'un produit mentionne
+  « tube métal TU0001 ». Ces mots n'apparaissent pas dans le champ.
+- **`Sachet format GC SA9205` colle deux informations** — le type de contenant
+  et la référence du format fournisseur. Faut-il les séparer ?
+
+En attendant, le champ propose les valeurs déjà employées sans en interdire
+aucune.
+
+### 🟡 M16. Deux arbitrages en sommeil
+
+L'application porte deux questions non tranchées depuis l'origine, et elles
+bloquent chacune un contrôle :
+
+- **« Aromatisé » et « parfumé »** : la distinction est-elle tenue produit par
+  produit ? Le §1.2 réserve « parfumé » à l'enfleurage — sans cette information,
+  le contrôle 1.3 est « sans objet » sur la totalité du catalogue.
+- **« Jardins » et « Producteur »** : une entité ou deux ?
+
 ### 🟠 M8. Un code fabricant erroné dans un Gencode
 
 `TA6692` porte l'EAN `3585810866925`, dont le code fabricant se lit **8581** au

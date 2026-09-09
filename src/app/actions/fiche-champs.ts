@@ -140,7 +140,6 @@ const DOSSIER_PRODUIT_TEXTE = [
   "floId",
   "nomLatin",
   "dateMiseMarche",
-  "organismeCertificateur",
   "fournisseur",
   "producteurJardin",
   "infoProducteur",

@@ -122,10 +122,13 @@ function ChampPmi({ label, field, value, section, tonLabel = "text-blue-500", to
     )
 }
 
-function DataPointEdit({ icon: Icon, label, field, value, suffix, section }: { icon: any, label: string, field: string, value: any, suffix?: string, section: EditableSection }) {
+function DataPointEdit({ icon: Icon, label, field, value, suffix, section, suggestions }: { icon: any, label: string, field: string, value: any, suffix?: string, section: EditableSection, suggestions?: string[] }) {
     if (!section.editing) {
         return <DataPoint icon={Icon} label={label} value={value} suffix={suffix} />
     }
+    // Suggestions, pas liste fermée : elles viennent des valeurs déjà employées
+    // dans le catalogue, et n'empêchent jamais d'en écrire une nouvelle.
+    const listeId = suggestions && suggestions.length > 0 ? `suggestions-${field}` : undefined
     return (
         <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-emerald-200">
             <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
@@ -135,10 +138,16 @@ function DataPointEdit({ icon: Icon, label, field, value, suffix, section }: { i
                 <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">{label}</div>
                 <input
                     type="text"
+                    list={listeId}
                     value={section.draft[field] ?? ""}
                     onChange={(e) => section.setField(field, e.target.value)}
                     className="w-full text-sm font-medium text-stone-800 bg-transparent border-b border-emerald-300 focus:outline-none focus:border-emerald-500"
                 />
+                {listeId && (
+                    <datalist id={listeId}>
+                        {suggestions!.map((v) => <option key={v} value={v} />)}
+                    </datalist>
+                )}
             </div>
         </div>
     )
@@ -200,7 +209,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1 }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number }) {
+export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[] }) {
     // State
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
@@ -326,7 +335,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             origine: labelData.origine,
             conditionnement: labelData.conditionnement,
             poidsNet: labelData.poidsNet,
-            mentionEcocert: labelData.mentionEcocert,
+            organismeCertificateur: labelData.organismeCertificateur,
             origineMpa: labelData.origineMpa,
             epoqueRecolte: labelData.epoqueRecolte,
             techniqueRecolte: labelData.techniqueRecolte,
@@ -718,28 +727,35 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                                         <DataPointEdit section={identiteSection} icon={Leaf} label="Type de Thé" field="typeTheFr" value={labelData.typeTheFr} />
                                         <DataPointEdit section={identiteSection} icon={Globe2} label="Origine" field="origine" value={labelData.origine || "Non spécifiée"} />
-                                        <DataPointEdit section={identiteSection} icon={Package} label="Conditionnement" field="conditionnement" value={labelData.conditionnement} />
+                                        <DataPointEdit section={identiteSection} icon={Package} label="Conditionnement" field="conditionnement" value={labelData.conditionnement} suggestions={conditionnementsConnus} />
                                         <DataPointEdit section={identiteSection} icon={AlignLeft} label="Poids Net" field="poidsNet" value={labelData.poidsNet} suffix="g" />
                                     </div>
 
-                                    {/* La coche verte AFFIRME une certification : sans valeur,
+                                    {/* L'encart lisait `mentionEcocert` — une colonne vide sur
+                                        les 152 produits. Il lit maintenant l'organisme
+                                        certificateur, la seule des trois colonnes de
+                                        certification qui porte de la donnée, et il est édité
+                                        ici plutôt que dans « Données complémentaires » : un
+                                        champ, un endroit.
+
+                                        La coche verte AFFIRME une certification : sans valeur,
                                         l'encart reste neutre plutôt que de la suggérer. */}
-                                    <div className={cn("mt-4 p-3.5 rounded-xl border flex items-start gap-3", hasRealValue(labelData.mentionEcocert) ? "bg-emerald-50 border-emerald-100/50" : "bg-stone-50 border-stone-100")}>
-                                        {hasRealValue(labelData.mentionEcocert)
+                                    <div className={cn("mt-4 p-3.5 rounded-xl border flex items-start gap-3", hasRealValue(labelData.organismeCertificateur) ? "bg-emerald-50 border-emerald-100/50" : "bg-stone-50 border-stone-100")}>
+                                        {hasRealValue(labelData.organismeCertificateur)
                                             ? <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                                             : <MinusCircle className="h-5 w-5 text-stone-300 shrink-0 mt-0.5" />}
-                                        <div>
-                                            <p className={cn("text-[10px] font-bold uppercase tracking-widest mb-0.5", hasRealValue(labelData.mentionEcocert) ? "text-emerald-800" : "text-stone-400")}>Certification Active</p>
+                                        <div className="min-w-0 flex-1">
+                                            <p className={cn("text-[10px] font-bold uppercase tracking-widest mb-0.5", hasRealValue(labelData.organismeCertificateur) ? "text-emerald-800" : "text-stone-400")}>Organisme certificateur</p>
                                             {identiteSection.editing ? (
                                                 <input
                                                     type="text"
-                                                    value={identiteSection.draft.mentionEcocert ?? ""}
-                                                    onChange={(e) => identiteSection.setField("mentionEcocert", e.target.value)}
-                                                    placeholder="ex. FR-BIO-01"
+                                                    value={identiteSection.draft.organismeCertificateur ?? ""}
+                                                    onChange={(e) => identiteSection.setField("organismeCertificateur", e.target.value)}
+                                                    placeholder="ex. Ecocert, CERES"
                                                     className="w-full bg-transparent border-b border-emerald-300 text-sm font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
                                                 />
                                             ) : (
-                                                <p className={cn("text-sm font-semibold", hasRealValue(labelData.mentionEcocert) ? "text-emerald-950" : "text-stone-500")}>{valeurOu(labelData.mentionEcocert)}</p>
+                                                <p className={cn("text-sm font-semibold", hasRealValue(labelData.organismeCertificateur) ? "text-emerald-950" : "text-stone-500")}>{valeurOu(labelData.organismeCertificateur)}</p>
                                             )}
                                         </div>
                                     </div>
@@ -784,7 +800,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                 )}
                                             </div>
                                         </div>
-                                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                                    {/* Les pastilles étaient minuscules alors qu'un label est
+                                        ce qu'on cherche du regard sur une fiche. Les vrais
+                                        logos viendront quand JDG nous aura fourni les
+                                        fichiers ; en attendant le texte se lit de loin. */}
+                                    <div className="mt-4 flex flex-wrap items-center gap-2">
                                         <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Labels matière première</span>
                                         {identiteSection.editing ? (
                                             <input
@@ -796,7 +816,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             />
                                         ) : Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? (
                                             labelData.labelsMP.map((lbl: string, i: number) => (
-                                                <Badge key={i} variant="outline" className="bg-white border-stone-200 text-[10px] text-stone-600 font-bold">{lbl}</Badge>
+                                                <Badge key={i} variant="outline" className="border-stone-300 bg-white px-3 py-1 text-sm font-bold tracking-wide text-stone-700 shadow-sm">{lbl}</Badge>
                                             ))
                                         ) : (
                                             <span className="text-xs"><NonRenseigne /></span>
@@ -1175,7 +1195,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                             nomLatin={labelData.nomLatin}
                             dateMiseMarche={labelData.dateMiseMarche}
                             labelsClient={labelData.labelsClient}
-                            organismeCertificateur={labelData.organismeCertificateur}
                             estAromatise={labelData.estAromatise}
                             fournisseur={labelData.fournisseur}
                             producteurJardin={labelData.producteurJardin}
