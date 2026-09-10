@@ -2,6 +2,7 @@ import { cache } from "react";
 import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { listeEtiquette } from "@/lib/recette/liste-ingredients";
+import type { LigneEtiquetteBat } from "@/lib/audit/visual/coherence-etiquette";
 import { fichesEtiquettes, produits, recettes, ingredientsRecette } from "@/db/schema";
 import type { AuditInput } from "@/lib/audit/types";
 import type { BatTextInput } from "@/lib/audit/visual/text-robot";
@@ -114,6 +115,8 @@ export const getBatTextInputForFiche = cache(
     produitId: string;
     codePf: string;
     input: BatTextInput;
+    /** La recette étiquette, ligne par ligne — confrontée au BAT (point 2.5). */
+    lignesEtiquette: LigneEtiquetteBat[];
     /** Au moins un ingrédient certifié Demeter — pilote le contrôle §11.1. */
     estDemeter: boolean;
   } | null> => {
@@ -149,6 +152,14 @@ export const getBatTextInputForFiche = cache(
       produitId: produit.id,
       codePf: produit.codePf,
       estDemeter,
+      lignesEtiquette: lignes
+        .sort((a, b) => a.ordreTri - b.ordreTri)
+        .map((l) => ({
+          designation: l.designationEtiquette ?? l.designation,
+          designationRecette: l.designation,
+          pourcentage: l.pourcentageEtiquette,
+          masque: l.masquerPourcentageEtiquette,
+        })),
       input: {
         denomination: produit.denominationFr ?? fiche.denominationLegale,
         ingredients: listeEtiquette(lignes) || null,

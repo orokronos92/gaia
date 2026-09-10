@@ -18,8 +18,8 @@ contrat dur : un point déterministe n'est **jamais** soumis à un modèle.
 
 | Voie | 45 points | Qui tranche | Coût |
 |---|---|---|---|
-| **Code · fiche** | 21 | Du code pur, sur les données de la fiche : calcul, seuil, comparaison de chaînes | 0 jeton |
-| **Code · BAT** | 13 | Du code pur, sur le PDF du BAT : mesure de tracés, de corps de police, de positions | 0 jeton |
+| **Code · fiche** | 20 | Du code pur, sur les données de la fiche : calcul, seuil, comparaison de chaînes | 0 jeton |
+| **Code · BAT** | 14 | Du code pur, sur le PDF du BAT : mesure de tracés, de corps de police, de positions | 0 jeton |
 | **Modèle** | 7 | Mistral, pour l'interprétation d'une règle rédigée — jamais pour un calcul | facturé |
 | **Œil** | 4 | Marie, sur le BAT : ce que ni le code ni le modèle ne savent encore lire | 0 jeton |
 
@@ -85,7 +85,7 @@ disant.
 | **2.2** | Les ingrédients sont-ils listés par ordre d'importance pondérale décroissante ? | Code · fiche | — | PRO-QHS-013 §2.1 |
 | **2.3** | Mono-ingrédient : la liste est-elle correctement omise (dénomination = nom de l'ingrédient) ? | Code · fiche | — | PRO-QHS-013 §2.1 |
 | **2.4** | Étoiles présentes (* bio / ** demeter) avec la mention de certification associée, demeter en gras italique ? | Code · BAT | — | PRO-QHS-013 §11.1 |
-| **2.5** | La liste d'ingrédients déclarée concorde-t-elle avec la recette (matières Demeter marquées « ** », nombre d'ingrédients, pourcentages) ? | Code · fiche | — | PRO-QHS-013 §2.1, §11.1 |
+| **2.5** | La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ? | Code · BAT | — | PRO-QHS-013 §2.1 |
 
 ### QUID (pourcentages)
 

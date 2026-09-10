@@ -93,7 +93,7 @@ export async function controleGraphismeAction(
 
   const checks = [
     ...runTextRobot(textes.join("\n\n"), data.input),
-    ...controlerBat(faces, { ...data.input, estDemeter: data.estDemeter, codePf: data.codePf }),
+    ...controlerBat(faces, { ...data.input, estDemeter: data.estDemeter, codePf: data.codePf, lignesEtiquette: data.lignesEtiquette }),
   ]
 
   return {

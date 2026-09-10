@@ -22,11 +22,7 @@ import {
   checkGencodeCoherent,
   checkGencodeUnicite,
 } from "./code-article";
-import {
-  checkCoherenceRecetteListe,
-  checkIngrMono,
-  checkIngrOrdreDecroissant,
-} from "./ingredients";
+import { checkIngrMono, checkIngrOrdreDecroissant } from "./ingredients";
 import {
   checkCodeEtiquette,
   checkNomUsuelInfusion,
@@ -50,7 +46,8 @@ const CHECKS: Record<string, CheckFn> = {
   // not stored data. See control-checklist.ts.
   "2.2": checkIngrOrdreDecroissant,
   "2.3": checkIngrMono,
-  "2.5": checkCoherenceRecetteListe,
+  // 2.5 est un contrôle BAT depuis le 2026-09-10 : il compare la recette
+  // étiquette à ce que le BAT imprime, et rien de tout cela n'est dans la fiche.
   "3.1": checkQuid,
   "3.2": checkRounding,
   "3.3": checkQuidAjustement100,

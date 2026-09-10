@@ -95,19 +95,18 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   {
     /**
-     * Deux documents JDG décrivent le même produit : la fiche recette porte la
-     * composition et les coches de certification, la fiche dégustation porte le
-     * texte d'étiquette écrit à la main. Aucun des deux ne peut être réécrit
-     * dans l'autre — les dénominations fournisseur (« SORWATHE OP1 ») ne sont
-     * pas des dénominations légales, et c'est le texte d'étiquette que l'audit
-     * compare au BAT. On les confronte donc, et la Qualité tranche.
+     * La recette de production nomme les matières comme on les pèse
+     * (« SORWATHE OP1 ») ; l'étiquette imprime la dénomination légale
+     * (« thé noir »). La Qualité fait la traduction sur la carte « recette
+     * étiquette », et si elle ne l'a pas faite, personne ne le voyait.
      *
-     * 2.4 lit les étoiles SUR LE BAT ; ce point-ci lit le désaccord entre les
-     * deux sources, avant même qu'un BAT existe.
+     * Contrôle BAT et non déterministe (décision 2026-09-10) : depuis la fiche
+     * seule, rien ne distingue « SORWATHE OP1 » de « THYM », qui est une
+     * dénomination valable. Le BAT tranche sans deviner — le nom y est ou non.
      */
-    id: "2.5", ordre: 12, section: "INGREDIENTS", typeControle: "INGR_COHERENCE_RECETTE", mode: "deterministic",
-    libelle: "La liste d'ingrédients déclarée concorde-t-elle avec la recette (matières Demeter marquées « ** », nombre d'ingrédients, pourcentages) ?",
-    reference: "PRO-QHS-013 §2.1, §11.1",
+    id: "2.5", ordre: 12, section: "INGREDIENTS", typeControle: "INGR_COHERENCE_RECETTE", mode: "bat",
+    libelle: "La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ?",
+    reference: "PRO-QHS-013 §2.1",
   },
   // 3. QUID
   {
