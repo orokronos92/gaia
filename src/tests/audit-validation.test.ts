@@ -5,6 +5,7 @@ import {
   appliquerValidations,
   empreinteConstat,
   refusMotif,
+  type ConstatValidable,
   type ValidationControle,
 } from "../lib/audit/validation";
 import { verdictChecklist } from "../lib/audit/synthesis";
@@ -166,9 +167,10 @@ describe("verdict de la checklist", () => {
  * assumée (constaté le 2026-09-10).
  */
 describe("décisions sur un constat hors registre", () => {
-  const constat = {
+  const constat: ConstatValidable = {
     id: "MENT_COHERENCE_ETIQUETTE",
-    statut: "FAIL" as const,
+    statut: "FAIL",
+    action: "CORRIGER",
     justification: "le BAT n'imprime pas « thé noir »",
   };
 
@@ -196,7 +198,7 @@ describe("décisions sur un constat hors registre", () => {
   it("le constat change → la décision se périme et le point se rouvre", () => {
     const r = appliquerValidation(constat, decision("empreinte-d-un-autre-constat"));
     expect(r.validation?.perimee).toBe(true);
-    expect(r.action).toBeUndefined();
+    expect(r.action).toBe("CORRIGER");
   });
 
   it("s'applique en lot, comme pour les points du registre", () => {

@@ -179,6 +179,13 @@ export interface BatTextCheck {
    */
   validation?: import("../validation").EtatValidation;
   /**
+   * Ce qu'il reste à faire dessus. Les compteurs de tête d'écran se comptent
+   * là-dessus : sans action, un constat hors registre était compté comme fait
+   * alors qu'il attendait un regard, et « tout est vérifié » ne voulait rien
+   * dire tant qu'il restait des constats ouverts en bas de page.
+   */
+  action?: import("../types").ControlAction;
+  /**
    * Où regarder sur le BAT. Un contrôle qui mesure sait où il a mesuré ; le
    * dire épargne à Marie de chercher le texte dont il parle.
    */

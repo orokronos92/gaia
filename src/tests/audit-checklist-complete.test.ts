@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 
 import { compterResteAFaire, construireChecklist } from "../lib/audit/checklist-complete";
+import { compterResteAFaire } from "@/lib/audit/checklist-complete";
+import { verdictChecklist } from "@/lib/audit/synthesis";
 import { CONTROL_CHECKLIST, partitionByMode } from "../lib/audit/control-checklist";
 import type { AuditInput } from "../lib/audit/types";
 
@@ -82,5 +84,38 @@ describe("qui répond à quoi — répartition du registre", () => {
       if (r.mode !== "deterministic") continue;
       expect(r.justification, `point ${r.id} sans justification`).toBeTruthy();
     }
+  });
+});
+
+/**
+ * Le décompte de tête d'écran est ce qui dit à la Qualité quand elle a fini.
+ *
+ * Les constats relevés hors registre en étaient exclus : l'écran pouvait donc
+ * annoncer « tout est vérifié » alors que des anomalies restaient ouvertes plus
+ * bas dans la page (constaté le 2026-09-10).
+ */
+describe("reste à faire — les constats hors registre comptent avec les points", () => {
+  const point = (statut: "PASS" | "WARNING" | "FAIL" | "NA", action?: "RIEN" | "VERIFIER" | "CORRIGER") => ({
+    statut,
+    action,
+  });
+
+  it("un constat hors registre encore ouvert empêche « tout est fait »", () => {
+    const c = compterResteAFaire([point("PASS", "RIEN"), point("FAIL", "CORRIGER")]);
+    expect(c.corriger).toBe(1);
+    expect(c.fait).toBe(1);
+  });
+
+  it("une fois tranché, il rejoint les points faits", () => {
+    const c = compterResteAFaire([point("PASS", "RIEN"), point("FAIL", "RIEN")]);
+    expect(c.corriger).toBe(0);
+    expect(c.fait).toBe(2);
+  });
+
+  it("le verdict reste ouvert tant qu'un constat hors registre l'est", () => {
+    expect(verdictChecklist([point("PASS", "RIEN"), point("WARNING", "VERIFIER")]).verdict).toBe(
+      "TRAVAIL_RESTANT"
+    );
+    expect(verdictChecklist([point("PASS", "RIEN"), point("WARNING", "RIEN")]).verdict).toBe("CONFORME");
   });
 });

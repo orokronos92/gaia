@@ -163,6 +163,7 @@ export function ControleEtiquette({
                     <DeterministicAuditPanel
                         ficheId={ficheId}
                         batChecks={visData?.checks}
+                        horsChecklist={horsChecklist}
                         data={detData}
                         onData={onDetData}
                         onResult={onDetResult}

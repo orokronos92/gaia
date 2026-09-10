@@ -44,13 +44,15 @@ interface DeterministicAuditPanelProps {
     pointVu?: string
     /** Résultats de l'audit BAT, s'il a été lancé — ils remplissent la liste. */
     batChecks?: BatTextCheck[]
+    /** Les constats sans point du registre — ils comptent dans le reste à faire. */
+    horsChecklist?: BatTextCheck[]
     /** Controlled result, lifted to the fiche so it survives tab switches. */
     data: AuditDeterministeResult | null
     onData: (r: AuditDeterministeResult | null) => void
     onResult?: (r: SousResultatAudit) => void
 }
 
-export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onData, onResult, onVoir, pointVu }: DeterministicAuditPanelProps) {
+export function DeterministicAuditPanel({ ficheId, actions, batChecks, horsChecklist, data, onData, onResult, onVoir, pointVu }: DeterministicAuditPanelProps) {
     const [pending, startTransition] = useTransition()
 
     const run = () => {
@@ -70,9 +72,15 @@ export function DeterministicAuditPanel({ ficheId, actions, batChecks, data, onD
         : undefined
     // Le verdict se recalcule sur la liste affichée : les preuves du BAT et les
     // décisions de la Qualité peuvent l'avoir déplacée depuis le calcul serveur.
-    const synthese = resultats ? verdictChecklist(resultats) : data?.synthese
+    //
+    // Les constats hors registre comptent avec les points. Ils en étaient
+    // exclus, si bien que le décompte pouvait annoncer « tout est vérifié »
+    // alors que des anomalies restaient ouvertes plus bas — et c'est ce
+    // décompte qui dit à Marie quand elle a fini.
+    const aCompter = resultats ? [...resultats, ...(horsChecklist ?? [])] : undefined
+    const synthese = aCompter ? verdictChecklist(aCompter) : data?.synthese
     const overall = data?.ok && synthese ? VERDICT[synthese.verdict] : null
-    const reste = resultats ? compterResteAFaire(resultats) : data?.resteAFaire
+    const reste = aCompter ? compterResteAFaire(aCompter) : data?.resteAFaire
 
     return (
         <Card className="border border-emerald-200/60 bg-white/80 backdrop-blur-xl shadow-sm overflow-hidden rounded-3xl">

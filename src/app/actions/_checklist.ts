@@ -24,6 +24,7 @@ import { controlerBat, type FaceBat } from "@/lib/audit/visual/controles-bat";
 import { runTextRobot, type BatTextCheck } from "@/lib/audit/visual/text-robot";
 import type { ControlResult } from "@/lib/audit/types";
 import { appliquerValidations } from "@/lib/audit/validation";
+import { actionParDefaut } from "@/lib/audit/types";
 import { analyserBat } from "@/lib/utils/pdf-bat";
 import { extractPdfText } from "@/lib/utils/pdf-text";
 import { getObjectBuffer } from "@/lib/utils/s3-client";
@@ -92,7 +93,9 @@ export async function chargerChecklist(ficheId: string): Promise<ChecklistCharge
   return {
     resultats: appliquerValidations(fusionnee, validations),
     horsChecklist: appliquerValidations(
-      preuves.checks.filter((c) => !c.checklistId),
+      preuves.checks
+        .filter((c) => !c.checklistId)
+        .map((c) => ({ ...c, action: c.action ?? actionParDefaut(c.statut) })),
       validations
     ),
     faces: preuves.faces,

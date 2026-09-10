@@ -83,7 +83,18 @@ export interface ResteAFaire {
 }
 
 /** Le décompte que Marie lit en tête d'écran. */
-export function compterResteAFaire(results: ControlResult[]): ResteAFaire {
+/**
+ * Ce qu'un constat doit dire pour entrer dans le décompte : son état, et ce
+ * qu'il reste à faire dessus. Les points du registre et les constats relevés
+ * hors registre y répondent tous les deux — et doivent y répondre, puisque
+ * c'est ce décompte qui dit à la Qualité quand elle a fini.
+ */
+export interface Decomptable {
+  statut: ControlResult["statut"];
+  action?: ControlResult["action"];
+}
+
+export function compterResteAFaire(results: readonly Decomptable[]): ResteAFaire {
   const compte: ResteAFaire = {
     corriger: 0,
     completer: 0,
