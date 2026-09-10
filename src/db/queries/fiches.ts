@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import type { StatutMention } from "@/lib/audit/statut-mention";
@@ -677,3 +677,31 @@ export const listerFichesPourControle = cache(
     return lignes;
   }
 );
+
+/**
+ * Renseigne la mention Demeter de la fiche — mais seulement si elle est vide.
+ *
+ * Écrite en une requête conditionnelle, pas en lecture puis écriture : ce qu'a
+ * saisi la Qualité ne doit jamais être écrasé, même si deux validations se
+ * croisent. Retourne vrai quand la ligne a été remplie, faux quand la fiche
+ * portait déjà une mention.
+ */
+export async function remplirMentionDemeterSiVide(
+  ficheId: string,
+  phrase: string
+): Promise<boolean> {
+  const lignes = await db
+    .update(fichesEtiquettes)
+    .set({ phraseDemeterFr: phrase, misAJourLe: new Date() })
+    .where(
+      and(
+        eq(fichesEtiquettes.id, ficheId),
+        or(
+          isNull(fichesEtiquettes.phraseDemeterFr),
+          eq(sql`btrim(${fichesEtiquettes.phraseDemeterFr})`, "")
+        )
+      )
+    )
+    .returning({ id: fichesEtiquettes.id });
+  return lignes.length > 0;
+}

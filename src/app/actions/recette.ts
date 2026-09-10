@@ -10,7 +10,9 @@ import {
   renommerIngredientEtiquette,
   validerRecette,
 } from "@/db/queries/recettes";
-import { getFicheProduitId } from "@/db/queries/fiches";
+import { getFicheProduitId, remplirMentionDemeterSiVide } from "@/db/queries/fiches";
+import { writeAuditLog } from "@/db/queries/audit-logs";
+import { DEMETER_PHRASE_TYPE } from "@/lib/audit/statut-mention";
 import { CopilotAgent } from "@/agents/copilot-agent";
 
 const IngredientPayload = z.object({
@@ -75,6 +77,36 @@ export async function validerRecetteAction(input: unknown) {
     etiquettesEffectives,
     masques,
   });
+
+  // Une recette qui porte une matière Demeter rend la note ** obligatoire dans
+  // la liste d'ingrédients, et cette note a un texte fixé par le §11.1. La
+  // Qualité le connaissait, l'application aussi — elle s'en servait déjà pour
+  // contrôler le BAT — et lui demandait quand même de le retaper. La mention se
+  // renseigne donc au moment où Marie valide la recette : c'est son geste, daté
+  // et journalisé, pas une écriture que l'application ferait de son côté.
+  //
+  // Jamais par-dessus une saisie existante : si elle a écrit sa propre
+  // formulation, elle reste.
+  const matieresDemeter = calc.ingredients.filter((i) => i.estDemeter);
+  if (data.ficheId && matieresDemeter.length > 0) {
+    const remplie = await remplirMentionDemeterSiVide(data.ficheId, DEMETER_PHRASE_TYPE);
+    if (remplie) {
+      await writeAuditLog({
+        typeEntite: "fiche_etiquette",
+        entiteId: data.ficheId,
+        action: "MENTION_DEMETER_RENSEIGNEE",
+        utilisateurId: session.user.id,
+        changements: {
+          champ: "phraseDemeterFr",
+          apres: DEMETER_PHRASE_TYPE,
+          source: "PRO-QHS-013 §11.1",
+          declencheur: `${matieresDemeter.length} matière(s) Demeter à la validation de la recette`,
+          matieres: matieresDemeter.map((i) => i.designation),
+          pourcentageDemeter: calc.demeter.pourcentageDemeter,
+        },
+      });
+    }
+  }
 
   // La liste déclarée n'est plus réécrite (décision 2026-09-10).
   //

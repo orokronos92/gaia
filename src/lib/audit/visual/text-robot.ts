@@ -16,6 +16,7 @@
 
 import { FABRICANT_JDG_TOKENS, normalize } from "../canonical";
 import {
+  DEMETER_PHRASE_TYPE,
   estGammeAnemos,
   estGammeEngages,
   mentionDue,
@@ -295,19 +296,6 @@ function checkMentionGamme(
  */
 const DEMETER_NOTE = "biologique et biodynamique";
 const DEMETER_TERMES = "demeter est la marque des produits issus";
-
-/**
- * Le texte du §11.1, au mot près — proposé à la fiche quand la mention est due
- * et que personne ne l'a saisie.
- *
- * Il vient de la PROCÉDURE, jamais du BAT. Recopier sur la fiche ce qui est
- * imprimé sur l'étiquette rendrait circulaire le contrôle qui compare ensuite
- * les deux (voir `propositions.ts`) ; ici la source est extérieure aux deux, et
- * la comparaison garde son sens. Le mot « demeter » reste en minuscules : le
- * §11.1 le veut en gras italique, ce que le style du BAT vérifie à part.
- */
-const DEMETER_PHRASE_TYPE =
-  "**Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée.";
 
 /** La fiche n'a pas la mention : on lui propose celle de la procédure. */
 const propositionDemeter = () =>

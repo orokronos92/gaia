@@ -20,6 +20,24 @@ import { normalize } from "./canonical";
 export type StatutMention = "AUTO" | "OUI" | "NON";
 
 /**
+ * La note ** du §11.1, au mot près.
+ *
+ * Elle explique ce que les deux étoiles veulent dire dans la liste
+ * d'ingrédients. Dès qu'une matière est certifiée Demeter, la liste porte un
+ * « ** » et cette légende doit l'accompagner — c'est indépendant des tranches
+ * Demeter, qui régissent le logo et la déclaration des pourcentages, pas la
+ * légende.
+ *
+ * Elle vit ici parce que trois endroits en ont besoin et ne doivent pas en
+ * garder chacun une copie : le contrôle qui la cherche sur le BAT, la
+ * proposition qui l'offre à la fiche, et la validation de recette qui la
+ * renseigne. Le mot « demeter » reste en minuscules — le §11.1 le veut en gras
+ * italique, ce que le style du BAT vérifie à part.
+ */
+export const DEMETER_PHRASE_TYPE =
+  "**Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée.";
+
+/**
  * La mention est-elle due ?
  *
  * `deduit` est ce que la donnée laisse penser — la gamme du produit, un
