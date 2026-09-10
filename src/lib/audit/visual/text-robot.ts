@@ -173,6 +173,12 @@ export interface BatTextCheck {
    */
   proposition?: import("./propositions").Proposition;
   /**
+   * La décision de la Qualité sur ce constat, quand il n'a pas de point du
+   * registre pour la porter. Sans elle, une anomalie hors checklist restait
+   * dans la liste de travail même une fois regardée et assumée.
+   */
+  validation?: import("../validation").EtatValidation;
+  /**
    * Où regarder sur le BAT. Un contrôle qui mesure sait où il a mesuré ; le
    * dire épargne à Marie de chercher le texte dont il parle.
    */

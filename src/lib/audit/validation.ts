@@ -36,7 +36,23 @@ export interface ValidationControle {
 }
 
 /** Ce que la décision a validé : le constat, pas la ligne. */
-export function empreinteConstat(resultat: ControlResult): string {
+/**
+ * Ce qu'il faut d'un constat pour qu'une décision puisse s'y poser.
+ *
+ * Les points du registre et les constats relevés hors registre n'ont pas la même
+ * forme, mais la Qualité doit pouvoir trancher les deux : sans cela, une
+ * anomalie hors checklist restait dans sa liste de travail même après qu'elle
+ * l'ait regardée et assumée (constaté le 2026-09-10).
+ */
+export interface ConstatValidable {
+  id: string;
+  statut: ControlResult["statut"];
+  justification?: string;
+  action?: ControlResult["action"];
+  validation?: EtatValidation;
+}
+
+export function empreinteConstat(resultat: ConstatValidable): string {
   return createHash("sha256")
     .update(`${resultat.statut}|${resultat.justification ?? ""}`)
     .digest("hex")
@@ -60,10 +76,10 @@ export interface EtatValidation {
  * la trace de la validation précédente pour que Marie sache qu'elle a déjà
  * regardé, et sur quoi.
  */
-export function appliquerValidation(
-  resultat: ControlResult,
+export function appliquerValidation<T extends ConstatValidable>(
+  resultat: T,
   validation: ValidationControle | undefined
-): ControlResult {
+): T {
   if (!validation) return resultat;
 
   const perimee = validation.empreinte !== empreinteConstat(resultat);
@@ -83,10 +99,10 @@ export function appliquerValidation(
 }
 
 /** Applique les décisions de la Qualité à toute une checklist. */
-export function appliquerValidations(
-  resultats: ControlResult[],
+export function appliquerValidations<T extends ConstatValidable>(
+  resultats: T[],
   validations: ValidationControle[]
-): ControlResult[] {
+): T[] {
   const parPoint = new Map(validations.map((v) => [v.pointId, v]));
   return resultats.map((r) => appliquerValidation(r, parPoint.get(r.id)));
 }

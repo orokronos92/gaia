@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils"
 import type { BatTextCheck } from "@/lib/audit/visual/text-robot"
 import type { ControlStatus } from "@/lib/audit/types"
 
+import { ValidationLigne } from "./validation-ligne"
+
 const STYLE: Record<ControlStatus, { icon: typeof CheckCircle2; tone: string }> = {
     FAIL: { icon: XCircle, tone: "text-red-500" },
     WARNING: { icon: AlertTriangle, tone: "text-orange-500" },
@@ -25,7 +27,16 @@ const STYLE: Record<ControlStatus, { icon: typeof CheckCircle2; tone: string }> 
  * Sans cette section, réunir les deux écrans ferait disparaître exactement le
  * genre de divergence que la Qualité doit arbitrer.
  */
-export function ConstatsHorsChecklist({ checks }: { checks: BatTextCheck[] }) {
+export function ConstatsHorsChecklist({
+    checks,
+    ficheId,
+    onChange,
+}: {
+    checks: BatTextCheck[]
+    ficheId: string
+    /** Relance la checklist : une décision change ce que l'écran doit montrer. */
+    onChange: () => void
+}) {
     if (checks.length === 0) return null
 
     return (
@@ -54,6 +65,15 @@ export function ConstatsHorsChecklist({ checks }: { checks: BatTextCheck[] }) {
                                 <span className="mt-1 block text-[10px] font-semibold uppercase tracking-wider text-stone-400">
                                     {c.rubrique}
                                 </span>
+                                {/* Le même geste que sur un point du registre.
+                                    Sans lui, un constat hors checklist restait
+                                    dans la liste de travail même une fois
+                                    regardé et tranché. */}
+                                <ValidationLigne
+                                    ficheId={ficheId}
+                                    r={{ id: c.id, statut: c.statut, validation: c.validation }}
+                                    onChange={onChange}
+                                />
                             </div>
                         </li>
                     )

@@ -12,14 +12,14 @@ import { chargerChecklist } from "./_checklist"
 
 const ValiderSchema = z.object({
     ficheId: z.string().uuid(),
-    pointId: z.string().min(1).max(16),
+    pointId: z.string().min(1).max(64),
     decision: z.enum(DECISIONS),
     justification: z.string().max(2000).optional(),
 })
 
 const RetirerSchema = z.object({
     ficheId: z.string().uuid(),
-    pointId: z.string().min(1).max(16),
+    pointId: z.string().min(1).max(64),
 })
 
 export interface ValidationResult {
@@ -48,7 +48,11 @@ export async function validerPointAction(raw: unknown): Promise<ValidationResult
     const charge = await chargerChecklist(ficheId)
     if (!charge) return { ok: false, error: "Fiche introuvable." }
 
-    const point = charge.resultats.find((c) => c.id === pointId)
+    // Un constat hors registre se tranche comme un point : il porte le même
+    // geste, la même empreinte, la même trace. Seule sa provenance diffère.
+    const point =
+        charge.resultats.find((c) => c.id === pointId) ??
+        charge.horsChecklist.find((c) => c.id === pointId)
     if (!point) return { ok: false, error: "Ce point ne s'applique pas à cette fiche." }
 
     const refus = refusMotif(decision, point.statut, justification)

@@ -636,7 +636,7 @@ export const validationsControle = pgTable("validations_controle", {
     id: uuid("id").primaryKey().defaultRandom(),
     ficheEtiquetteId: uuid("fiche_etiquette_id").references(() => fichesEtiquettes.id, { onDelete: 'cascade' }).notNull(),
     /** Numéro du point dans PRO-QHS-013 / MOP-PRO-029, ex. « 14.1 ». */
-    pointId: varchar("point_id", { length: 16 }).notNull(),
+    pointId: varchar("point_id", { length: 64 }).notNull(),
     decision: DecisionControle("decision").notNull(),
     /** Obligatoire pour une dérogation ; libre sinon. */
     justification: text("justification"),

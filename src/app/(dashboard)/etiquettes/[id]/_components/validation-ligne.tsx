@@ -12,12 +12,20 @@ import {
 } from "@/app/actions/validation-controle"
 import type { ControlResult } from "@/lib/audit/types"
 
+/**
+ * Ce que la ligne a besoin de savoir. Un point du registre et un constat relevé
+ * hors registre n'ont pas la même forme, mais le geste est le même — et il doit
+ * l'être : une anomalie qu'on ne peut pas clore reste éternellement ouverte.
+ */
+type ConstatDecidable = Pick<ControlResult, "id" | "statut"> &
+    Partial<Pick<ControlResult, "validation" | "proposition">>
+
 const dateCourte = (d: Date | string) =>
     new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" })
 
 interface ValidationLigneProps {
     ficheId: string
-    r: ControlResult
+    r: ConstatDecidable
     /** Relance la checklist : une décision change ce que l'écran doit montrer. */
     onChange: () => void
 }

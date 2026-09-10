@@ -72,6 +72,15 @@ export function ControleEtiquette({
     // L'analyse IA n'a de sens que posée sur une liste : sans contrôle préalable,
     // ses constats n'avaient aucune ligne où se ranger et l'écran restait vide.
     // On ne fait plus dépendre le résultat de l'ordre des clics.
+    // Une décision prise sur un constat hors registre change la liste : on la
+    // relit, comme le fait la liste des points après une validation.
+    const relancerControle = () =>
+        startTransition(async () => {
+            const res = await auditDeterministeAction({ ficheId })
+            onDetData(res)
+            if (res.ok) onDetResult?.({ overallStatus: res.overallStatus, counts: res.counts })
+        })
+
     const lancerIa = () =>
         startTransition(async () => {
             if (!detData?.ok) {
@@ -176,7 +185,7 @@ export function ControleEtiquette({
                             </Button>
                         }
                     />
-                    <ConstatsHorsChecklist checks={horsChecklist} />
+                    <ConstatsHorsChecklist checks={horsChecklist} ficheId={ficheId} onChange={relancerControle} />
                 </div>
 
                 <div className="order-1 xl:order-2 xl:col-span-5">

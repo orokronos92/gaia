@@ -156,3 +156,51 @@ describe("verdict de la checklist", () => {
     expect(verdictChecklist([ligne("NA", "RIEN")]).verdict).toBe("SANS_OBJET");
   });
 });
+
+/**
+ * Un constat relevé hors registre se tranche comme un point.
+ *
+ * Il n'a pas la même forme — pas de `mode`, pas de `typeControle` — et la
+ * décision ne pouvait donc pas s'y poser : une anomalie hors checklist restait
+ * dans la liste de travail de Marie même après qu'elle l'ait regardée et
+ * assumée (constaté le 2026-09-10).
+ */
+describe("décisions sur un constat hors registre", () => {
+  const constat = {
+    id: "MENT_COHERENCE_ETIQUETTE",
+    statut: "FAIL" as const,
+    justification: "le BAT n'imprime pas « thé noir »",
+  };
+
+  const decision = (empreinte: string) => ({
+    pointId: "MENT_COHERENCE_ETIQUETTE",
+    decision: "DEROGATION" as const,
+    valideParNom: "Marie",
+    valideLe: new Date("2026-09-10"),
+    justification: "écart assumé, BAT en cours de refonte",
+    empreinte,
+  });
+
+  it("l'empreinte se calcule sur un constat sans forme de point", () => {
+    expect(empreinteConstat(constat)).toHaveLength(64);
+  });
+
+  it("une décision close le constat sans réécrire ce qui a été mesuré", () => {
+    const r = appliquerValidation(constat, decision(empreinteConstat(constat)));
+    expect(r.action).toBe("RIEN");
+    expect(r.statut).toBe("FAIL");
+    expect(r.validation?.decision).toBe("DEROGATION");
+    expect(r.validation?.perimee).toBe(false);
+  });
+
+  it("le constat change → la décision se périme et le point se rouvre", () => {
+    const r = appliquerValidation(constat, decision("empreinte-d-un-autre-constat"));
+    expect(r.validation?.perimee).toBe(true);
+    expect(r.action).toBeUndefined();
+  });
+
+  it("s'applique en lot, comme pour les points du registre", () => {
+    const [r] = appliquerValidations([constat], [decision(empreinteConstat(constat))]);
+    expect(r.validation?.parNom).toBe("Marie");
+  });
+});

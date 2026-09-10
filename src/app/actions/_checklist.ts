@@ -86,9 +86,15 @@ export async function chargerChecklist(ficheId: string): Promise<ChecklistCharge
   const preuves = await preuvesDesBat(ficheId);
   const fusionnee = preuves.checks.length > 0 ? fusionner(base, preuves.checks) : base;
 
+  // Les décisions valent pour les deux listes : un constat hors registre se
+  // regarde et s'assume comme un point, sinon il reste indéfiniment ouvert.
+  const validations = await getValidationsFiche(ficheId);
   return {
-    resultats: appliquerValidations(fusionnee, await getValidationsFiche(ficheId)),
-    horsChecklist: preuves.checks.filter((c) => !c.checklistId),
+    resultats: appliquerValidations(fusionnee, validations),
+    horsChecklist: appliquerValidations(
+      preuves.checks.filter((c) => !c.checklistId),
+      validations
+    ),
     faces: preuves.faces,
     dossiers: preuves.dossiers,
   };
