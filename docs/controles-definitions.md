@@ -19,11 +19,11 @@ un contrôle de voie « code » n'est jamais soumis à un modèle de langage.
 | Voie | Points | Qui répond | IA |
 |---|---|---|---|
 | 🟩 **Code · fiche** | 20 | Du code, sur les données de la fiche et de la recette : calcul, seuil, comparaison de chaînes | non |
-| 🟦 **Code · BAT** | 13 | Du code, sur le PDF du bon à tirer : mesure de tracés, de corps de police, de positions | non |
+| 🟦 **Code · BAT** | 14 | Du code, sur le PDF du bon à tirer : mesure de tracés, de corps de police, de positions | non |
 | 🟨 **Modèle** | 7 | Un modèle de langage ou de vision, pour l'interprétation d'une règle rédigée ou la reconnaissance d'un dessin | oui |
 | ⬜ **Œil** | 4 | La Qualité, sur le bon à tirer : ce que ni le code ni le modèle ne savent lire aujourd'hui | — |
 
-**33 des 44 contrôles s'exécutent sans aucune IA**, à chaque
+**34 des 45 contrôles s'exécutent sans aucune IA**, à chaque
 lancement, sans consommer de jeton. Les 7 contrôles de voie « modèle »
 ne s'exécutent que sur demande explicite.
 
@@ -36,6 +36,38 @@ la liste de travail sans disparaître du registre.
 tirer. Les deux se cumulent sur la même ligne. Réciproquement, un contrôle de
 voie « code · fiche » est presque toujours doublé d'une lecture du bon à tirer :
 la fiche dit ce qui devrait être imprimé, le BAT dit ce qui l'est.
+
+**Les constats hors checklist.** Un audit peut relever sur le BAT une anomalie
+qu'aucun des 45 points ne prévoyait. Elle apparaît sous « hors checklist », et
+elle se traite désormais comme les autres : la Qualité la corrige, ou l'assume
+par une **dérogation motivée**, et la ligne rejoint alors le compte des points
+vérifiés. Sans cela, un constat sans point de rattachement restait une anomalie
+ouverte pour toujours, et le compteur ne pouvait jamais atteindre son total —
+alors que c'est ce compteur qui dit à Marie quand elle a fini.
+
+---
+
+## Ce qui a changé depuis la version du 9 septembre 2026
+
+Cinq évolutions, toutes issues des essais du 10 septembre. Le reste du document
+est inchangé.
+
+1. **Un point de plus — 2.5**, « la liste d'ingrédients de la recette étiquette
+   correspond-elle à celle imprimée sur le BAT ? ». Le registre passe de 44 à
+   **45 points**, et la voie « Code · BAT » de 13 à 14.
+2. **Les mentions volontaires ne se devinent plus dans le libellé de la gamme.**
+   Les points **13.5** (Anemos) et **13.6** (Les Engagés) lisent une obligation
+   *déclarée* par la gamme, cochée par la Qualité dans le nouvel écran
+   **Référentiels**. Un renommage n'éteint plus le contrôle en silence.
+3. **Un seul geste pour trois points bloqués.** Quand la fiche ne porte pas de
+   quantité nette, les points **1.4**, **6.1** et **6.2** n'ont rien à mesurer.
+   Le bouton qui enregistre la valeur lue sur le BAT annonce maintenant les trois
+   points qu'il rouvre.
+4. **Les constats hors checklist se ferment** par correction ou par dérogation,
+   et comptent dans le total vérifié (voir ci-dessus).
+5. **La recette étiquette est la référence de l'audit.** C'est elle — et non la
+   recette de production — que les contrôles comparent au BAT. Les pourcentages
+   que la Qualité y masque volontairement sortent de la comparaison.
 
 ---
 
@@ -84,7 +116,9 @@ Un modèle vérifie que le mot « parfumé » n'est employé que pour un thé pa
 
 Deux mesures sur le PDF du BAT. D'abord la position : les mots de la dénomination et ceux du poids net sont-ils sur la même face, et à quelle distance en millimètres. Ensuite le style : la police de chaque mot de la dénomination est interrogée sur son angle d'italique — le §1 exige des caractères droits.
 
-*Données lues* : BAT : coordonnées des mots + métriques de police.
+La position ne se mesure pas si la fiche ne porte pas de quantité nette : sans cette valeur, il n'y a rien à localiser sur le BAT. Le point propose alors **d'enregistrer la quantité lue sur le BAT**, et annonce ce que ce clic rouvre — le même remède est posé sur les points 6.1 et 6.2, bloqués par la même absence. Un seul geste les règle tous les trois.
+
+*Données lues* : BAT : coordonnées des mots + métriques de police. Fiche : dénomination, quantité nette.
 
 ### 🟦 1.5 — La dénomination portée par la fiche figure-t-elle à l'identique sur le BAT ?
 
@@ -244,7 +278,7 @@ Détecte la réglisse dans la composition, puis cherche sur le BAT l'avertisseme
 **Voie** : Code · fiche · **Sans IA** : oui  
 **Référence** : PRO-QHS-013 §4
 
-Vérifie que la quantité nette est exprimée en unité de masse. Le catalogue stocke le plus souvent un nombre nu : la convention connue s'applique — au-delà de 10, des grammes ; en deçà, des kilos. Une quantité exprimée en volume est une non-conformité. Le BAT est lu en parallèle, et propose sa valeur en un clic quand la fiche est muette.
+Vérifie que la quantité nette est exprimée en unité de masse. Le catalogue stocke le plus souvent un nombre nu : la convention connue s'applique — au-delà de 10, des grammes ; en deçà, des kilos. Une quantité exprimée en volume est une non-conformité. Le BAT est lu en parallèle, et propose sa valeur en un clic quand la fiche est muette : le bouton annonce alors qu'il rouvre aussi les points 1.4 et 6.2, qui butent sur la même absence.
 
 *Données lues* : Poids net de la fiche + texte du BAT.
 
@@ -255,7 +289,9 @@ Vérifie que la quantité nette est exprimée en unité de masse. Le catalogue s
 
 Mesure la hauteur réelle des chiffres du poids net sur le BAT, en millimètres, à partir du corps de la police, et la compare au seuil de la tranche : 2 mm jusqu'à 50 g, 3 mm jusqu'à 200 g, 4 mm jusqu'à 1 kg, 6 mm au-delà. Vérifie aussi que le poids partage le champ visuel de la dénomination.
 
-*Données lues* : BAT : métriques de police + coordonnées.
+Le seuil se déduit du grammage : sans quantité nette sur la fiche, il n'y a pas de tranche à appliquer. Le point propose donc lui aussi d'enregistrer la valeur lue sur le BAT (voir 1.4 et 6.1).
+
+*Données lues* : BAT : métriques de police + coordonnées. Fiche : quantité nette.
 
 ### 🟩 6.3 — Le nombre de tasses annoncé correspond-il au poids net divisé par 2 g ?
 
@@ -411,26 +447,26 @@ Le logo Point Vert est interdit depuis le 1ᵉʳ janvier 2021. Le contrôle vise
 **Voie** : Code · BAT · **Sans IA** : oui  
 **Référence** : PRO-QHS-013 §11.2
 
-*Conditionnel* — ne s'applique qu'à la gamme « THÉ TRANSPORTÉ À LA VOILE » (3 références).
+*Conditionnel* — ne s'applique qu'aux gammes qui **déclarent exiger** cette mention. Depuis le 10 septembre 2026, l'obligation est une propriété de la gamme, cochée par la Qualité dans l'écran Référentiels : elle n'est plus devinée en cherchant « voile » dans le libellé, où un renommage ou une casse différente éteignait le contrôle sans le dire.
 
 Le code cherche deux marqueurs distincts sur le BAT : le bandeau de gamme « THÉ TRANSPORTÉ À LA VOILE » et la phrase que le transporteur impose d'imprimer avec lui (« Le vent comme énergie de transport… Ensemble, changeons de cap ! »). Les séparer dit lequel des deux manque — et c'est la phrase qui manque, jamais le bandeau. À noter : le mot « Anemos » est le nom du label côté TOWT, il n'est jamais imprimé sur l'étiquette ; le chercher sur le BAT ne trouverait rien.
 
 Quand le BAT porte les deux mais que la zone « Mention Anemos » de la fiche est vide, le contrôle demande de **compléter la fiche**, pas de corriger l'étiquette.
 
-*Données lues* : fiche : gamme, zone Anemos. BAT : texte.
+*Données lues* : référentiel : obligation portée par la gamme. Fiche : zone Anemos, statut de la mention. BAT : texte.
 
 ### 🟦 13.6 — Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
 **Référence** : PRO-QHS-013 §11.2
 
-*Conditionnel* — ne s'applique qu'à la gamme « LES ENGAGÉS » (11 références, 3 sous-gammes).
+*Conditionnel* — ne s'applique qu'aux gammes qui **déclarent exiger** la ligne de don, cochée par la Qualité dans l'écran Référentiels (voir 13.5). Les Engagés comptent 10 références et 3 sous-gammes ; une onzième, « Malin comme un chimpanzé », est encore rangée sous l'ancien libellé « Les Militants » — question M21 du document de visite.
 
 Le descriptif de l'association change à chaque produit — 8 associations pour 11 références. Le contrôle ne le mesure donc pas : il vérifie les deux éléments invariants, le bandeau de sous-gamme (« AGIR POUR LA NATURE / L'ÉDUCATION / LA CULTURE ») et la ligne de don. Le bandeau sans le don serait une promesse sans son engagement.
 
 Le contrôle du texte de l'association lui-même suppose un référentiel des bénéficiaires ; il n'est pas livré.
 
-*Données lues* : fiche : gamme, zone Les Engagés. BAT : texte.
+*Données lues* : référentiel : obligation portée par la gamme. Fiche : zone Les Engagés, statut de la mention. BAT : texte.
 
 ## 14. Taille des caractères
 

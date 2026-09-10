@@ -45,6 +45,12 @@ Une décision de la Qualité est attachée au **constat qu'elle répondait** : s
 contrôle ne dit plus la même chose après un nouveau BAT, la ligne se rouvre en le
 disant.
 
+**Hors checklist.** Un audit peut relever une anomalie qu'aucun des 45 points ne
+prévoyait. Elle se traite comme les autres : corrigée, ou assumée par une
+dérogation motivée — et la ligne rejoint alors le compte des points vérifiés.
+Le compteur est ce qui dit à Marie quand elle a fini ; un constat impossible à
+fermer l'aurait empêché d'y arriver.
+
 ## 3. Les colonnes du tableau
 
 - **BAT** — `zone` : le contrôle sait **où** il a mesuré et le montre sur
@@ -213,4 +219,8 @@ Camellia sinensis (1.1), présence de réglisse (5.3), pourcentage par origine
   `docs/decisions/2026-09-08-controle-bat-par-le-pdf.md`
 - L'écran de contrôle et les décisions de la Qualité :
   `docs/decisions/2026-09-08-ecran-controle-et-mesures-bat.md`
+- La définition détaillée de chaque point, référence par référence :
+  `docs/controles-definitions.md` — c'est ce document-là qui se met en regard de
+  PRO-QHS-013 paragraphe par paragraphe, et il porte la liste de ce qui a changé
+  depuis le 9 septembre.
 - Les procédures JDG elles-mêmes : `docs/referentiels/`
