@@ -329,9 +329,49 @@ n'est pas 0,5 (TA7372 : on écrit 38,5 / 19,5 / 4,5 / 0,5 au lieu de 38 / 19 / 5
 reporter l'écart sur le plus gros » — cette variante a été testée et infirmée par la feuille
 MT265 (elle pousse le maté à 63 au lieu de 62). Voir le garde-fou dans `recette.test.ts`.
 
-**Solution.** Question à poser à Marie **avant** de toucher au moteur : quelle règle fait foi,
-et qui remplit la colonne « % pour liste d'ingrédient » ? Selon la réponse : lire la colonne
-du classeur plutôt que recalculer, ou rendre le pas d'arrondi paramétrable par produit.
+**Mesuré sur les cinq classeurs (2026-09-10).** La colonne « % pour liste d'ingrédient »
+est désormais importée. L'écart est net : **MT265 est le seul des cinq à concorder** —
+c'est la référence sur laquelle le moteur a été calibré. Les quatre autres divergent sur
+2 à 4 lignes chacun (TA602 : 68,5≠69, 3,5≠3, 1,5≠1, **0≠0,5** ; TA626 : 4 lignes ;
+TA746 : 2 lignes ; TA737 : 4 lignes). Le cas le plus parlant est le BLEUET BLEU de TA602,
+0,03 kg : notre moteur écrit **0 %** sur l'étiquette là où JDG écrit 0,5. Un ingrédient à
+0 % n'est pas défendable devant un contrôle.
+
+**Arbitrage 2026-09-10 (Ouro).** Notre calcul reste la référence ; la colonne de JDG
+devient un **contrôle**. Les écarts sont donc persistés à l'import
+(`recettes.ecarts_pourcentage`) au lieu d'être appliqués en silence.
+
+**Solution.** Question à poser à Marie : qui remplit la colonne « % pour liste
+d'ingrédient », et que fait-elle d'un ingrédient sous 0,5 % ? Les écarts sont conservés
+mais **ne remontent encore dans aucun écran** — les brancher sur la fiche recette est le
+reste à faire.
 
 **Fichiers.** `src/lib/business-rules/recette.ts` (`arrondiPlusGrandReste`),
-`src/agents/imports/recetteExtractor.ts:23` (`PRECISION_PAR_DEFAUT = 0.5`).
+`src/agents/imports/recetteExtractor.ts` (`PRECISION_PAR_DEFAUT = 0.5`, `comparerPourcentages`).
+
+---
+
+## 18. 🟠 Extraction recette — le repli IA et les libellés de gabarit restent non couverts
+
+**Constat (2026-09-10).** Le classeur recette est maintenant lu par adresse de cellule
+(`src/lib/recette/xlsx-lecteur.ts`), avec les cinq classeurs réels en tests de
+non-régression. Deux zones restent en dehors :
+
+1. **Le chemin de repli IA** (`extraireParIA`) ne s'exécute sur aucun gabarit connu, donc
+   aucun test ne le traverse. Il neutralise volontairement les coches Demeter et
+   équitable, mais rien ne le vérifie.
+2. **Les libellés reconnus** (`LIBELLES_COLONNES`, `CHAMPS_ENTETE`) ont été relevés sur
+   trois gabarits — ENR-PRO-023 indices 8, 11 et 12, ENR-PRO-024 indice 9. Un quatrième
+   gabarit tombera en repli sans qu'on le sache à l'avance.
+
+**Impact.** Un classeur non reconnu produit une recette sans mention Demeter ni équitable.
+C'est le comportement voulu — mieux vaut une case vide qu'une case inventée — mais il est
+silencieux pour Marie : `recettes.source_extraction` vaut `IA_DEGRADEE` et personne ne le
+voit encore à l'écran.
+
+**Solution.** Afficher `source_extraction` sur la fiche recette ; ajouter un test du repli
+sur un classeur volontairement dégradé ; demander à JDG la liste des indices en vigueur
+pour ENR-PRO-023 et 024.
+
+**Fichiers.** `src/agents/imports/recetteExtractor.ts`, `src/lib/recette/xlsx-lecteur.ts`,
+`src/lib/recette/xlsx-tableau.ts`, `src/tests/recette-xlsx-lecteur.test.ts`.

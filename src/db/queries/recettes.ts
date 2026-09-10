@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { recettes, ingredientsRecette, auditLogs, matieresPremieres } from "@/db/schema";
 import { evaluerDemeter, type RecetteCalculee } from "@/lib/business-rules/recette";
@@ -9,23 +9,37 @@ interface SaveRecetteParams {
   produitId: string;
   version: string;
   developpeur?: string;
+  date?: Date;
+  saveurOrigine?: string;
   calc: RecetteCalculee;
   descriptifModification?: string;
   raisonModification?: string;
-  incidenceEtiquetage?: boolean;
+  /** null = la fiche ne répond pas, ce qui n'est pas « non ». */
+  incidenceEtiquetage?: boolean | null;
+  /** DETERMINISTE (classeur lu) ou IA_DEGRADEE (gabarit non reconnu). */
+  sourceExtraction?: string;
+  /** Écarts entre notre arrondi QUID et la colonne % de JDG. */
+  ecartsPourcentage?: unknown;
+  /** Une extraction dégradée n'a pas lu les coches : elle ne qualifie rien. */
+  qualifieLesMatieres?: boolean;
 }
 
 /**
  * Feeds the raw-material reference from what an import just revealed.
  *
- * Only `codeArticle` → `designationRd` is written, and never over an existing
- * row: the legal denomination and the markers are a human's answer, and a later
- * import must not undo it. The table therefore fills itself as products come in,
- * and stays correct where someone has already qualified a material.
+ * A row that a human has qualified is never touched: the legal denomination and
+ * the markers are Marie's answer, and no import may undo it. An unqualified row,
+ * on the other hand, is only ever the residue of a previous import — and the
+ * first import used to win forever, which is why TN592 SORWATHE OP1 still
+ * carried a Demeter marker from a misread on 07/09 while the re-import had since
+ * read it correctly as fair trade. So a fresh reading overwrites an unqualified
+ * row, and only a reading: a degraded extraction has not read the ticks at all
+ * and must not write them.
  */
 async function alimenterMatieresPremieres(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  calc: RecetteCalculee
+  calc: RecetteCalculee,
+  qualifieLesMatieres: boolean
 ): Promise<void> {
   const lignes = calc.ingredients
     .filter((i) => i.codeArticle.trim() !== "")
@@ -37,9 +51,29 @@ async function alimenterMatieresPremieres(
     }));
   if (lignes.length === 0) return;
 
-  await tx.insert(matieresPremieres).values(lignes).onConflictDoNothing({
-    target: matieresPremieres.codeArticle,
-  });
+  if (!qualifieLesMatieres) {
+    // Le code n'a pas lu les coches : on n'enregistre que l'existence de la
+    // matière, jamais un marqueur de certification deviné.
+    await tx.insert(matieresPremieres).values(lignes).onConflictDoNothing({
+      target: matieresPremieres.codeArticle,
+    });
+    return;
+  }
+
+  await tx
+    .insert(matieresPremieres)
+    .values(lignes)
+    .onConflictDoUpdate({
+      target: matieresPremieres.codeArticle,
+      // Marie a tranché sur cette matière → sa réponse prime, on ne touche à rien.
+      setWhere: isNull(matieresPremieres.qualifiePar),
+      set: {
+        designationRd: sql`excluded.designation_rd`,
+        estDemeter: sql`excluded.est_demeter`,
+        estEquitable: sql`excluded.est_equitable`,
+        misAJourLe: new Date(),
+      },
+    });
 }
 
 /**
@@ -50,10 +84,15 @@ export async function saveRecette({
   produitId,
   version,
   developpeur,
+  date,
+  saveurOrigine,
   calc,
   descriptifModification,
   raisonModification,
   incidenceEtiquetage,
+  sourceExtraction,
+  ecartsPourcentage,
+  qualifieLesMatieres = false,
 }: SaveRecetteParams) {
   return db.transaction(async (tx) => {
     // The previous version is superseded, not overwritten: comparing before and
@@ -70,14 +109,18 @@ export async function saveRecette({
         produitId,
         version,
         developpeur,
+        date,
+        saveurOrigine,
         descriptifModification,
         raisonModification,
         incidenceEtiquetage,
+        sourceExtraction,
+        ecartsPourcentage,
         pourcentageTotal: calc.totalPourcentageEtiquette,
       })
       .returning();
 
-    await alimenterMatieresPremieres(tx, calc);
+    await alimenterMatieresPremieres(tx, calc, qualifieLesMatieres);
 
     if (calc.ingredients.length > 0) {
       await tx.insert(ingredientsRecette).values(

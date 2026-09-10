@@ -1,26 +1,40 @@
 /**
- * Structured recette extraction (Lot 1 — source reconciliation).
+ * Recette extraction — the authoritative composition, read rather than guessed.
  *
- * The R&D recette sheet (Excel) is the authoritative composition. This is a
- * SECOND, dedicated AI call — separate from the dégustation extraction — that
- * turns the tabular sheet into structured ingredient lines. Per the decision
- * (2026-06-09-reconciliation-sources):
- *   - the LLM extracts the kg (flexible across sheet layouts),
- *   - `computeRecette` recomputes the %  (figures never come from the LLM),
- *   - the result is persisted as a DRAFT recette; Marie validates later.
+ * The R&D recette sheet decides the ingredient list, the QUID figures and the
+ * Demeter / fair-trade claims. It used to be flattened to tab-separated text and
+ * handed to the LLM, which had to reconstruct the column grid from a header the
+ * flattening had broken into three lines. It got the ticks wrong about one
+ * import in three: TA602's three fair-trade ticks came back as Demeter ticks,
+ * which put "**" on three ingredients and claimed a 77 % Demeter recipe that
+ * does not exist.
+ *
+ * So the workbook is now READ by cell address (`lireFicheRecetteXlsx`), and the
+ * LLM is only a fallback for a layout the reader does not recognise. In that
+ * fallback the certification ticks are NOT guessed — a wrong `true` travels
+ * silently all the way onto a label, so the degraded path reports "no tick" and
+ * flags itself for Marie instead.
+ *
+ * Per the decision (2026-06-09-reconciliation-sources) the figures still come
+ * from `computeRecette`, never from the model; JDG's own "% pour liste
+ * d'ingrédient" column is imported alongside as a control, not as the truth.
  */
 
 import { z } from "zod";
-import * as xlsx from "xlsx";
 import {
   computeRecette,
   type IngredientRecetteInput,
   type RecetteCalculee,
 } from "@/lib/business-rules/recette";
+import { lireFicheRecetteXlsx, type FicheRecetteLue } from "@/lib/recette/xlsx-lecteur";
 import { callMistral, type CallMeta } from "../mistral-call";
 import { TEXT_MODEL } from "../models";
+import { xlsxVersTexte } from "./xlsx-texte";
 
 const PRECISION_PAR_DEFAUT = 0.5 as const;
+
+/** Below this the two percentages are the same number, not a divergence. */
+const TOLERANCE_ECART = 0.001;
 
 const IngredientExtrait = z.object({
   /** Code article JDG (HB170, TN592…) — clé de jointure du référentiel matière. */
@@ -32,7 +46,6 @@ const IngredientExtrait = z.object({
   estEquitable: z.boolean().nullable().optional(),
 });
 export const RecetteExtractionSchema = z.object({
-  /** Version retenue, telle qu'écrite dans le classeur ("V.2"). */
   version: z.string().nullable().optional(),
   descriptifModification: z.string().nullable().optional(),
   raisonModification: z.string().nullable().optional(),
@@ -41,19 +54,32 @@ export const RecetteExtractionSchema = z.object({
 });
 export type RecetteExtraction = z.infer<typeof RecetteExtractionSchema>;
 
-/** Excel buffer → tab-separated text, one block per sheet. */
-function xlsxVersTexte(buffer: ArrayBuffer): string {
-  const workbook = xlsx.read(buffer, { type: "buffer" });
-  let texte = "";
-  for (const nom of workbook.SheetNames) {
-    const rows = xlsx.utils.sheet_to_json(workbook.Sheets[nom], { header: 1 }) as unknown[][];
-    texte += `\nFeuille: ${nom}\n`;
-    texte += rows
-      .filter((r) => r.some((c) => c !== null && c !== undefined && c !== ""))
-      .map((r) => r.join("\t"))
-      .join("\n");
-  }
-  return texte;
+/** How the composition was obtained — persisted, so Marie can tell them apart. */
+export type SourceExtractionRecette = "DETERMINISTE" | "IA_DEGRADEE";
+
+/** One line where our QUID rounding differs from the sheet's own label column. */
+export interface EcartPourcentage {
+  codeArticle: string | null;
+  designation: string;
+  /** Our engine — the reference (SPEC-02). */
+  calcule: number;
+  /** JDG's "% pour liste d'ingrédient" column. */
+  fiche: number;
+}
+
+export interface RecetteImportee {
+  calc: RecetteCalculee;
+  source: SourceExtractionRecette;
+  version?: string;
+  developpeur?: string;
+  date?: Date;
+  saveurOrigine?: string;
+  descriptifModification?: string;
+  raisonModification?: string;
+  /** null / undefined = the form carries no answer, which is not "non". */
+  incidenceEtiquetage?: boolean | null;
+  ecartsPourcentage: EcartPourcentage[];
+  anomalies: string[];
 }
 
 function buildPrompt(texte: string): string {
@@ -66,10 +92,9 @@ Retourne UNIQUEMENT un objet JSON valide, sans markdown ni commentaire :
   "version": "string|null",
   "descriptifModification": "string|null",
   "raisonModification": "string|null",
-  "incidenceEtiquetage": true|false|null,
   "ingredients": [
     { "codeArticle": "string|null", "designation": "string", "quantiteKg": number|null,
-      "pourcentage": number|null, "estDemeter": boolean, "estEquitable": boolean }
+      "pourcentage": number|null }
   ]
 }
 
@@ -87,14 +112,12 @@ AUTRES CHAMPS :
 - "codeArticle" : le code de la colonne CODE ARTICLE (HB170, TN592, EF231…). null si absent.
 - "quantiteKg" : la masse en kg de la colonne quantité (accepte la virgule décimale). null si absente.
 - "pourcentage" : le % de la colonne pourcentage si présent. null sinon.
-- "estDemeter" / "estEquitable" : true si la case DEMETER / COMMERCE ÉQUITABLE porte
-  une marque (x, X, oui…) pour CET ingrédient, sinon false.
 - "descriptifModification" / "raisonModification" : les lignes correspondantes de la
   fiche de modification, si présentes. null sinon.
-- "incidenceEtiquetage" : true si la fiche indique que la modification a une incidence
-  sur l'ÉTIQUETAGE, false si elle indique le contraire, null si ce n'est pas renseigné.
 - N'invente JAMAIS un chiffre. Ignore les lignes de total, d'en-tête et les lignes vides.
 - Une ligne = un ingrédient réel de la recette.
+- NE te prononce PAS sur les cases DEMETER et COMMERCE ÉQUITABLE : elles ne sont
+  pas lisibles de façon fiable dans ce texte aplati, elles sont traitées ailleurs.
 
 CLASSEUR :
 ${texte.substring(0, 16000)}`;
@@ -128,25 +151,56 @@ export function recetteExtraiteVersInput(
   }));
 }
 
-/**
- * What one recette workbook yields: the computed recipe plus the change record
- * around it. JDG's sheet is a "fiche de modification" that states its own reason
- * and whether the change touches the label — that reasoning is worth keeping.
- */
-export interface RecetteImportee {
-  calc: RecetteCalculee;
-  version?: string;
-  descriptifModification?: string;
-  raisonModification?: string;
-  incidenceEtiquetage?: boolean;
+/** Read lines → engine input, keeping the sheet's own kg (or % as a fallback). */
+function ficheVersInput(fiche: FicheRecetteLue): IngredientRecetteInput[] | null {
+  const lignes = fiche.tableau.lignes;
+  if (lignes.length === 0) return null;
+
+  const tousKg = lignes.every((l) => typeof l.quantiteKg === "number" && l.quantiteKg > 0);
+  const tousPct = lignes.every((l) => typeof l.pourcentageSource === "number" && l.pourcentageSource > 0);
+  if (!tousKg && !tousPct) return null;
+
+  return lignes.map((l) => ({
+    codeArticle: (l.codeArticle ?? "").trim(),
+    designation: l.designation,
+    estBio: true,
+    quantiteKg: tousKg ? (l.quantiteKg as number) : (l.pourcentageSource as number),
+    estDemeter: l.estDemeter,
+    estEquitable: l.estEquitable,
+  }));
 }
 
 /**
- * Extracts the recette from an Excel buffer and returns the computed result
- * (kg from the LLM, % from the engine), or null if nothing usable. Throws only
- * on a hard LLM/parse failure — the caller treats it as best-effort.
+ * Our rounding against JDG's own label column. Ours is the reference; a
+ * divergence is a question for Marie, not a correction to apply silently.
  */
-export async function extraireRecetteDepuisXlsx(
+function comparerPourcentages(
+  calc: RecetteCalculee,
+  fiche: FicheRecetteLue
+): EcartPourcentage[] {
+  const cle = (code: string | null, designation: string) =>
+    (code ?? "").trim() !== "" ? (code as string).trim() : designation.trim();
+  const parCle = new Map(
+    fiche.tableau.lignes.map((l) => [cle(l.codeArticle, l.designation), l.pourcentageEtiquetteSource])
+  );
+
+  const ecarts: EcartPourcentage[] = [];
+  for (const ingredient of calc.ingredients) {
+    const source = parCle.get(cle(ingredient.codeArticle, ingredient.designation));
+    if (typeof source !== "number") continue;
+    if (Math.abs(source - ingredient.pourcentageEtiquette) <= TOLERANCE_ECART) continue;
+    ecarts.push({
+      codeArticle: ingredient.codeArticle || null,
+      designation: ingredient.designation,
+      calcule: ingredient.pourcentageEtiquette,
+      fiche: source,
+    });
+  }
+  return ecarts;
+}
+
+/** Fallback path: the model reads the text, but never a certification tick. */
+async function extraireParIA(
   buffer: ArrayBuffer,
   meta?: Omit<CallMeta, "agent">
 ): Promise<RecetteImportee | null> {
@@ -170,11 +224,53 @@ export async function extraireRecetteDepuisXlsx(
   const ingredients = recetteExtraiteVersInput(extraction);
   if (!ingredients) return null;
 
+  // Les coches ne sont jamais devinées : un « true » inventé devient un « ** »
+  // sur l'étiquette et une mention Demeter exigée à l'audit, sans bruit.
+  const neutralises = ingredients.map((i) => ({ ...i, estDemeter: false, estEquitable: false }));
+
   return {
-    calc: computeRecette({ ingredients, precisionArrondi: PRECISION_PAR_DEFAUT }),
+    calc: computeRecette({ ingredients: neutralises, precisionArrondi: PRECISION_PAR_DEFAUT }),
+    source: "IA_DEGRADEE",
     version: extraction.version?.trim() || undefined,
     descriptifModification: extraction.descriptifModification?.trim() || undefined,
     raisonModification: extraction.raisonModification?.trim() || undefined,
-    incidenceEtiquetage: extraction.incidenceEtiquetage ?? undefined,
+    incidenceEtiquetage: null,
+    ecartsPourcentage: [],
+    anomalies: [
+      "Classeur non reconnu : composition lue par l'IA. Les mentions Demeter et commerce équitable n'ont pas été lues — à renseigner à la main.",
+    ],
   };
+}
+
+/**
+ * Extracts the recette from an Excel buffer. Reads the workbook directly when
+ * its layout is recognised, and only then falls back to the model. Returns null
+ * if nothing usable came out; throws only on a hard LLM/parse failure in the
+ * fallback — the caller treats that as best-effort.
+ */
+export async function extraireRecetteDepuisXlsx(
+  buffer: ArrayBuffer,
+  meta?: Omit<CallMeta, "agent">
+): Promise<RecetteImportee | null> {
+  const fiche = lireFicheRecetteXlsx(buffer);
+  const ingredients = fiche ? ficheVersInput(fiche) : null;
+
+  if (fiche && ingredients) {
+    const calc = computeRecette({ ingredients, precisionArrondi: PRECISION_PAR_DEFAUT });
+    return {
+      calc,
+      source: "DETERMINISTE",
+      version: fiche.versionRetenue ?? undefined,
+      developpeur: fiche.entete.developpeur ?? undefined,
+      date: fiche.entete.date ?? undefined,
+      saveurOrigine: fiche.entete.saveurOrigine ?? undefined,
+      descriptifModification: fiche.entete.descriptifModification ?? undefined,
+      raisonModification: fiche.entete.raisonModification ?? undefined,
+      incidenceEtiquetage: fiche.incidenceEtiquetage,
+      ecartsPourcentage: comparerPourcentages(calc, fiche),
+      anomalies: fiche.anomalies,
+    };
+  }
+
+  return extraireParIA(buffer, meta);
 }

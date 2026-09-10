@@ -185,6 +185,19 @@ export const recettes = pgTable("recettes", {
     raisonModification: text("raison_modification"),
     /** Ce que JDG a coché sur la fiche ; null = non renseigné, pas « non ». */
     incidenceEtiquetage: boolean("incidence_etiquetage"),
+    /**
+     * Comment la composition a été obtenue. DETERMINISTE : lue dans le classeur
+     * par adresse de cellule. IA_DEGRADEE : gabarit non reconnu, le modèle a lu
+     * le texte et les coches Demeter / équitable n'ont PAS été renseignées.
+     * Marie doit pouvoir distinguer les deux d'un coup d'œil.
+     */
+    sourceExtraction: varchar("source_extraction", { length: 30 }),
+    /**
+     * Écarts entre notre arrondi QUID (SPEC-02, qui fait foi) et la colonne
+     * « % pour liste d'ingrédient » que JDG remplit lui-même. Conservés comme
+     * point de contrôle, jamais appliqués en silence.
+     */
+    ecartsPourcentage: json("ecarts_pourcentage"),
     fichierSourceId: varchar("fichier_source_id", { length: 255 }), // Storage ref
     creeLe: timestamp("cree_le").defaultNow().notNull(),
     misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),

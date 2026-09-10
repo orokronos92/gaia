@@ -69,11 +69,16 @@ export async function reintegrerRecetteAction(formData: FormData): Promise<Reint
     await saveRecette({
         produitId,
         version: importee.version ?? "1.0",
-        developpeur: "Ré-import IA",
+        developpeur: importee.developpeur ?? "Ré-import",
+        date: importee.date,
+        saveurOrigine: importee.saveurOrigine,
         calc: importee.calc,
         descriptifModification: importee.descriptifModification,
         raisonModification: importee.raisonModification,
         incidenceEtiquetage: importee.incidenceEtiquetage,
+        sourceExtraction: importee.source,
+        ecartsPourcentage: importee.ecartsPourcentage,
+        qualifieLesMatieres: importee.source === "DETERMINISTE",
     })
     await writeAuditLog({
         typeEntite: "fiche",
@@ -84,6 +89,9 @@ export async function reintegrerRecetteAction(formData: FormData): Promise<Reint
             nbIngredients: importee.calc.ingredients.length,
             version: importee.version,
             incidenceEtiquetage: importee.incidenceEtiquetage,
+            source: importee.source,
+            ecartsPourcentage: importee.ecartsPourcentage,
+            anomalies: importee.anomalies,
         },
     })
 

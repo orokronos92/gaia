@@ -570,8 +570,8 @@ ${combinedText.substring(0, 22000)}`;
             console.log(`[ImportWorker] Fiche dégustation créée → id: ${ficheDegustationId}`);
         }
 
-        // 8. Recette structurée — appel IA dédié à l'Excel (best-effort). kg par
-        // l'IA, % par computeRecette ; persistée en DRAFT, Marie validera.
+        // 8. Recette structurée — le classeur est lu par adresse de cellule, le
+        // modèle n'intervient qu'en repli. % par computeRecette ; DRAFT, Marie validera.
         if (docs.xlsxBuffer && docs.xlsxBuffer.byteLength > 0) {
             try {
                 const importee = await extraireRecetteDepuisXlsx(docs.xlsxBuffer);
@@ -579,13 +579,22 @@ ${combinedText.substring(0, 22000)}`;
                     await saveRecette({
                         produitId,
                         version: importee.version ?? "1.0",
-                        developpeur: "Import IA",
+                        developpeur: importee.developpeur ?? "Import",
+                        date: importee.date,
+                        saveurOrigine: importee.saveurOrigine,
                         calc: importee.calc,
                         descriptifModification: importee.descriptifModification,
                         raisonModification: importee.raisonModification,
                         incidenceEtiquetage: importee.incidenceEtiquetage,
+                        sourceExtraction: importee.source,
+                        ecartsPourcentage: importee.ecartsPourcentage,
+                        // Seule une lecture du classeur qualifie une matière.
+                        qualifieLesMatieres: importee.source === "DETERMINISTE",
                     });
-                    console.log(`[ImportWorker] Recette structurée extraite (${importee.calc.ingredients.length} ingrédients)`);
+                    console.log(`[ImportWorker] Recette ${importee.source} (${importee.calc.ingredients.length} ingrédients, ${importee.ecartsPourcentage.length} écart(s) de %)`);
+                    for (const anomalie of importee.anomalies) {
+                        console.warn(`[ImportWorker] Recette — ${anomalie}`);
+                    }
                 }
             } catch (e) {
                 console.error("[ImportWorker] Extraction recette structurée échouée:", e instanceof Error ? e.message : e);
