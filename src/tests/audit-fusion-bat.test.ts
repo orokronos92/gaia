@@ -87,3 +87,74 @@ describe("fusion des résultats BAT dans la checklist", () => {
     expect(fusionner(liste, [])).toEqual(liste);
   });
 });
+
+/**
+ * Deux fusions successives — le cas réel de l'écran d'audit.
+ *
+ * Marie lance d'abord le contrôle, qui verse les constats mesurés ; puis
+ * l'analyse IA, qui verse ceux du modèle. La seconde passe réévaluait le point
+ * sur les seules preuves du modèle : sur TA737, l'Eurofeuille mesurée à
+ * 12,78 × 8,52 mm — sous la taille minimale — redevenait « à vérifier » parce
+ * que le modèle avait répondu « logo détecté ». Une mesure effacée par un avis.
+ */
+describe("fusions successives — les preuves s'ajoutent, jamais ne se remplacent", () => {
+  const mesure = (statut: BatTextCheck["statut"], justification: string): BatTextCheck =>
+    ({ id: "M", checklistId: "13.1", origine: "texte", rubrique: "Labels", libelle: "Eurofeuille", statut, justification });
+  const modele = (statut: BatTextCheck["statut"], justification: string): BatTextCheck =>
+    ({ id: "V", checklistId: "13.1", origine: "visuel", rubrique: "Labels", libelle: "Eurofeuille", statut, justification });
+
+  const enDeuxTemps = (dabord: BatTextCheck[], ensuite: BatTextCheck[]) =>
+    fusionner(fusionner([point("13.1", "bat", "WARNING", "VERIFIER")], dabord), ensuite)[0];
+
+  it("un « logo détecté » n'efface pas une Eurofeuille mesurée hors norme", () => {
+    const r = enDeuxTemps(
+      [mesure("FAIL", "champ vert 12,78 × 8,52 mm — sous la taille minimale")],
+      [modele("PASS", "Logo obligatoire détecté sur le BAT.")]
+    );
+    expect(r.statut).toBe("FAIL");
+    expect(r.action).toBe("CORRIGER");
+  });
+
+  it("Marie lit les deux constats, pas seulement le dernier arrivé", () => {
+    const r = enDeuxTemps(
+      [mesure("FAIL", "champ vert 12,78 × 8,52 mm — sous la taille minimale")],
+      [modele("PASS", "Logo obligatoire détecté sur le BAT.")]
+    );
+    expect(r.justification).toContain("12,78");
+    expect(r.justification).toContain("détecté");
+    expect(r.preuves).toHaveLength(2);
+  });
+
+  it("l'ordre des clics ne change pas le verdict", () => {
+    const m = mesure("FAIL", "hors norme");
+    const v = modele("PASS", "détecté");
+    expect(enDeuxTemps([m], [v]).statut).toBe(enDeuxTemps([v], [m]).statut);
+  });
+
+  it("rejouer la même preuve ne la compte pas deux fois", () => {
+    const m = mesure("FAIL", "hors norme");
+    expect(enDeuxTemps([m], [m]).preuves).toHaveLength(1);
+  });
+
+  it("un modèle qui confirme une mesure conforme laisse le point conforme", () => {
+    const r = enDeuxTemps([mesure("PASS", "aux dimensions")], [modele("PASS", "détecté")]);
+    expect(r.statut).toBe("PASS");
+  });
+
+  it("le modèle seul ne clôt pas un point : il reste à confirmer", () => {
+    const r = fusionner([point("12.1", "manual", "WARNING", "VERIFIER")], [
+      { id: "V", checklistId: "12.1", origine: "visuel", rubrique: "P", libelle: "Triman", statut: "PASS", justification: "détecté" },
+    ])[0];
+    expect(r.action).toBe("VERIFIER");
+    expect(r.justification).toContain("à confirmer sur le BAT");
+  });
+
+  it("une décision de la Qualité tient malgré une preuve qui arrive après", () => {
+    const tranche: ControlResult = {
+      ...point("13.1", "bat", "FAIL", "CORRIGER"),
+      validation: { decision: "DEROGATION", parNom: "Marie", le: new Date(), justification: "écart assumé", perimee: false },
+    };
+    const r = fusionner([tranche], [modele("FAIL", "toujours hors norme")])[0];
+    expect(r.action).toBe("RIEN");
+  });
+});

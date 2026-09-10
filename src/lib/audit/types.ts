@@ -200,6 +200,15 @@ export const ControlResultSchema = z.object({
  * La décision n'est pas dans le schéma Zod : celui-ci décrit ce que le moteur
  * produit, elle vient de la base et s'y ajoute après coup.
  */
+/** Une preuve apportée par le BAT, telle qu'elle reste attachée au point. */
+export interface PreuveBatResultat {
+  libelle: string;
+  statut: ControlStatus;
+  justification: string;
+  origine: string;
+  manqueSurLaFiche?: string;
+}
+
 export type ControlResult = z.infer<typeof ControlResultSchema> & {
   validation?: {
     decision: "VERIFIE" | "DEROGATION";
@@ -211,6 +220,18 @@ export type ControlResult = z.infer<typeof ControlResultSchema> & {
   };
   /** Une valeur que le BAT porte et que la fiche pourrait enregistrer. */
   proposition?: { table: "produit" | "fiche"; champ: "poidsNet" | "codeEtiquette" | "phraseDemeterFr"; valeur: string; source: string };
+  /**
+   * Toutes les preuves du BAT rattachées au point, dans leur ordre d'arrivée.
+   *
+   * Conservées sur le résultat pour que la fusion reste **rejouable** : l'écran
+   * fusionne d'abord les constats mesurés, puis ceux du modèle quand Marie
+   * lance l'analyse. Sans mémoire des premières, la seconde fusion réévaluait le
+   * point sur les seules preuves du modèle — et un « logo détecté » effaçait une
+   * Eurofeuille mesurée hors norme (constaté sur TA737 le 2026-09-10).
+   */
+  preuves?: PreuveBatResultat[];
+  /** L'état du point avant toute preuve du BAT, pour pouvoir tout réévaluer. */
+  socle?: { statut: ControlStatus; action?: ControlAction; justification?: string };
   /** Où regarder sur le BAT, en fractions de la face rendue. */
   reperes?: {
     face: number;
