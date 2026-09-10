@@ -6,10 +6,12 @@ import { cn } from "@/lib/utils"
 
 import { db } from "@/db"
 import { produits, fichesEtiquettes } from "@/db/schema"
-import { and, eq, ilike, or } from "drizzle-orm"
+import { and, eq, ilike, or, type SQL } from "drizzle-orm"
 import { filtreCatalogue, type FiltreCatalogue } from "@/db/queries/produits"
 import { FiltreCatalogueSelect } from "./FiltreCatalogueSelect"
+import { FiltreGammeSelect } from "./FiltreGammeSelect"
 import { ProductSearch } from "@/components/features/ProductSearch"
+import { getChoixGammes } from "@/db/queries/gammes"
 import { ProductsTableClient } from "./ProductsTableClient"
 
 export default async function ProductsPage(
@@ -22,6 +24,9 @@ export default async function ProductsPage(
     const filtreBrut = typeof searchParams?.catalogue === 'string' ? searchParams.catalogue : "actifs";
     const filtre: FiltreCatalogue =
         filtreBrut === "retires" || filtreBrut === "tous" ? filtreBrut : "actifs";
+    const choixGammes = await getChoixGammes();
+    const gammeFiltre = typeof searchParams?.gamme === 'string' ? searchParams.gamme : "";
+    const sousGammeFiltre = typeof searchParams?.sousGamme === 'string' ? searchParams.sousGamme : "";
 
     // Construire la requête de base
     let query = db
@@ -31,6 +36,7 @@ export default async function ProductsPage(
             name: produits.denominationFr,
             type: produits.typeTheFr,
             gamme: produits.gamme,
+            sousGamme: produits.sousGamme,
             status: fichesEtiquettes.statut,
             ficheId: fichesEtiquettes.id,
             retireLe: produits.retireLe,
@@ -40,19 +46,22 @@ export default async function ProductsPage(
 
     // Les produits archivés ne figurent plus au catalogue : ils vivent dans le
     // registre d'archives, pas ici.
-    const base = filtreCatalogue(filtre);
-    query = query.where(
-        q
-            ? and(
-                  base,
-                  or(
-                      ilike(produits.codePf, `%${q}%`),
-                      ilike(produits.denominationFr, `%${q}%`),
-                      ilike(produits.gamme, `%${q}%`)
-                  )
-              )
-            : base
-    ) as any;
+    // La recherche libre et les deux filtres se cumulent : chercher « chimpanzé »
+    // dans une gamme donnée doit rester possible.
+    const conditions: SQL[] = [filtreCatalogue(filtre)];
+    if (q) {
+        conditions.push(
+            or(
+                ilike(produits.codePf, `%${q}%`),
+                ilike(produits.denominationFr, `%${q}%`),
+                ilike(produits.gamme, `%${q}%`),
+                ilike(produits.sousGamme, `%${q}%`)
+            )!
+        );
+    }
+    if (gammeFiltre) conditions.push(eq(produits.gamme, gammeFiltre));
+    if (sousGammeFiltre) conditions.push(eq(produits.sousGamme, sousGammeFiltre));
+    query = query.where(and(...conditions)) as any;
 
     const rawData = await query.orderBy(produits.creeLe);
 
@@ -95,7 +104,8 @@ export default async function ProductsPage(
                         Consultez et modifiez les recettes validées issues de la Base de Données
                     </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                    <FiltreGammeSelect choix={choixGammes} gamme={gammeFiltre} sousGamme={sousGammeFiltre} />
                     <FiltreCatalogueSelect valeur={filtre} />
                     <Link href="/etiquettes/nouveau">
                         <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2 shadow-sm shadow-emerald-700/20 text-white rounded-full px-5">

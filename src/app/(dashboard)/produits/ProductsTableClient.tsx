@@ -20,6 +20,7 @@ interface ProductRow {
     name: string;
     type: string;
     gamme: string;
+    sousGamme: string | null;
     status: string | null;
     ficheId: string | null;
     nbFiches?: number;
@@ -105,7 +106,8 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                         <TableHead className="w-[120px] font-medium text-stone-500">Code PF</TableHead>
                         <TableHead className="font-medium text-stone-500">Dénomination</TableHead>
                         <TableHead className="font-medium text-stone-500 hidden md:table-cell">Famille de texte</TableHead>
-                        <TableHead className="font-medium text-stone-500">Gamme Origine</TableHead>
+                        <TableHead className="font-medium text-stone-500">Gamme</TableHead>
+                        <TableHead className="font-medium text-stone-500 hidden lg:table-cell">Sous-gamme</TableHead>
                         <TableHead className="font-medium text-stone-500">Statut Fiche</TableHead>
                         {/* Épinglée à droite : même sur un écran étroit, où le tableau
                             défile, retirer ou supprimer un produit reste atteignable.
@@ -128,6 +130,9 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                             <TableCell className="font-semibold text-stone-800 group-hover:text-emerald-700 transition-colors">{product.name}</TableCell>
                             <TableCell className="text-stone-500 hidden md:table-cell">{product.type}</TableCell>
                             <TableCell className="text-stone-600 dark:text-stone-300">{product.gamme}</TableCell>
+                            <TableCell className="hidden lg:table-cell text-stone-500">
+                                {product.sousGamme?.trim() ? product.sousGamme : <span className="text-stone-300">—</span>}
+                            </TableCell>
                             <TableCell>
                                 {product.status ? (
                                     <Badge
