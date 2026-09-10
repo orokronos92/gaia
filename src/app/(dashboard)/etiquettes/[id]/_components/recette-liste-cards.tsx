@@ -1,4 +1,4 @@
-import { FlaskConical, BookOpen, EyeOff, AlertTriangle } from "lucide-react";
+import { FlaskConical, BookOpen, EyeOff, AlertTriangle, Tag } from "lucide-react";
 
 import { RecetteEtiquetteCarte } from "./recette-etiquette-carte";
 
@@ -38,16 +38,17 @@ const nb = (v: number, d = 3) =>
  * Marie habille de dénominations légales, et que l'audit comparera au BAT.
  */
 export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteListeCardsProps) {
-  if (!recette || recette.ingredients.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/80 py-10 text-center text-sm font-medium text-stone-400">
-        Aucune recette validée. Renseignez-la dans l&apos;onglet Recette / QUID.
-      </div>
-    );
-  }
-
-  const ings = [...recette.ingredients].sort((a, b) => a.ordreTri - b.ordreTri);
-  const masques = recette.ingredients.map((i) => i.masquerEtiquette);
+  // Les trois cartes se montrent toujours, même vides.
+  //
+  // Sans recette, elles disparaissaient toutes les trois derrière un encadré
+  // « Aucune recette validée » — y compris le rappel dégustation, qui portait
+  // pourtant du texte. Après un import de la seule fiche dégustation, l'écran
+  // annonçait donc qu'il n'avait rien alors qu'il avait la liste d'ingrédients
+  // du comité. Une carte vide dit ce qui manque et d'où ça vient ; une carte
+  // absente ne dit rien.
+  const aRecette = recette !== null && recette.ingredients.length > 0;
+  const ings = aRecette ? [...recette.ingredients].sort((a, b) => a.ordreTri - b.ordreTri) : [];
+  const masques = aRecette ? recette.ingredients.map((i) => i.masquerEtiquette) : [];
   const nbMasques = masques.filter(Boolean).length;
   const totalBrut = ings.reduce((s, i) => s + i.pourcentageBrut, 0);
   const totalKg = ings.reduce((s, i) => s + i.quantiteKg, 0);
@@ -55,13 +56,15 @@ export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteLi
   // Un écart de dénomination — un ingrédient présent d'un côté et pas de l'autre
   // — veut dire que les deux textes ne parlent pas des mêmes matières. Un écart
   // de pourcentage, non : c'est l'arrondi, et c'est normal.
-  const ecarts = differentielDepuisTexte(
-    ingredientsFr,
-    recette.ingredients.map((i, n) => ({
-      designation: i.designation,
-      pourcentage: masques[n] ? null : i.pourcentageEtiquette,
-    }))
-  );
+  const ecarts = aRecette
+    ? differentielDepuisTexte(
+        ingredientsFr,
+        recette.ingredients.map((i, n) => ({
+          designation: i.designation,
+          pourcentage: masques[n] ? null : i.pourcentageEtiquette,
+        }))
+      )
+    : [];
   const denominationsDivergentes = ecarts.filter((e) => e.type !== "pourcentage").length;
 
   return (
@@ -72,6 +75,12 @@ export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteLi
         sousTitre={nbMasques > 0 ? `ce qui est pesé · ${nbMasques} % masqué${nbMasques > 1 ? "s" : ""}` : "ce qui est pesé et calculé"}
         ton="stone"
       >
+        {!aRecette ? (
+          <Vide
+            quoi="Aucune recette de production."
+            dou="Elle arrive avec la fiche recette (Excel) — bouton « Ré-intégrer », ou depuis l'onglet Recette / QUID."
+          />
+        ) : (
         <table className="w-full text-xs">
           <thead>
             <tr className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
@@ -105,9 +114,19 @@ export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteLi
             </tr>
           </tbody>
         </table>
+        )}
       </Carte>
 
-      <RecetteEtiquetteCarte ficheId={ficheId} recette={recette} />
+      {aRecette ? (
+        <RecetteEtiquetteCarte ficheId={ficheId} recette={recette} />
+      ) : (
+        <Carte icone={Tag} titre="Recette étiquette" sousTitre="ce qui sera imprimé, comparé au BAT" ton="sky">
+          <Vide
+            quoi="Pas encore de recette étiquette."
+            dou="Elle se crée à partir de la recette de production, à sa validation. La Qualité y reprend ensuite les dénominations imprimées."
+          />
+        </Carte>
+      )}
 
       <Carte
         icone={BookOpen}
@@ -123,9 +142,10 @@ export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteLi
         {ingredientsFr?.trim() ? (
           <p className="text-sm font-medium leading-relaxed text-emerald-900">{ingredientsFr}</p>
         ) : (
-          <p className="text-sm italic text-stone-400">
-            Aucune liste dans la fiche dégustation.
-          </p>
+          <Vide
+            quoi="Aucune liste dans la fiche dégustation."
+            dou="Elle est recopiée du document du comité à l'import — le texte sous « Liste d'ingrédient »."
+          />
         )}
       </Carte>
     </div>
@@ -174,6 +194,16 @@ function Carte({
         )}
       </div>
       {children}
+    </div>
+  );
+}
+
+/** Ce que la carte attend, et d'où ça vient — une carte vide reste bavarde. */
+function Vide({ quoi, dou }: { quoi: string; dou: string }) {
+  return (
+    <div className="py-3">
+      <p className="text-sm font-medium text-stone-500">{quoi}</p>
+      <p className="mt-1 text-xs leading-relaxed text-stone-400">{dou}</p>
     </div>
   );
 }
