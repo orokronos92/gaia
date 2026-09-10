@@ -13,7 +13,8 @@ import {
     Bell,
     Brain,
     Archive,
-    PenTool
+    PenTool,
+    Library
 } from "lucide-react"
 
 const navItems = [
@@ -22,6 +23,9 @@ const navItems = [
     { href: "/etiquettes", label: "Étiquettes", icon: Tags },
     { href: "/commandes", label: "Commandes", icon: ClipboardList },
     { href: "/connaissances", label: "Connaissances", icon: Brain },
+    // Ce que le catalogue désigne et qui existe sans lui : gammes, matières,
+    // opérations. Séparé de Paramètres, qui règle l'outil et non le métier.
+    { href: "/referentiels", label: "Référentiels", icon: Library },
     // Emplacement provisoire : le graphisme aura son propre espace, mais
     // l'auto-contrôle n'a d'intérêt que s'il est utilisable tout de suite.
     { href: "/controle-graphisme", label: "Contrôle graphisme", icon: PenTool },

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector, index, uniqueIndex, unique } from "drizzle-orm/pg-core";
 
 export const RoleUtilisateur = pgEnum("role_utilisateur", ["ADMIN", "QUALITE", "GRAPHISME", "CONDITIONNEMENT", "ACHATS", "DIRECTION"]);
 
@@ -527,6 +527,41 @@ export const matieresPremieres = pgTable("matieres_premieres", {
     creeLe: timestamp("cree_le").defaultNow().notNull(),
     misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
 });
+
+/**
+ * Les gammes du catalogue, et leurs sous-gammes.
+ *
+ * Le champ `produits.gamme` est une saisie libre, et il décide de contrôles
+ * réglementaires : la mention Anemos se déclenche si le libellé contient
+ * « voile », celle des Engagés s'il contient « engag ». Une casse différente ou
+ * un renommage éteint donc un contrôle sans le dire — mesuré le 2026-09-10,
+ * 12 libellés pour 7 gammes réelles, et les deux thés Anemos rangés en
+ * « Grand classiques » n'étaient pas contrôlés.
+ *
+ * La gamme devient une chose qui existe, que la Qualité tient, et que le produit
+ * désigne. Renommer cessera de casser quoi que ce soit le jour où le produit la
+ * désignera par son identifiant (lot suivant).
+ */
+export const gammes = pgTable("gammes", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nom: varchar("nom", { length: 120 }).notNull().unique(),
+    /**
+     * Une gamme ne se supprime pas : des produits l'ont portée, des paquets sont
+     * imprimés. Elle se retire des listes de choix et garde son histoire.
+     */
+    active: boolean("active").default(true).notNull(),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+    misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
+});
+
+export const sousGammes = pgTable("sous_gammes", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    gammeId: uuid("gamme_id").references(() => gammes.id, { onDelete: "cascade" }).notNull(),
+    nom: varchar("nom", { length: 120 }).notNull(),
+    active: boolean("active").default(true).notNull(),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+    misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
+}, (t) => [unique("sous_gammes_gamme_nom_unique").on(t.gammeId, t.nom)]);
 
 export const knowledgeDocuments = pgTable("knowledge_documents", {
     id: uuid("id").primaryKey().defaultRandom(),

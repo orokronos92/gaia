@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Settings2, Shield, Bell, Database, Users, Gauge, Sprout } from "lucide-react"
+import { Settings2, Shield, Bell, Database, Users, Gauge } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -10,11 +10,13 @@ import { cn } from "@/lib/utils"
  * Settings navigation. The panels that are not built yet are rendered as
  * explicitly disabled rather than as clickable buttons that do nothing — a dead
  * click reads as a bug, a greyed item reads as a roadmap.
+ *
+ * Les matières premières sont parties dans Référentiels (2026-09-10) : ce n'est
+ * pas un réglage de l'outil, c'est une liste du métier que la Qualité tient.
  */
 const ITEMS = [
     { href: "/parametres", label: "Général", icon: Settings2, actif: true },
     { href: "/parametres/consommation", label: "Consommation IA", icon: Gauge, actif: true },
-    { href: "/parametres/matieres", label: "Matières premières", icon: Sprout, actif: true },
     { href: "#", label: "Règles Qualité (PRO-QHS)", icon: Shield, actif: false },
     { href: "#", label: "Équipe & Rôles", icon: Users, actif: false },
     { href: "#", label: "Agents IA & Intégrations", icon: Database, actif: false },
