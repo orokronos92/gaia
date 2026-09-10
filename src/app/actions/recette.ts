@@ -67,7 +67,7 @@ export async function validerRecetteAction(input: unknown) {
 
   const { recetteId } = await validerRecette({
     produitId: data.produitId,
-    version: data.version ?? "1.0",
+    version: data.version,
     utilisateurId: session.user.id,
     calc,
     etiquettesEffectives,

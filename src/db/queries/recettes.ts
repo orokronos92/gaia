@@ -196,7 +196,12 @@ export const getRecetteOutputForProduit = cache(
 
 export interface ValiderRecetteParams {
   produitId: string;
-  version: string;
+  /**
+   * Optionnel : la validation ne renomme pas la version. Le classeur dit « V.2 »
+   * et la calculatrice n'a pas d'avis là-dessus — un défaut à « 1.0 » effaçait
+   * silencieusement ce que l'import venait de lire.
+   */
+  version?: string;
   utilisateurId: string;
   /** Server-recomputed result (figures never trusted from the client). */
   calc: RecetteCalculee;
@@ -234,7 +239,7 @@ export async function validerRecette({
       await tx
         .update(recettes)
         .set({
-          version,
+          ...(version ? { version } : {}),
           statut: "VALIDATED",
           pourcentageTotal,
           misAJourLe: new Date(),
@@ -247,7 +252,7 @@ export async function validerRecette({
     } else {
       const [created] = await tx
         .insert(recettes)
-        .values({ produitId, version, statut: "VALIDATED", pourcentageTotal })
+        .values({ produitId, version: version ?? "1.0", statut: "VALIDATED", pourcentageTotal })
         .returning();
       recetteId = created.id;
     }
@@ -274,7 +279,7 @@ export async function validerRecette({
       utilisateurId,
       changements: {
         produitId,
-        version,
+        version: version ?? existante?.version ?? null,
         pourcentageTotal,
         lignes: calc.ingredients.map((ing, i) => ({
           codeArticle: ing.codeArticle,
