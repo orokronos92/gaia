@@ -72,7 +72,7 @@ export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteLi
       <Carte
         icone={FlaskConical}
         titre="Recette de production"
-        sousTitre={nbMasques > 0 ? `ce qui est pesé · ${nbMasques} % masqué${nbMasques > 1 ? "s" : ""}` : "ce qui est pesé et calculé"}
+        sousTitre={nbMasques > 0 ? `ce qui est pesé · ${nbMasques} pourcentage${nbMasques > 1 ? "s" : ""} masqué${nbMasques > 1 ? "s" : ""} sur l\u2019étiquette` : "ce qui est pesé et calculé"}
         ton="stone"
       >
         {!aRecette ? (
@@ -93,15 +93,21 @@ export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteLi
           <tbody>
             {ings.map((i) => (
               <tr key={`${i.codeArticle}-${i.ordreTri}`} className="border-b border-stone-100 last:border-0">
-                <td className="py-1 pr-2 font-medium text-stone-700">
-                  {i.designation}
-                  {i.masquerEtiquette && (
-                    <EyeOff className="ml-1 inline size-3 text-stone-400" aria-label="% masqué sur l'étiquette" />
-                  )}
-                </td>
+                <td className="py-1 pr-2 font-medium text-stone-700">{i.designation}</td>
                 <td className="py-1 pr-2 text-right tabular-nums text-stone-500">{nb(i.quantiteKg)} kg</td>
                 <td className="py-1 pr-2 text-right tabular-nums text-stone-500">{nb(i.pourcentageBrut)} %</td>
-                <td className="py-1 text-right font-semibold tabular-nums text-sky-800">{nb(i.pourcentageEtiquette, 2)} %</td>
+                {/* L'œil barré était posé sur le NOM : il se lisait « cet
+                    ingrédient est masqué », alors qu'il ne l'est jamais — seul
+                    son pourcentage l'est. Il vit sur la colonne qu'il décrit. */}
+                <td className="py-1 text-right">
+                  <span className="font-semibold tabular-nums text-sky-800">{nb(i.pourcentageEtiquette, 2)} %</span>
+                  {i.masquerEtiquette && (
+                    <EyeOff
+                      className="ml-1 inline size-3 text-stone-400"
+                      aria-label="pourcentage masqué sur l'étiquette — l'ingrédient reste imprimé"
+                    />
+                  )}
+                </td>
               </tr>
             ))}
             <tr>

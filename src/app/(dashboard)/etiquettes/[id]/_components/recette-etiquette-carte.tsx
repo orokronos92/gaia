@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Tag, Loader2, Copy, Check } from "lucide-react";
+import { Tag, Loader2, Copy, Check, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
@@ -71,7 +71,7 @@ export function RecetteEtiquetteCarte({ ficheId, recette }: RecetteEtiquetteCart
           <tr className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
             <th className="pb-1 text-left font-bold">Nom imprimé</th>
             <th className="pb-1 pr-2 text-left font-bold">Nom recette</th>
-            <th className="pb-1 text-right font-bold">%</th>
+            <th className="pb-1 text-right font-bold">% imprimé</th>
           </tr>
         </thead>
         <tbody>
@@ -173,8 +173,17 @@ function LigneEtiquette({
         </div>
       </td>
       <td className="py-1 pr-2 text-stone-400">{designationRd}</td>
-      <td className="py-1 text-right tabular-nums font-semibold text-sky-800">
-        {masque ? "—" : `${pourcentage} %`}
+      {/* Le masquage retire le POURCENTAGE, jamais l'ingrédient : l'INCO exige
+          que la liste les porte tous. Un tiret muet laissait croire l'inverse —
+          et c'est bien ce qu'il a laissé croire. */}
+      <td className="py-1 text-right">
+        {masque ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-stone-400">
+            <EyeOff className="size-3" /> % masqué
+          </span>
+        ) : (
+          <span className="tabular-nums font-semibold text-sky-800">{pourcentage} %</span>
+        )}
       </td>
     </tr>
   );
