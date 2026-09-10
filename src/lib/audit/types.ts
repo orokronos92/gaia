@@ -243,7 +243,13 @@ export interface AuditIngredient {
 }
 
 export interface AuditFicheData {
-  ingredientsFr?: string | null;
+  /**
+   * La recette étiquette : la liste telle qu'elle sera imprimée, dénominations
+   * relues par la Qualité comprises. C'était auparavant le texte recopié de la
+   * fiche dégustation — un document antérieur à la recette de production, qui ne
+   * la suit pas (décision 2026-09-10).
+   */
+  listeEtiquette?: string | null;
   allergenes?: string | null;
   allegationsSanteFr?: string | null;
   mentionConservation?: string | null;

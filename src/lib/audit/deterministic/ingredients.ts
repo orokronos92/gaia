@@ -67,7 +67,7 @@ const pire = (a: ControlStatus, b: ControlStatus): ControlStatus =>
  */
 export function checkCoherenceRecetteListe(input: AuditInput): DeterministicVerdict {
   const recette = input.ingredients;
-  const declaree = lireListeDeclaree(input.fiche.ingredientsFr);
+  const declaree = lireListeDeclaree(input.fiche.listeEtiquette);
 
   if (recette.length === 0) {
     return { statut: "WARNING", action: "COMPLETER", justification: "Aucune recette : la cohérence avec la liste déclarée n'est pas vérifiable." };

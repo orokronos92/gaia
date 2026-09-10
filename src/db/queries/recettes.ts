@@ -3,6 +3,7 @@ import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { recettes, ingredientsRecette, auditLogs, matieresPremieres } from "@/db/schema";
 import { evaluerDemeter, type RecetteCalculee } from "@/lib/business-rules/recette";
+import { listeEtiquette } from "@/lib/recette/liste-ingredients";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 
 interface SaveRecetteParams {
@@ -358,3 +359,24 @@ export async function renommerIngredientEtiquette(params: {
     .where(eq(ingredientsRecette.id, params.ingredientId));
   return true;
 }
+
+/**
+ * La recette étiquette d'un produit, sous forme de texte — ce que l'audit
+ * compare au BAT. null quand aucune recette n'existe : mieux vaut un contrôle
+ * qui dit « non vérifiable » qu'un contrôle qui juge le brouillon du comité.
+ */
+export const getListeEtiquetteProduit = cache(
+  async (produitId: string): Promise<string | null> => {
+    const recette = await db.query.recettes.findFirst({
+      where: and(eq(recettes.produitId, produitId), ne(recettes.statut, "ARCHIVED")),
+      orderBy: [desc(recettes.creeLe)],
+      columns: { id: true },
+    });
+    if (!recette) return null;
+
+    const lignes = await db.query.ingredientsRecette.findMany({
+      where: eq(ingredientsRecette.recetteId, recette.id),
+    });
+    return listeEtiquette(lignes) || null;
+  }
+);

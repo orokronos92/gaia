@@ -49,7 +49,7 @@ describe("Voie A déterministe — golden MT265", () => {
   // 12 points PRO-QHS-013 + 4 points MOP-PRO-029 (code article et Gencode).
   it("couvre les 21 points déterministes et valide chaque verdict (Zod)", () => {
     const input: AuditInput = {
-      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
+      fiche: { listeEtiquette: INGREDIENTS_TEXTE, allergenes: "non" },
       produit: { typeTheFr: "Mélange de plantes", estAromatise: true },
       ingredients: buildIngredients(),
     };
@@ -65,7 +65,7 @@ describe("Voie A déterministe — golden MT265", () => {
   it("données partielles : ancres reproductibles + WARNING honnête sur le manquant", () => {
     const input: AuditInput = {
       fiche: {
-        ingredientsFr: INGREDIENTS_TEXTE,
+        listeEtiquette: INGREDIENTS_TEXTE,
         allergenes: "non",
         mentionConservation: null,
         mentionFabricant: null,
@@ -98,7 +98,7 @@ describe("Voie A déterministe — golden MT265", () => {
   it("données complètes conformes : les branches PASS s'allument", () => {
     const input: AuditInput = {
       fiche: {
-        ingredientsFr: `Ingrédients : ${INGREDIENTS_TEXTE}`,
+        listeEtiquette: `Ingrédients : ${INGREDIENTS_TEXTE}`,
         allergenes: "non",
         mentionConservation: "À conserver à l'abri de l'humidité, de la lumière et de la chaleur",
         mentionFabricant: "LES JARDINS DE GAÏA – Z.A. – 6 rue de l'Écluse – FR-67820 Wittisheim",
@@ -126,7 +126,7 @@ describe("Voie A déterministe — golden MT265", () => {
       i.codeArticle === "MT100" ? { ...i, pourcentageEtiquette: 63 } : i
     );
     const input: AuditInput = {
-      fiche: { ingredientsFr: INGREDIENTS_TEXTE },
+      fiche: { listeEtiquette: INGREDIENTS_TEXTE },
       produit: { poidsNet: "50 ml" }, // volume au lieu de masse
       ingredients: tampered,
     };
@@ -142,7 +142,7 @@ describe("Voie A déterministe — golden MT265", () => {
       i.codeArticle === "EF033" ? { ...i, pourcentageMasque: true } : i
     );
     const input: AuditInput = {
-      fiche: { ingredientsFr: INGREDIENTS_TEXTE },
+      fiche: { listeEtiquette: INGREDIENTS_TEXTE },
       produit: {},
       ingredients: avecMasque,
     };
@@ -171,7 +171,7 @@ describe("Voie A déterministe — golden MT265", () => {
       },
     ];
     const input: AuditInput = {
-      fiche: { ingredientsFr: `${INGREDIENTS_TEXTE}, réglisse* 3%` },
+      fiche: { listeEtiquette: `${INGREDIENTS_TEXTE}, réglisse* 3%` },
       produit: { contientReglisse: false }, // flag absent → le scan doit rattraper
       ingredients: avecReglisse,
     };
@@ -183,7 +183,7 @@ describe("Voie A déterministe — golden MT265", () => {
   it("allergène matière non déclaré sur l'étiquette → 5.1 FAIL", () => {
     const input: AuditInput = {
       // "Aucun" = défaut d'import → ne déclare rien.
-      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "Aucun" },
+      fiche: { listeEtiquette: INGREDIENTS_TEXTE, allergenes: "Aucun" },
       produit: { allergenesMp: "oui" }, // la matière première signale un allergène
       ingredients: buildIngredients(),
     };
@@ -193,7 +193,7 @@ describe("Voie A déterministe — golden MT265", () => {
 
   it("allergène déclaré sur la fiche → 5.1 PASS (gras manuel)", () => {
     const input: AuditInput = {
-      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "Fruits à coque" },
+      fiche: { listeEtiquette: INGREDIENTS_TEXTE, allergenes: "Fruits à coque" },
       produit: { allergenesMp: "oui" },
       ingredients: buildIngredients(),
     };
@@ -216,7 +216,7 @@ describe("Voie A déterministe — golden MT265", () => {
       },
     ];
     const input: AuditInput = {
-      fiche: { ingredientsFr: "Ingrédients : thé vert* 94%, menthe* 6%" },
+      fiche: { listeEtiquette: "Ingrédients : thé vert* 94%, menthe* 6%" },
       produit: { typeTheFr: "Thé vert" },
       ingredients: theBase,
     };
@@ -228,7 +228,7 @@ describe("Voie A déterministe — golden MT265", () => {
 describe("§1.3 — le nom usuel d'une infusion", () => {
   const infusion = (denominationLegale: string | null) =>
     auditDeterministic({
-      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non", denominationLegale },
+      fiche: { listeEtiquette: INGREDIENTS_TEXTE, allergenes: "non", denominationLegale },
       produit: { typeTheFr: "Mélange de plantes" },
       ingredients: buildIngredients(),
     }).find((c) => c.id === "1.6");
@@ -253,7 +253,7 @@ describe("§1.3 — le nom usuel d'une infusion", () => {
 describe("§3.2 — le nombre de tasses suit le poids net", () => {
   const tasses = (poidsNet: string | null, nbTasses: string | null) =>
     auditDeterministic({
-      fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
+      fiche: { listeEtiquette: INGREDIENTS_TEXTE, allergenes: "non" },
       produit: { typeTheFr: "Mélange de plantes", poidsNet, nbTasses },
       ingredients: buildIngredients(),
     }).find((c) => c.id === "6.3");
@@ -291,7 +291,7 @@ describe("2.5 — cohérence entre la recette et la liste déclarée", () => {
 
   const verdict = (ingredients: AuditIngredient[], texte: string | null, statutDemeter?: "AUTO" | "OUI" | "NON") =>
     checkCoherenceRecetteListe({
-      fiche: { ingredientsFr: texte, ...(statutDemeter ? { statutDemeter } : {}) },
+      fiche: { listeEtiquette: texte, ...(statutDemeter ? { statutDemeter } : {}) },
       produit: {},
       ingredients,
     } as AuditInput);

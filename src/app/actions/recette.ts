@@ -5,18 +5,12 @@ import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
 import { computeRecette } from "@/lib/business-rules/recette";
-import { genererListeIngredients } from "@/lib/recette/liste-ingredients";
 import {
   getRecetteOutputForProduit,
   renommerIngredientEtiquette,
   validerRecette,
 } from "@/db/queries/recettes";
-import {
-  alignerListeIngredients,
-  getFicheProduitId,
-  getIngredientsFrFiche,
-} from "@/db/queries/fiches";
-import { ecartsDeDenomination } from "@/lib/recette/differentiel";
+import { getFicheProduitId } from "@/db/queries/fiches";
 import { CopilotAgent } from "@/agents/copilot-agent";
 
 const IngredientPayload = z.object({
@@ -82,77 +76,19 @@ export async function validerRecetteAction(input: unknown) {
     masques,
   });
 
-  // Lot 5 — align the produit's declared composition with the validated recette.
-  // The recette is the truth; this regenerates the fiche's declared ingredient
-  // list, which also closes the composition differential (ready for audit).
-  // Decision 2026-06-18: the canonical printed/audited list is the MASKED one
-  // (what actually goes on the label) — masked ingredients print without their %.
+  // La liste déclarée n'est plus réécrite (décision 2026-09-10).
   //
-  // Décision 2026-09-08 : la réécriture reste le comportement normal, mais elle
-  // ne s'exécute plus en silence quand elle change les DÉNOMINATIONS. La recette
-  // porte aujourd'hui des désignations fournisseur (« SORWATHE OP1 ») là où
-  // l'étiquette imprime « thé noir » : écraser la liste déclarée revient alors à
-  // dégrader la donnée même que l'audit compare au BAT. Un écart de pourcentage,
-  // lui, c'est l'arrondi — il ne mérite aucune question.
-  if (data.ficheId) {
-    const proposee = genererListeIngredients(calc.ingredients, etiquettesEffectives, masques);
-    const actuelle = await getIngredientsFrFiche(data.ficheId);
-    const ecarts = ecartsDeDenomination(
-      actuelle,
-      calc.ingredients.map((i, n) => ({
-        designation: i.designation,
-        pourcentage: masques[n] ? null : (etiquettesEffectives[n] ?? null),
-      }))
-    );
+  // Elle est le texte recopié de la fiche dégustation : le point de départ du
+  // comité, antérieur à la recette de production et qui ne la suit pas. On
+  // l'écrasait avec les dénominations R&D — « SORWATHE OP1 » là où l'étiquette
+  // doit dire « thé noir » — ou on renonçait, et la Qualité perdait alors les
+  // marqueurs Demeter. C'est la recette étiquette qui porte désormais les
+  // dénominations imprimées, et c'est elle que l'audit compare au BAT.
+  if (data.ficheId) revalidatePath(`/etiquettes/${data.ficheId}`);
 
-    if (ecarts.length === 0) {
-      await alignerListeIngredients(data.ficheId, proposee);
-      revalidatePath(`/etiquettes/${data.ficheId}`);
-      return { ok: true as const, recetteId, listeAlignee: true as const };
-    }
-
-    return {
-      ok: true as const,
-      recetteId,
-      listeAlignee: false as const,
-      proposition: { avant: actuelle ?? "", apres: proposee, ecarts },
-    };
-  }
-  return { ok: true as const, recetteId, listeAlignee: true as const };
+  return { ok: true as const, recetteId };
 }
 
-
-const AppliquerPayload = z.object({
-  ficheId: z.string().uuid(),
-  produitId: z.string().uuid(),
-});
-
-/**
- * Marie tranche : la liste déclarée devient celle de la recette.
- *
- * Le texte n'est **pas reçu du client**. Il est régénéré ici depuis la recette
- * courante, sinon l'appelant pourrait faire enregistrer n'importe quelle
- * composition sous couvert d'une proposition — et c'est cette liste que l'audit
- * oppose ensuite au BAT.
- */
-export async function appliquerListeRecetteAction(input: unknown) {
-  const data = AppliquerPayload.parse(input);
-
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
-
-  const recette = await getRecetteOutputForProduit(data.produitId);
-  if (!recette) return { ok: false as const, error: "Aucune recette à reporter." };
-
-  const texte = genererListeIngredients(
-    recette.ingredients,
-    undefined,
-    recette.ingredients.map((i) => i.masquerEtiquette)
-  );
-  await alignerListeIngredients(data.ficheId, texte);
-  revalidatePath(`/etiquettes/${data.ficheId}`);
-  return { ok: true as const, texte };
-}
 
 const SuggererPayload = z.object({
   produitId: z.string().uuid(),

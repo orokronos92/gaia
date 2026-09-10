@@ -43,7 +43,7 @@ function detectInfusion(input: AuditInput): boolean {
   if (detectContientThe(input)) return false;
   const texte = normalize(
     [
-      input.fiche.ingredientsFr ?? "",
+      input.fiche.listeEtiquette ?? "",
       input.fiche.denominationLegale ?? "",
       input.produit.denominationFr ?? "",
       input.produit.typeTheFr ?? "",
@@ -66,7 +66,7 @@ export function buildAuditContext(input: AuditInput): AuditContext {
     estAromatise: produit.estAromatise ?? false,
     // No backing data yet — keeps DENOM_PARFUME non-applicable (manual lane).
     estParfumeEnfleurage: false,
-    ingredients: fiche.ingredientsFr ?? null,
+    ingredients: fiche.listeEtiquette ?? null,
     allergenes: fiche.allergenes ?? null,
     allergeneMatiere: allergeneMatierePresent(produit.allergenesMp),
     allegationsSanteFr: fiche.allegationsSanteFr ?? null,

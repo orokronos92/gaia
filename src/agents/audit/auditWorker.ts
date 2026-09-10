@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { db } from "@/db";
+import { getListeEtiquetteProduit } from "@/db/queries/recettes";
 import { fichesEtiquettes, controlesConformite, produits } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { RAGService } from "../knowledge/RAGService";
@@ -56,7 +57,7 @@ ${ragContext}
 CONTENU DE L'ÉTIQUETTE À VÉRIFIER :
 - Code PF : ${product.codePf}
 - Dénomination : ${product.denominationFr}
-- Ingrédients : ${fiche.ingredientsFr}
+- Ingrédients : ${fiche.listeEtiquette ?? "Non renseignés"}
 - Allégations : ${fiche.allegationsSanteFr || "Aucune"}
 - Allergènes : ${fiche.allergenes || "Aucun"}
 
@@ -159,7 +160,16 @@ Exécute les 5 types de contrôles.`;
             throw new Error(`Fiche ID ${ficheId} introuvable.`);
         }
 
-        const prompt = await this.buildAuditPrompt(ficheDetails.fiche, ficheDetails.produit);
+        // La liste soumise au modèle est la RECETTE ÉTIQUETTE, comme pour la voie
+        // déterministe. Lui donner le texte de la fiche dégustation ferait juger
+        // deux sources différentes selon le point de contrôle — le texte du
+        // comité est antérieur à la recette et ne la suit pas (décision
+        // 2026-09-10). Sans recette, la ligne reste vide plutôt que fausse.
+        const liste = await getListeEtiquetteProduit(ficheDetails.produit.id);
+        const prompt = await this.buildAuditPrompt(
+            { ...ficheDetails.fiche, listeEtiquette: liste },
+            ficheDetails.produit
+        );
 
         let controls: Controle[];
         let usage: unknown;

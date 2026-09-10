@@ -191,7 +191,7 @@ const INGREDIENTS_NUTRITIFS = ["caramel", "sucre", "chocolat", "cacao", "confit"
 
 function texteComposition(input: AuditInput): string {
   return normalize(
-    [input.fiche.ingredientsFr ?? "", ...input.ingredients.map((i) => i.designation)].join(" | ")
+    [input.fiche.listeEtiquette ?? "", ...input.ingredients.map((i) => i.designation)].join(" | ")
   );
 }
 

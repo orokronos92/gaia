@@ -40,7 +40,7 @@ export function checkAllergen(input: AuditInput): DeterministicVerdict {
 /** 5.3 — REGLISSE. Reached only when licorice is present; the JDG hypertension
  * mention is not stored as a field, so it can only be confirmed on the BAT. */
 export function checkReglisse(input: AuditInput): DeterministicVerdict {
-  const texte = input.fiche.ingredientsFr ?? "";
+  const texte = input.fiche.listeEtiquette ?? "";
   const normalized = normalize(texte);
   const mentionPresente = MENTION_REGLISSE_TOKENS.every((t) => normalized.includes(t));
   if (mentionPresente) {

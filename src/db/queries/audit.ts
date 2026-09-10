@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
+import { listeEtiquette } from "@/lib/recette/liste-ingredients";
 import { fichesEtiquettes, produits, recettes, ingredientsRecette } from "@/db/schema";
 import type { AuditInput } from "@/lib/audit/types";
 import type { BatTextInput } from "@/lib/audit/visual/text-robot";
@@ -55,7 +56,7 @@ export const getAuditInputForFiche = cache(
 
     return {
       fiche: {
-        ingredientsFr: fiche.ingredientsFr,
+        listeEtiquette: listeEtiquette(lignes) || null,
         allergenes: fiche.allergenes,
         allegationsSanteFr: fiche.allegationsSanteFr,
         mentionConservation: fiche.mentionConservation,
@@ -150,7 +151,7 @@ export const getBatTextInputForFiche = cache(
       estDemeter,
       input: {
         denomination: produit.denominationFr ?? fiche.denominationLegale,
-        ingredients: fiche.ingredientsFr,
+        ingredients: listeEtiquette(lignes) || null,
         allegation: fiche.allegationsSanteFr ?? fiche.allegationChoisie,
         allergenes: fiche.allergenes,
         poidsNet: produit.poidsNet,

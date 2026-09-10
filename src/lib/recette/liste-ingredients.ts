@@ -53,3 +53,39 @@ export function genererListeIngredients(
     });
   return lignes.length > 0 ? lignes.join(", ") + "." : "";
 }
+
+/** Une ligne de recette telle que la base la stocke. */
+export interface LigneRecettePersistee {
+  designation: string;
+  designationEtiquette?: string | null;
+  pourcentageEtiquette: number;
+  ordreTri: number;
+  estDemeter: boolean;
+  estEquitable: boolean;
+  estBio?: boolean;
+  masquerPourcentageEtiquette?: boolean;
+}
+
+/**
+ * La liste telle qu'elle sera IMPRIMÉE — la recette étiquette (décision
+ * 2026-09-10), et la seule chose que l'audit confronte au BAT.
+ *
+ * Chaque ligne prend la dénomination que la Qualité a relue, ou à défaut celle
+ * de la recette. Ce défaut n'est pas un repli commode : une ligne encore au nom
+ * R&D produit « SORWATHE OP1 » là où le BAT imprime « thé noir », et c'est
+ * précisément l'écart que le contrôle doit faire remonter plutôt que masquer.
+ */
+export function listeEtiquette(lignes: LigneRecettePersistee[]): string {
+  return genererListeIngredients(
+    lignes.map((l) => ({
+      designation: l.designationEtiquette ?? l.designation,
+      pourcentageEtiquette: l.pourcentageEtiquette,
+      ordreTri: l.ordreTri,
+      estDemeter: l.estDemeter,
+      estEquitable: l.estEquitable,
+      estBio: l.estBio,
+    })),
+    undefined,
+    lignes.map((l) => l.masquerPourcentageEtiquette ?? false)
+  );
+}
