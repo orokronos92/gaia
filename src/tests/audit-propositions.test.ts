@@ -106,10 +106,30 @@ describe("émission du constat", () => {
       ...FICHE_COMPLETE,
       poidsNet: null,
     });
-    expect(c).toHaveLength(1);
-    expect(c[0].checklistId).toBe("6.1");
-    expect(c[0].proposition?.valeur).toBe("100 g");
-    expect(c[0].manqueSurLaFiche).toBe("la quantité nette");
+    const six = c.find((x) => x.checklistId === "6.1");
+    expect(six?.proposition?.valeur).toBe("100 g");
+    expect(six?.manqueSurLaFiche).toBe("la quantité nette");
+  });
+
+  /**
+   * Sans quantité nette, trois points restent muets : 6.1 la réclame pour
+   * elle-même, 1.4 ne peut pas dire si dénomination et poids partagent un champ
+   * visuel, 6.2 déduit du grammage le seuil de hauteur des chiffres. Le bouton
+   * ne vivait que sur 6.1 : Marie lisait le blocage sur 1.4 et la solution
+   * plusieurs lignes plus bas, sous un autre intitulé.
+   */
+  it("pose le même remède sur chacun des points qu'il rouvre", () => {
+    const c = controlerPropositions([face(["poids", "net", "100g"])], {
+      ...FICHE_COMPLETE,
+      poidsNet: null,
+    });
+    const points = c.filter((x) => x.proposition?.champ === "poidsNet").map((x) => x.checklistId);
+    expect(points.sort()).toEqual(["1.4", "6.1", "6.2"]);
+    for (const chk of c) {
+      if (chk.proposition?.champ !== "poidsNet") continue;
+      expect(chk.proposition.valeur).toBe("100 g");
+      expect(chk.proposition.sert).toEqual(["1.4", "6.1", "6.2"]);
+    }
   });
 
   it("se tait quand la fiche porte déjà la donnée", () => {

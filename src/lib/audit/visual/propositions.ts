@@ -39,6 +39,16 @@ export interface Proposition {
   valeur: string;
   /** D'où elle vient — Marie doit pouvoir vérifier avant de cliquer. */
   source: string;
+  /**
+   * Les points de la checklist que cette valeur débloque.
+   *
+   * Une donnée absente bloque souvent plusieurs contrôles : sans quantité nette,
+   * ni le champ visuel (1.4), ni la hauteur des chiffres (6.2) ne se mesurent.
+   * Le bouton ne vivait que sur le point 6.1, et le lien entre les trois
+   * n'existait nulle part — Marie lisait le problème sur une ligne et la
+   * solution plusieurs lignes plus bas, sous un autre intitulé.
+   */
+  sert?: readonly string[];
 }
 
 /** Une masse imprimée : « 100g », « 1,5 kg ». */
@@ -95,9 +105,20 @@ export function proposerPoidsNet(
     champ: "poidsNet",
     valeur,
     source: `lu sur le BAT : « poids net ${valeur} »`,
+    sert: POINTS_QUANTITE_NETTE,
     reperes,
   };
 }
+
+/**
+ * Les points que la quantité nette débloque à elle seule.
+ *
+ * 6.1 la réclame pour elle-même ; 1.4 ne peut pas dire si la dénomination et le
+ * poids partagent un champ visuel sans savoir quel poids chercher ; 6.2 déduit
+ * du grammage le seuil de hauteur des chiffres. Un seul clic les rouvre tous
+ * les trois, et rien ne le disait.
+ */
+const POINTS_QUANTITE_NETTE = ["1.4", "6.1", "6.2"] as const;
 
 /** Ce que la lecture des codes imprimés a donné, y compris quand elle échoue. */
 type LectureCode =
@@ -227,18 +248,26 @@ export function controlerPropositions(
   if (!entree.poidsNet?.trim()) {
     const proposition = proposerPoidsNet(analyses);
     if (proposition) {
-      checks.push({
-        id: "PROP_POIDS_NET",
-        origine: "texte",
-        rubrique: "Quantité nette",
-        libelle: "Quantité nette absente de la fiche",
-        statut: "WARNING",
-        manqueSurLaFiche: "la quantité nette",
-        justification: `La fiche ne porte pas de quantité nette, mais le BAT l'imprime — ${proposition.source}. À enregistrer sur la fiche, qui reste la référence.`,
-        checklistId: "6.1",
-        proposition,
-        reperes: proposition.reperes,
-      });
+      // Le même remède se pose sur chacun des points qu'il rouvre. La valeur
+      // est de toute façon relue sur le BAT au moment du clic : la répéter à
+      // l'écran n'ouvre aucune porte, et taire le lien en fermait une.
+      for (const point of POINTS_QUANTITE_NETTE) {
+        checks.push({
+          id: `PROP_POIDS_NET_${point}`,
+          origine: "texte",
+          rubrique: point === "6.1" ? "Quantité nette" : "Position",
+          libelle: "Quantité nette absente de la fiche",
+          statut: "WARNING",
+          manqueSurLaFiche: "la quantité nette",
+          justification:
+            point === "6.1"
+              ? `La fiche ne porte pas de quantité nette, mais le BAT l'imprime — ${proposition.source}. À enregistrer sur la fiche, qui reste la référence.`
+              : `Le BAT porte la quantité nette — ${proposition.source}. L'enregistrer sur la fiche rouvre ce point.`,
+          checklistId: point,
+          proposition,
+          ...(point === "6.1" ? { reperes: proposition.reperes } : {}),
+        });
+      }
     }
   }
 

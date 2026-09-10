@@ -37,6 +37,8 @@ export function ValidationLigne({ ficheId, r, onChange }: ValidationLigneProps) 
     const [erreur, setErreur] = useState<string | null>(null)
 
     const derogation = r.statut === "FAIL"
+    // Les autres points que cette même valeur rouvre — le point courant exclu.
+    const autresPoints = (r.proposition?.sert ?? []).filter((p) => p !== r.id)
     const validation = r.validation
     const close = validation && !validation.perimee
 
@@ -100,6 +102,13 @@ export function ValidationLigne({ ficheId, r, onChange }: ValidationLigneProps) 
                 >
                     {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                     Enregistrer « {r.proposition.valeur} » sur la fiche
+                    {/* Une donnée absente bloque souvent plusieurs points. Le
+                        dire évite de traiter trois fois ce qu'un clic règle. */}
+                    {autresPoints.length > 0 && (
+                        <span className="font-medium text-sky-600/80">
+                            — rouvre aussi {autresPoints.join(" et ")}
+                        </span>
+                    )}
                 </button>
             )}
 

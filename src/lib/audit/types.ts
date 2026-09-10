@@ -219,7 +219,14 @@ export type ControlResult = z.infer<typeof ControlResultSchema> & {
     perimee: boolean;
   };
   /** Une valeur que le BAT porte et que la fiche pourrait enregistrer. */
-  proposition?: { table: "produit" | "fiche"; champ: "poidsNet" | "codeEtiquette" | "phraseDemeterFr"; valeur: string; source: string };
+  proposition?: {
+    table: "produit" | "fiche";
+    champ: "poidsNet" | "codeEtiquette" | "phraseDemeterFr";
+    valeur: string;
+    source: string;
+    /** Les points de la checklist que cette valeur rouvre — 1.4, 6.1, 6.2… */
+    sert?: readonly string[];
+  };
   /**
    * Toutes les preuves du BAT rattachées au point, dans leur ordre d'arrivée.
    *
