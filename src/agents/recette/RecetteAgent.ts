@@ -16,8 +16,12 @@ import {
  */
 
 const IngredientCalculeSchema = z.object({
+  /** Ligne persistée — absent quand le moteur calcule sans passer par la base. */
+  id: z.string().uuid().optional(),
   codeArticle: z.string(),
   designation: z.string(),
+  /** Dénomination imprimée, quand la Qualité l'a relue. null = pas encore. */
+  designationEtiquette: z.string().nullable().optional(),
   quantiteKg: z.number(),
   pourcentageBrut: z.number(),
   pourcentageEtiquette: z.number(),

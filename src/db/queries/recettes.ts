@@ -165,8 +165,10 @@ export const getRecetteOutputForProduit = cache(
     if (rows.length === 0) return null;
 
     const ingredients = rows.map((r) => ({
+      id: r.id,
       codeArticle: r.codeArticle,
       designation: r.designation,
+      designationEtiquette: r.designationEtiquette,
       quantiteKg: r.quantiteKg,
       pourcentageBrut: r.pourcentageBrut,
       pourcentageEtiquette: r.pourcentageEtiquette,
@@ -322,4 +324,37 @@ export async function aRecetteValidee(produitId: string): Promise<boolean> {
     columns: { id: true },
   });
   return !!r;
+}
+
+/**
+ * Renames one ingredient AS PRINTED, without touching the recipe.
+ *
+ * The R&D name stays: it is what tells the warehouse which lot to weigh. Only
+ * the label wording moves, and only for a line that belongs to this product —
+ * an ingredient id arriving from the browser proves nothing on its own
+ * (CLAUDE.md §8). An empty string clears the override and the line falls back
+ * to the R&D name, which is how Marie undoes a rename.
+ */
+export async function renommerIngredientEtiquette(params: {
+  ingredientId: string;
+  produitId: string;
+  designationEtiquette: string | null;
+}): Promise<boolean> {
+  const lignes = await db
+    .select({ id: ingredientsRecette.id })
+    .from(ingredientsRecette)
+    .innerJoin(recettes, eq(recettes.id, ingredientsRecette.recetteId))
+    .where(
+      and(
+        eq(ingredientsRecette.id, params.ingredientId),
+        eq(recettes.produitId, params.produitId)
+      )
+    );
+  if (lignes.length === 0) return false;
+
+  await db
+    .update(ingredientsRecette)
+    .set({ designationEtiquette: params.designationEtiquette })
+    .where(eq(ingredientsRecette.id, params.ingredientId));
+  return true;
 }

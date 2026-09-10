@@ -1,12 +1,20 @@
-import { FlaskConical, Tag, EyeOff, AlertTriangle } from "lucide-react";
+import { FlaskConical, BookOpen, EyeOff, AlertTriangle } from "lucide-react";
+
+import { RecetteEtiquetteCarte } from "./recette-etiquette-carte";
 
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 import { differentielDepuisTexte } from "@/lib/recette/differentiel";
 
 export interface RecetteListeCardsProps {
   recette: RecetteAgentOutput | null;
-  /** La liste réellement déclarée sur la fiche — celle que l'audit compare au BAT. */
+  /**
+   * Le texte recopié de la fiche dégustation. C'est le point de départ du
+   * comité, pas une référence : il est antérieur à la recette de production et
+   * ne la suit pas — sur TA737 il compte six ingrédients quand la recette en a
+   * sept. Affiché pour mémoire ; l'audit lit la recette étiquette.
+   */
   ingredientsFr?: string | null;
+  ficheId: string;
 }
 
 const nb = (v: number, d = 3) =>
@@ -29,7 +37,7 @@ const nb = (v: number, d = 3) =>
  * La place libérée revient à la RECETTE ÉTIQUETTE (lot C) : le brouillon que
  * Marie habille de dénominations légales, et que l'audit comparera au BAT.
  */
-export function RecetteListeCards({ recette, ingredientsFr }: RecetteListeCardsProps) {
+export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteListeCardsProps) {
   if (!recette || recette.ingredients.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50/80 py-10 text-center text-sm font-medium text-stone-400">
@@ -57,7 +65,7 @@ export function RecetteListeCards({ recette, ingredientsFr }: RecetteListeCardsP
   const denominationsDivergentes = ecarts.filter((e) => e.type !== "pourcentage").length;
 
   return (
-    <div className="grid gap-3 xl:grid-cols-2">
+    <div className="grid gap-3 xl:grid-cols-3">
       <Carte
         icone={FlaskConical}
         titre="Recette de production"
@@ -99,14 +107,16 @@ export function RecetteListeCards({ recette, ingredientsFr }: RecetteListeCardsP
         </table>
       </Carte>
 
+      <RecetteEtiquetteCarte ficheId={ficheId} recette={recette} />
+
       <Carte
-        icone={Tag}
-        titre="Liste déclarée"
-        sousTitre="comparée au BAT"
+        icone={BookOpen}
+        titre="Rappel dégustation"
+        sousTitre="le point de départ du comité"
         ton="emerald"
         badge={
           denominationsDivergentes > 0
-            ? { icone: AlertTriangle, texte: `${denominationsDivergentes} dénomination(s) d'écart` }
+            ? { icone: AlertTriangle, texte: `${denominationsDivergentes} écart(s) avec la recette` }
             : undefined
         }
       >
@@ -114,7 +124,7 @@ export function RecetteListeCards({ recette, ingredientsFr }: RecetteListeCardsP
           <p className="text-sm font-medium leading-relaxed text-emerald-900">{ingredientsFr}</p>
         ) : (
           <p className="text-sm italic text-stone-400">
-            Aucune liste déclarée sur la fiche — l&apos;audit n&apos;a rien à comparer au BAT.
+            Aucune liste dans la fiche dégustation.
           </p>
         )}
       </Carte>
@@ -142,11 +152,11 @@ function Carte({
   badge,
   children,
 }: {
-  icone: typeof Tag;
+  icone: typeof BookOpen;
   titre: string;
   sousTitre: string;
   ton: keyof typeof TONS;
-  badge?: { icone: typeof Tag; texte: string };
+  badge?: { icone: typeof BookOpen; texte: string };
   children: React.ReactNode;
 }) {
   const Badge = badge?.icone;

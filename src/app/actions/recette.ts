@@ -6,8 +6,16 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { computeRecette } from "@/lib/business-rules/recette";
 import { genererListeIngredients } from "@/lib/recette/liste-ingredients";
-import { getRecetteOutputForProduit, validerRecette } from "@/db/queries/recettes";
-import { alignerListeIngredients, getIngredientsFrFiche } from "@/db/queries/fiches";
+import {
+  getRecetteOutputForProduit,
+  renommerIngredientEtiquette,
+  validerRecette,
+} from "@/db/queries/recettes";
+import {
+  alignerListeIngredients,
+  getFicheProduitId,
+  getIngredientsFrFiche,
+} from "@/db/queries/fiches";
 import { ecartsDeDenomination } from "@/lib/recette/differentiel";
 import { CopilotAgent } from "@/agents/copilot-agent";
 
@@ -177,4 +185,44 @@ export async function suggererQuantitesAction(input: unknown) {
     manquants: data.manquants,
     masseLotKg: data.masseLotKg,
   });
+}
+
+const RenommerPayload = z.object({
+  ficheId: z.string().uuid(),
+  ingredientId: z.string().uuid(),
+  /** Vide = on efface la reprise et la ligne retombe sur le nom R&D. */
+  designationEtiquette: z.string().max(255),
+});
+
+/**
+ * Renomme un ingrédient TEL QU'IL SERA IMPRIMÉ (décision 2026-09-10).
+ *
+ * La recette continue de dire « SORWATHE OP1 » — c'est le nom qui désigne le lot
+ * à peser. L'étiquette dira « thé noir ». Seule cette seconde dénomination est
+ * touchée ; les pourcentages, marqueurs et ordre restent calculés, et rien ici
+ * ne recalcule quoi que ce soit.
+ *
+ * Le produit est résolu depuis la fiche côté serveur : l'identifiant de ligne
+ * envoyé par le navigateur ne prouve rien tant qu'on n'a pas vérifié qu'il
+ * appartient bien à ce produit (CLAUDE.md §8).
+ */
+export async function renommerIngredientEtiquetteAction(input: unknown) {
+  const data = RenommerPayload.parse(input);
+
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false as const, error: "Non autorisé." };
+
+  const produitId = await getFicheProduitId(data.ficheId);
+  if (!produitId) return { ok: false as const, error: "Fiche introuvable." };
+
+  const nom = data.designationEtiquette.trim();
+  const applique = await renommerIngredientEtiquette({
+    ingredientId: data.ingredientId,
+    produitId,
+    designationEtiquette: nom === "" ? null : nom,
+  });
+  if (!applique) return { ok: false as const, error: "Ingrédient hors de ce produit." };
+
+  revalidatePath(`/etiquettes/${data.ficheId}`);
+  return { ok: true as const, designationEtiquette: nom === "" ? null : nom };
 }
