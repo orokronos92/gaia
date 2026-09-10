@@ -10,7 +10,7 @@ import {
   normalize,
   REGLISSE_KEYWORDS,
 } from "./canonical";
-import { estGammeAnemos, estGammeEngages, mentionDue } from "./statut-mention";
+import { mentionDue } from "./statut-mention";
 import type { AuditContext, AuditInput } from "./types";
 
 function scanDesignations(input: AuditInput, keywords: readonly string[]): boolean {
@@ -76,7 +76,10 @@ export function buildAuditContext(input: AuditInput): AuditContext {
     origineMpUnique: undefined,
     // La gamme déduit, le statut décide. `applicableSi` reçoit la décision, pas
     // la donnée : un « NON » de la Qualité rend le point sans objet pour de bon.
-    mentionAnemos: mentionDue(fiche.statutAnemos, estGammeAnemos(produit.gamme)),
-    mentionEngages: mentionDue(fiche.statutEngages, estGammeEngages(produit.gamme)),
+    // Ce que la gamme exige est désormais une propriété du référentiel, cochée
+    // par la Qualité — plus une recherche de « voile » ou « engag » dans son
+    // libellé, qu'un renommage suffisait à faire échouer (décision 2026-09-10).
+    mentionAnemos: mentionDue(fiche.statutAnemos, produit.exigeMentionAnemos === true),
+    mentionEngages: mentionDue(fiche.statutEngages, produit.exigeMentionEngages === true),
   };
 }

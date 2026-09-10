@@ -1,5 +1,5 @@
 import { db } from "@/db"
-import { fichesEtiquettes, produits, fichesDegustation } from "@/db/schema"
+import { fichesEtiquettes, gammes, produits, fichesDegustation } from "@/db/schema"
 import { eq, desc } from "drizzle-orm"
 import EtiquetteClient from "./EtiquetteClient"
 import { notFound } from "next/navigation"
@@ -29,6 +29,9 @@ export default async function EtiquetteDetailPage(
             codeEan: produits.codeEan,
             gamme: produits.gamme,
             sousGamme: produits.sousGamme,
+            // Ce que la gamme impose — lu dans le référentiel, comme l'audit.
+            exigeMentionAnemos: gammes.exigeMentionAnemos,
+            exigeMentionEngages: gammes.exigeMentionEngages,
             retireLe: produits.retireLe,
             // Une fiche dont le produit est supprimé reste consultable — c'est
             // volontaire — mais l'écran doit le dire et ne plus proposer d'agir.
@@ -102,6 +105,7 @@ export default async function EtiquetteDetailPage(
         })
         .from(fichesEtiquettes)
         .leftJoin(produits, eq(fichesEtiquettes.produitId, produits.id))
+        .leftJoin(gammes, eq(produits.gammeId, gammes.id))
         .where(eq(fichesEtiquettes.id, id));
 
     if (!data || data.length === 0) {

@@ -45,7 +45,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { estGammeAnemos, estGammeEngages, phraseSaisie } from "@/lib/audit/statut-mention"
+import { phraseSaisie } from "@/lib/audit/statut-mention"
 import { RecettePanel } from "@/components/recette/RecettePanel"
 import { RecetteListeCards } from "./_components/recette-liste-cards"
 import { StatutSelect } from "./_components/statut-select"
@@ -309,8 +309,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
     const mentionsDeduites = useMemo(() => ({
         wfto: phraseSaisie(labelData.phraseWftoFr),
         demeter: (recette?.ingredients ?? []).some((i) => i.estDemeter),
-        anemos: estGammeAnemos(labelData.gamme),
-        engages: estGammeEngages(labelData.gamme),
+        // Ce que la gamme exige vient du référentiel, comme pour l'audit : si
+        // l'écran déduisait encore du libellé, il annoncerait « requise » là où
+        // le contrôle ne se déclencherait pas, ou l'inverse.
+        anemos: labelData.exigeMentionAnemos === true,
+        engages: labelData.exigeMentionEngages === true,
     }), [labelData.phraseWftoFr, labelData.gamme, recette])
 
     // Editable-fiche phase 2 — Mentions Légales (reference instance of the pattern).
@@ -1228,9 +1231,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             <ZoneGamme section={textesSection} titre="Mention Demeter" field="phraseDemeterFr" value={labelData.phraseDemeterFr}
                                                 statutField="statutDemeter" statut={labelData.statutDemeter} deduit={mentionsDeduites.demeter} raison="ingrédient Demeter en recette" raisonAbsente="aucun ingrédient Demeter en recette" />
                                             <ZoneGamme section={textesSection} titre="Mention Anemos" field="phraseAnemosFr" value={labelData.phraseAnemosFr}
-                                                statutField="statutAnemos" statut={labelData.statutAnemos} deduit={mentionsDeduites.anemos} raison="gamme" raisonAbsente="hors gamme" />
+                                                statutField="statutAnemos" statut={labelData.statutAnemos} deduit={mentionsDeduites.anemos} raison="exigée par la gamme" raisonAbsente="non exigée par la gamme" />
                                             <ZoneGamme section={textesSection} titre="Mention Les Engagés" field="phraseEngagesFr" value={labelData.phraseEngagesFr}
-                                                statutField="statutEngages" statut={labelData.statutEngages} deduit={mentionsDeduites.engages} raison="gamme" raisonAbsente="hors gamme" />
+                                                statutField="statutEngages" statut={labelData.statutEngages} deduit={mentionsDeduites.engages} raison="exigée par la gamme" raisonAbsente="non exigée par la gamme" />
                                         </div>
 
                                         {/* §2.3 — due quand l'aromatisation modifie la valeur

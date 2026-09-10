@@ -15,6 +15,9 @@ export interface GammeReferentiel {
   id: string;
   nom: string;
   active: boolean;
+  /** §11.2 — ce que la gamme impose sur l'étiquette. */
+  exigeMentionAnemos: boolean;
+  exigeMentionEngages: boolean;
   /** Produits actifs qui portent ce libellé de gamme. */
   nbProduits: number;
   sousGammes: SousGammeReferentiel[];
@@ -29,41 +32,64 @@ export interface GammeReferentiel {
  * visibles : une gamme à 1 produit à côté d'une à 89 se voit sans explication.
  */
 export const getReferentielGammes = cache(async (): Promise<GammeReferentiel[]> => {
-  const lignes = await db
-    .select({
-      id: gammes.id,
-      nom: gammes.nom,
-      active: gammes.active,
-      nbProduits: sql<number>`(
-        select count(*)::int from ${produits}
-        where btrim(${produits.gamme}) = ${gammes.nom} and ${produits.archiveLe} is null
-      )`,
-    })
-    .from(gammes)
-    .orderBy(asc(gammes.nom));
+  // Les décomptes se font en UNE passe groupée, pas en sous-requêtes corrélées.
+  //
+  // La version corrélée s'est retournée contre elle-même : Drizzle rend les
+  // colonnes sans qualification, et le jour où `produits` a gagné une colonne
+  // `gamme_id`, le `"gamme_id"` nu de la sous-requête s'est mis à désigner
+  // celle-là plutôt que celle de `sous_gammes`. La sous-gamme comptait alors
+  // tous ses homonymes, gammes confondues — 32 au lieu de 18 — sans la moindre
+  // erreur. Grouper une fois et rapprocher en mémoire ne se prête pas au piège.
+  const [lignes, sous, comptes] = await Promise.all([
+    db
+      .select({
+        id: gammes.id,
+        nom: gammes.nom,
+        active: gammes.active,
+        exigeMentionAnemos: gammes.exigeMentionAnemos,
+        exigeMentionEngages: gammes.exigeMentionEngages,
+      })
+      .from(gammes)
+      .orderBy(asc(gammes.nom)),
+    db
+      .select({
+        id: sousGammes.id,
+        gammeId: sousGammes.gammeId,
+        nom: sousGammes.nom,
+        active: sousGammes.active,
+      })
+      .from(sousGammes)
+      .orderBy(asc(sousGammes.nom)),
+    db
+      .select({
+        gamme: sql<string>`btrim(coalesce(${produits.gamme}, ''))`,
+        sousGamme: sql<string>`btrim(coalesce(${produits.sousGamme}, ''))`,
+        n: sql<number>`count(*)::int`,
+      })
+      .from(produits)
+      .where(isNull(produits.archiveLe))
+      .groupBy(
+        sql`btrim(coalesce(${produits.gamme}, ''))`,
+        sql`btrim(coalesce(${produits.sousGamme}, ''))`
+      ),
+  ]);
 
-  const sous = await db
-    .select({
-      id: sousGammes.id,
-      gammeId: sousGammes.gammeId,
-      nom: sousGammes.nom,
-      active: sousGammes.active,
-      // Compté SOUS SA GAMME, jamais sur le seul libellé : « LES INFUSIONS DE
-      // PLANTES » existe sous deux gammes différentes, et l'afficher à 32 sous
-      // une gamme qui n'en porte que 20 ne veut rien dire.
-      nbProduits: sql<number>`(
-        select count(*)::int from ${produits}
-        where btrim(${produits.sousGamme}) = ${sousGammes.nom}
-          and btrim(${produits.gamme}) = (select g.nom from ${gammes} g where g.id = ${sousGammes.gammeId})
-          and ${produits.archiveLe} is null
-      )`,
-    })
-    .from(sousGammes)
-    .orderBy(asc(sousGammes.nom));
+  const parGamme = new Map<string, number>();
+  const parCouple = new Map<string, number>();
+  for (const c of comptes) {
+    parGamme.set(c.gamme, (parGamme.get(c.gamme) ?? 0) + c.n);
+    parCouple.set(`${c.gamme}\u0000${c.sousGamme}`, c.n);
+  }
 
   return lignes.map((g) => ({
     ...g,
-    sousGammes: sous.filter((s) => s.gammeId === g.id).map(({ gammeId: _g, ...s }) => s),
+    nbProduits: parGamme.get(g.nom) ?? 0,
+    sousGammes: sous
+      .filter((x) => x.gammeId === g.id)
+      .map(({ gammeId: _g, ...x }) => ({
+        ...x,
+        nbProduits: parCouple.get(`${g.nom}\u0000${x.nom}`) ?? 0,
+      })),
   }));
 });
 
@@ -184,4 +210,23 @@ export async function resoudreGamme(
     .from(sousGammes)
     .where(and(eq(sousGammes.gammeId, gamme.id), eq(sousGammes.nom, nom)));
   return { gammeId: gamme.id, sousGammeId: sous?.id ?? null };
+}
+
+/**
+ * Ce que la gamme impose sur l'étiquette — la seule chose qui décidait jusqu'ici
+ * de deux contrôles réglementaires, et qui se devinait dans son libellé.
+ */
+export async function definirObligation(
+  id: string,
+  mention: "anemos" | "engages",
+  exige: boolean
+): Promise<void> {
+  await db
+    .update(gammes)
+    .set(
+      mention === "anemos"
+        ? { exigeMentionAnemos: exige, misAJourLe: new Date() }
+        : { exigeMentionEngages: exige, misAJourLe: new Date() }
+    )
+    .where(eq(gammes.id, id));
 }

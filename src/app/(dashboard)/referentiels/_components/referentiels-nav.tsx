@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  */
 const ITEMS = [
   { href: "/referentiels/gammes", label: "Gammes & sous-gammes", icon: Layers, actif: true },
-  { href: "/parametres/matieres", label: "Matières premières", icon: Sprout, actif: true },
+  { href: "/referentiels/matieres", label: "Matières premières", icon: Sprout, actif: true },
   { href: "#", label: "Opérations caritatives", icon: HeartHandshake, actif: false },
 ] as const;
 

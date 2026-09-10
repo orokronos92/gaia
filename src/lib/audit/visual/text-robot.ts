@@ -17,8 +17,6 @@
 import { FABRICANT_JDG_TOKENS, normalize } from "../canonical";
 import {
   DEMETER_PHRASE_TYPE,
-  estGammeAnemos,
-  estGammeEngages,
   mentionDue,
   phraseSaisie,
   type StatutMention,
@@ -123,6 +121,9 @@ export interface BatTextInput {
    * Ce n'est plus elle qui décide : c'est le statut que la Qualité a posé.
    */
   gamme?: string | null;
+  /** Ce que la gamme du produit impose — lu dans le référentiel, pas deviné. */
+  exigeMentionAnemos?: boolean;
+  exigeMentionEngages?: boolean;
   /** Au moins un ingrédient certifié Demeter dans la recette courante (§11.1). */
   estDemeter?: boolean;
   phraseDemeter?: string | null;
@@ -542,10 +543,11 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
   if (mentionDue(input.statutWfto, phraseSaisie(input.phraseWfto))) {
     results.push(checkWfto(batN));
   }
-  if (mentionDue(input.statutAnemos, estGammeAnemos(input.gamme) || phraseSaisie(input.phraseAnemos))) {
+  // La gamme dit elle-même ce qu'elle exige : le libellé n'est plus interrogé.
+  if (mentionDue(input.statutAnemos, input.exigeMentionAnemos === true || phraseSaisie(input.phraseAnemos))) {
     results.push(checkMentionGamme(batN, MENTION_ANEMOS, input.phraseAnemos));
   }
-  if (mentionDue(input.statutEngages, estGammeEngages(input.gamme) || phraseSaisie(input.phraseEngages))) {
+  if (mentionDue(input.statutEngages, input.exigeMentionEngages === true || phraseSaisie(input.phraseEngages))) {
     results.push(checkMentionGamme(batN, MENTION_ENGAGES, input.phraseEngages));
   }
   if (mentionDue(input.statutDemeter, input.estDemeter === true || phraseSaisie(input.phraseDemeter))) {

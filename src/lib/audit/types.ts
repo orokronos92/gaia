@@ -157,8 +157,8 @@ export interface AuditContext {
    * objet », et l'y laisse : c'est la différence avec une dérogation, qui
    * referme la ligne et la rouvre au contrôle suivant.
    */
-  mentionAnemos?: boolean; // gamme « THÉ TRANSPORTÉ À LA VOILE », sauf décision contraire
-  mentionEngages?: boolean; // gamme « LES ENGAGÉS », sauf décision contraire
+  mentionAnemos?: boolean; // la gamme l'exige, sauf décision contraire
+  mentionEngages?: boolean; // la gamme l'exige, sauf décision contraire
 }
 
 /** A control point in the checklist (static metadata + applicability). */
@@ -291,8 +291,12 @@ export interface AuditFicheData {
 export interface AuditProduitData {
   /** Code article JDG (MOP-PRO-029 §2.1) — identité du produit. */
   codePf?: string | null;
-  /** Gamme JDG — décide des mentions volontaires exigibles (§11.2). */
+  /** Gamme JDG, pour l'affichage. Ce qu'elle EXIGE se lit dans les deux drapeaux. */
   gamme?: string | null;
+  /** §11.2 — la gamme impose-t-elle la mention « transporté à la voile » ? */
+  exigeMentionAnemos?: boolean;
+  /** §11.2 — la gamme impose-t-elle la ligne de don des Engagés ? */
+  exigeMentionEngages?: boolean;
   typeTheFr?: string | null;
   denominationFr?: string | null;
   estAromatise?: boolean;

@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/db/queries/audit-logs";
 import {
   basculerActivite,
+  definirObligation,
   creerGamme,
   creerSousGamme,
   renommerGamme,
@@ -29,6 +30,12 @@ const Basculer = z.object({
   table: z.enum(["gamme", "sousGamme"]),
   id: z.string().uuid(),
   active: z.boolean(),
+});
+
+const Obligation = z.object({
+  id: z.string().uuid(),
+  mention: z.enum(["anemos", "engages"]),
+  exige: z.boolean(),
 });
 
 export interface ResultatGamme {
@@ -148,5 +155,27 @@ export async function basculerActiviteAction(input: unknown): Promise<ResultatGa
     table: data.table,
   });
   revalidatePath(CHEMIN);
+  return { ok: true };
+}
+
+/**
+ * Coche ou décoche une obligation d'étiquetage portée par la gamme.
+ *
+ * C'est ce qui remplace la recherche de « voile » ou « engag » dans son libellé.
+ * Le geste engage un contrôle réglementaire : il est journalisé au nom de qui
+ * l'a fait, comme une décision, pas comme un réglage.
+ */
+export async function definirObligationAction(input: unknown): Promise<ResultatGamme> {
+  const session = await auth();
+  if (!session?.user?.id) return { ok: false, error: "Non autorisé." };
+  const data = Obligation.parse(input);
+  await definirObligation(data.id, data.mention, data.exige);
+  await journaliser("GAMME_OBLIGATION_MODIFIEE", session.user.id, {
+    id: data.id,
+    mention: data.mention,
+    exige: data.exige,
+  });
+  revalidatePath(CHEMIN);
+  revalidatePath("/etiquettes");
   return { ok: true };
 }

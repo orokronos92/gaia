@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   basculerActiviteAction,
+  definirObligationAction,
   creerSousGammeAction,
   renommerGammeAction,
   renommerSousGammeAction,
@@ -82,6 +83,37 @@ export function LigneGamme({ gamme, douteuse }: { gamme: GammeReferentiel; doute
         </Button>
       </div>
 
+      {/* Ce que la gamme impose sur l'étiquette. C'était deviné dans son
+          libellé — « voile », « engag » — et un renommage éteignait le contrôle
+          sans le dire. C'est maintenant une décision, cochée et journalisée. */}
+      <div className="mt-3 flex flex-wrap items-center gap-4 rounded-xl bg-stone-50/70 px-3 py-2">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
+          Impose sur l&apos;étiquette
+        </span>
+        <Obligation
+          libelle="Mention « transporté à la voile »"
+          coche={gamme.exigeMentionAnemos}
+          pending={pending}
+          onBasculer={(exige) =>
+            agir(
+              () => definirObligationAction({ id: gamme.id, mention: "anemos", exige }),
+              exige ? "Mention Anemos exigée par cette gamme" : "Mention Anemos non exigée"
+            )
+          }
+        />
+        <Obligation
+          libelle="Ligne de don « Les Engagés »"
+          coche={gamme.exigeMentionEngages}
+          pending={pending}
+          onBasculer={(exige) =>
+            agir(
+              () => definirObligationAction({ id: gamme.id, mention: "engages", exige }),
+              exige ? "Ligne de don exigée par cette gamme" : "Ligne de don non exigée"
+            )
+          }
+        />
+      </div>
+
       <div className="mt-3 space-y-1.5 border-l-2 border-stone-100 pl-4">
         {gamme.sousGammes.length === 0 && (
           <p className="text-xs italic text-stone-400">Aucune sous-gamme.</p>
@@ -123,6 +155,32 @@ export function LigneGamme({ gamme, douteuse }: { gamme: GammeReferentiel; doute
         </div>
       </div>
     </div>
+  );
+}
+
+/** Une obligation d'étiquetage portée par la gamme. */
+function Obligation({
+  libelle,
+  coche,
+  pending,
+  onBasculer,
+}: {
+  libelle: string;
+  coche: boolean;
+  pending: boolean;
+  onBasculer: (exige: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-1.5 text-xs text-stone-600">
+      <input
+        type="checkbox"
+        checked={coche}
+        disabled={pending}
+        onChange={(e) => onBasculer(e.target.checked)}
+        className="size-3.5 accent-emerald-600"
+      />
+      {libelle}
+    </label>
   );
 }
 

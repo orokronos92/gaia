@@ -198,9 +198,9 @@ biodynamique. demeter est le label des produits issus
 de l'agriculture biodynamique.
 ETCVA6212V7`;
 
-describe("mentions de gamme — la gamme déclenche, pas le champ de fiche", () => {
-  const voile: BatTextInput = { gamme: "THE TRANSPORTE A LA VOILE" };
-  const engages: BatTextInput = { gamme: "LES ENGAGÉS" };
+describe("mentions de gamme — la gamme déclare ce qu'elle exige", () => {
+  const voile: BatTextInput = { gamme: "THÉS À LA VOILE", exigeMentionAnemos: true };
+  const engages: BatTextInput = { gamme: "LES ENGAGÉS", exigeMentionEngages: true };
 
   it("ne s'exécute pas hors de la gamme concernée", () => {
     const r = runTextRobot(BAT_MT265, FICHE_MT265);
@@ -209,7 +209,7 @@ describe("mentions de gamme — la gamme déclenche, pas le champ de fiche", () 
     expect(r.find((c) => c.id === "TXT_DEMETER")).toBeUndefined();
   });
 
-  it("s'exécute sur la seule foi de la gamme, champ de fiche vide", () => {
+  it("s'exécute sur la seule obligation de la gamme, champ de fiche vide", () => {
     // C'est tout l'enjeu du branchement : les quatre champs de mention sont
     // vides sur 178 fiches. Les attendre reviendrait à ne jamais contrôler.
     const c = byId(runTextRobot(BAT_TA6262, voile), "TXT_ANEMOS");
@@ -292,9 +292,9 @@ describe("note ** Demeter — déclenchée par la recette, jugée sur les termes
 });
 
 describe("statut de mention — la Qualité décide, la donnée déduit", () => {
-  const voile: BatTextInput = { gamme: "THE TRANSPORTE A LA VOILE" };
+  const voile: BatTextInput = { gamme: "THÉS À LA VOILE", exigeMentionAnemos: true };
 
-  it("« AUTO » retombe sur la gamme — c'est le défaut de toute fiche", () => {
+  it("« AUTO » retombe sur ce que la gamme exige — le défaut de toute fiche", () => {
     expect(runTextRobot(BAT_TA6262, { ...voile, statutAnemos: "AUTO" }).find((c) => c.id === "TXT_ANEMOS")).toBeDefined();
   });
 

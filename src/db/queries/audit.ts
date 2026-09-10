@@ -3,7 +3,7 @@ import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { listeEtiquette } from "@/lib/recette/liste-ingredients";
 import type { LigneEtiquetteBat } from "@/lib/audit/visual/coherence-etiquette";
-import { fichesEtiquettes, produits, recettes, ingredientsRecette } from "@/db/schema";
+import { gammes, fichesEtiquettes, produits, recettes, ingredientsRecette } from "@/db/schema";
 import type { AuditInput } from "@/lib/audit/types";
 import type { BatTextInput } from "@/lib/audit/visual/text-robot";
 
@@ -26,6 +26,14 @@ export const getAuditInputForFiche = cache(
       where: eq(produits.id, fiche.produitId),
     });
     if (!produit) return null;
+
+    // Ce que la gamme exige vient du référentiel, pas de son libellé : un
+    // renommage ne doit plus éteindre un contrôle (décision 2026-09-10). Un
+    // produit dont la gamme n'est pas encore rattachée n'exige rien de plus —
+    // et c'est visible sur l'écran des référentiels.
+    const gammeProduit = produit.gammeId
+      ? await db.query.gammes.findFirst({ where: eq(gammes.id, produit.gammeId) })
+      : null;
 
     const recette = await db.query.recettes.findFirst({
       where: eq(recettes.produitId, produit.id),
@@ -85,6 +93,8 @@ export const getAuditInputForFiche = cache(
         contientReglisse: produit.contientReglisse,
         allergenesMp: produit.allergenesMp,
         codeEan: produit.codeEan,
+        exigeMentionAnemos: gammeProduit?.exigeMentionAnemos ?? false,
+        exigeMentionEngages: gammeProduit?.exigeMentionEngages ?? false,
         eanPartagePar,
       },
       ingredients: lignes.map((l) => ({
@@ -130,6 +140,14 @@ export const getBatTextInputForFiche = cache(
     });
     if (!produit) return null;
 
+    // Ce que la gamme exige vient du référentiel, pas de son libellé : un
+    // renommage ne doit plus éteindre un contrôle (décision 2026-09-10). Un
+    // produit dont la gamme n'est pas encore rattachée n'exige rien de plus —
+    // et c'est visible sur l'écran des référentiels.
+    const gammeProduit = produit.gammeId
+      ? await db.query.gammes.findFirst({ where: eq(gammes.id, produit.gammeId) })
+      : null;
+
     // La certification Demeter se lit sur les lignes de la recette, jamais sur
     // le produit : c'est un ingrédient qui la porte, et c'est elle qui impose le
     // gras italique du mot « demeter » sur l'étiquette (PRO-QHS-013 §11.1).
@@ -173,6 +191,8 @@ export const getBatTextInputForFiche = cache(
         // Les quatre mentions de gamme : ce que la Qualité a décidé (le statut),
         // et ce dont on déduit en son absence (la gamme, la recette).
         gamme: produit.gamme,
+        exigeMentionAnemos: gammeProduit?.exigeMentionAnemos ?? false,
+        exigeMentionEngages: gammeProduit?.exigeMentionEngages ?? false,
         estDemeter,
         phraseDemeter: fiche.phraseDemeterFr,
         phraseAnemos: fiche.phraseAnemosFr,

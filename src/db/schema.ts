@@ -556,6 +556,17 @@ export const gammes = pgTable("gammes", {
     id: uuid("id").primaryKey().defaultRandom(),
     nom: varchar("nom", { length: 120 }).notNull().unique(),
     /**
+     * Ce que la gamme impose sur l'étiquette.
+     *
+     * L'audit le déduisait du LIBELLÉ — « voile » pour Anemos, « engag » pour
+     * Les Engagés. Un renommage éteignait donc un contrôle réglementaire en
+     * silence, et le seul produit où le contrôle « voile » se déclenchait était
+     * celui où la mention avait été tapée dans le champ gamme. La Qualité coche,
+     * le libellé redevient un libellé.
+     */
+    exigeMentionAnemos: boolean("exige_mention_anemos").default(false).notNull(),
+    exigeMentionEngages: boolean("exige_mention_engages").default(false).notNull(),
+    /**
      * Une gamme ne se supprime pas : des produits l'ont portée, des paquets sont
      * imprimés. Elle se retire des listes de choix et garde son histoire.
      */
