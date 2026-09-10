@@ -136,3 +136,52 @@ export async function basculerActivite(
   const cible = table === "gamme" ? gammes : sousGammes;
   await db.update(cible).set({ active, misAJourLe: new Date() }).where(eq(cible.id, id));
 }
+
+export interface ChoixGamme {
+  id: string;
+  nom: string;
+  active: boolean;
+  sousGammes: { id: string; nom: string; active: boolean }[];
+}
+
+/**
+ * De quoi remplir les deux listes de la fiche produit.
+ *
+ * Les gammes retirées des choix sont renvoyées quand même, avec leur drapeau :
+ * un produit posé sur une gamme retirée doit continuer d'afficher la sienne,
+ * sinon la liste lui en attribuerait une autre au premier enregistrement.
+ */
+export const getChoixGammes = cache(async (): Promise<ChoixGamme[]> => {
+  const [g, s] = await Promise.all([
+    db.select({ id: gammes.id, nom: gammes.nom, active: gammes.active }).from(gammes).orderBy(asc(gammes.nom)),
+    db
+      .select({ id: sousGammes.id, gammeId: sousGammes.gammeId, nom: sousGammes.nom, active: sousGammes.active })
+      .from(sousGammes)
+      .orderBy(asc(sousGammes.nom)),
+  ]);
+  return g.map((gamme) => ({
+    ...gamme,
+    sousGammes: s.filter((x) => x.gammeId === gamme.id).map(({ gammeId: _g, ...x }) => x),
+  }));
+});
+
+/** Le couple d'identifiants correspondant aux libellés choisis, ou null. */
+export async function resoudreGamme(
+  nomGamme: string,
+  nomSousGamme?: string | null
+): Promise<{ gammeId: string | null; sousGammeId: string | null }> {
+  const [gamme] = await db
+    .select({ id: gammes.id })
+    .from(gammes)
+    .where(eq(gammes.nom, nomGamme.trim()));
+  if (!gamme) return { gammeId: null, sousGammeId: null };
+
+  const nom = (nomSousGamme ?? "").trim();
+  if (nom === "") return { gammeId: gamme.id, sousGammeId: null };
+
+  const [sous] = await db
+    .select({ id: sousGammes.id })
+    .from(sousGammes)
+    .where(and(eq(sousGammes.gammeId, gamme.id), eq(sousGammes.nom, nom)));
+  return { gammeId: gamme.id, sousGammeId: sous?.id ?? null };
+}

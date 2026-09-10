@@ -48,6 +48,10 @@ export const CHAMPS_PRODUIT_EDITABLES = [
   // corrigeable. Elle est NOT NULL — l'action serveur refuse de la vider.
   "gamme",
   "sousGamme",
+  // Résolus côté serveur à partir des libellés choisis — jamais reçus du
+  // navigateur. Ce sont eux qui font foi ; les libellés en sont le reflet.
+  "gammeId",
+  "sousGammeId",
   // Déplacé depuis « Données complémentaires » : il vit désormais dans la carte
   // Identité, à côté de la certification qu'il désigne, et nulle part ailleurs.
   "organismeCertificateur",

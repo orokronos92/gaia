@@ -7,7 +7,8 @@ import { getPublicUrl } from "@/lib/utils/s3-client"
 import { getFichiersProduit } from "@/db/queries/fichiers-etiquettes"
 import { getDocumentsProduit, getLienDocument } from "@/db/queries/documents-import"
 import { getRecetteOutputForProduit } from "@/db/queries/recettes"
-import { getConditionnementsConnus, getGammesConnues } from "@/db/queries/produits"
+import { getConditionnementsConnus } from "@/db/queries/produits"
+import { getChoixGammes } from "@/db/queries/gammes"
 import { getVersionsFiche } from "@/db/queries/fiches"
 
 export default async function EtiquetteDetailPage(
@@ -118,7 +119,7 @@ export default async function EtiquetteDetailPage(
     // Recette QUID (SPEC-03) — lue côté serveur, mappée en RecetteAgentOutput.
     const recette = await getRecetteOutputForProduit(data[0].produitId);
     const conditionnementsConnus = await getConditionnementsConnus();
-    const gammesConnues = await getGammesConnues();
+    const choixGammes = await getChoixGammes();
 
     // Historique des versions (editable-fiche / versioning).
     const versions = await getVersionsFiche(id);
@@ -168,7 +169,7 @@ export default async function EtiquetteDetailPage(
         <EtiquetteClient
             labelData={labelData}
             conditionnementsConnus={conditionnementsConnus}
-            gammesConnues={gammesConnues}
+            choixGammes={choixGammes}
             recette={recette}
             versions={versions}
             documentsSource={documentsSource}

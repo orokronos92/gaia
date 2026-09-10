@@ -36,6 +36,8 @@ import { choisirAllegationAction, dupliquerFicheAction, sauvegarderVersionAction
 import { useEditableSection, EditButtons, EditableText, EditableSelect, type EditableSection } from "@/components/etiquettes/editable-section"
 import { VersionsHistorique } from "@/components/etiquettes/versions-historique"
 import { DocumentsSource, type DocumentSourceVue } from "./_components/documents-source"
+import { ChoixGammeSousGamme } from "./_components/choix-gamme"
+import type { ChoixGamme } from "@/db/queries/gammes"
 import { SupprimerProduit } from "@/components/produits/supprimer-produit"
 import { RetraitCatalogue } from "@/components/produits/retrait-catalogue"
 import { Button } from "@/components/ui/button"
@@ -282,7 +284,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [], gammesConnues = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[]; gammesConnues?: string[] }) {
+export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [], choixGammes = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[]; choixGammes?: ChoixGamme[] }) {
     // State
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
@@ -710,35 +712,23 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                         <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
                             Gamme:{" "}
                             {dossierSection.editing ? (
-                                <input
-                                    type="text"
-                                    value={dossierSection.draft.gamme ?? ""}
-                                    onChange={(e) => dossierSection.setField("gamme", e.target.value)}
-                                    list="suggestions-gamme"
-                                    placeholder="gamme"
-                                    className="ml-1 w-56 bg-transparent border-b border-emerald-300 text-stone-900 focus:border-emerald-500 focus:outline-none"
+                                <ChoixGammeSousGamme
+                                    choix={choixGammes}
+                                    gamme={dossierSection.draft.gamme ?? ""}
+                                    sousGamme={dossierSection.draft.sousGamme ?? ""}
+                                    onGamme={(v) => dossierSection.setField("gamme", v)}
+                                    onSousGamme={(v) => dossierSection.setField("sousGamme", v)}
                                 />
                             ) : (
                                 <span className="text-stone-900 ml-1">{valeurOu(labelData.gamme)}</span>
                             )}
                         </Badge>
-                        <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
-                            Sous-Gamme:{" "}
-                            {dossierSection.editing ? (
-                                <input
-                                    type="text"
-                                    value={dossierSection.draft.sousGamme ?? ""}
-                                    onChange={(e) => dossierSection.setField("sousGamme", e.target.value)}
-                                    placeholder="sous-gamme"
-                                    className="ml-1 w-32 bg-transparent border-b border-emerald-300 text-stone-900 focus:border-emerald-500 focus:outline-none"
-                                />
-                            ) : (
+                        {!dossierSection.editing && (
+                            <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
+                                Sous-Gamme:{" "}
                                 <span className="text-stone-900 ml-1">{valeurOu(labelData.sousGamme)}</span>
-                            )}
-                        </Badge>
-                        <datalist id="suggestions-gamme">
-                            {gammesConnues.map((g) => <option key={g} value={g} />)}
-                        </datalist>
+                            </Badge>
+                        )}
                         <span className="text-stone-300 mx-1">•</span>
                         <span className="text-sm font-medium text-stone-500 flex items-center gap-1.5 border border-stone-100 bg-stone-50 px-2 py-0.5 rounded-md">
                             <Clock className="h-3.5 w-3.5" /> Modifié le {labelData.date ?? 'N/A'}

@@ -47,6 +47,13 @@ export const utilisateurs = pgTable("utilisateurs", {
 export const produits = pgTable("produits", {
     id: uuid("id").primaryKey().defaultRandom(),
     codePf: varchar("code_pf", { length: 50 }).notNull(), // ex: MT265 — unicité portée par un index PARTIEL (voir plus bas)
+    /**
+     * Libellés conservés comme un REFLET du référentiel : beaucoup d'écrans,
+     * d'exports et de contrôles les lisent encore. Ce sont `gammeId` et
+     * `sousGammeId` qui font foi depuis le 2026-09-10 — renommer une gamme
+     * cessait sinon de suivre ses produits, et une casse différente éteignait un
+     * contrôle réglementaire en silence.
+     */
     gamme: varchar("gamme", { length: 100 }).notNull(),
     sousGamme: varchar("sous_gamme", { length: 100 }),
     denominationFr: varchar("denomination_fr", { length: 255 }).notNull(),
@@ -87,7 +94,10 @@ export const produits = pgTable("produits", {
     // ─── Allergènes & Allégations MP ──────────────────────────────────────────
     allergenesMp: varchar("allergenes_mp", { length: 50 }),             // "oui" / "non" / null
     allegationsMp: varchar("allegations_mp", { length: 50 }),           // "oui" / "non" / null (sur le mélange final ?)
-    contientReglisse: boolean("contient_reglisse").default(false).notNull(), // Audit 5.3 — déclenche la mention hypertension JDG. Repli : scan des désignations.
+    contientReglisse: boolean("contient_reglisse").default(false).notNull(),
+    /** La gamme du référentiel — ce que le produit désigne vraiment. */
+    gammeId: uuid("gamme_id").references(() => gammes.id),
+    sousGammeId: uuid("sous_gamme_id").references(() => sousGammes.id), // Audit 5.3 — déclenche la mention hypertension JDG. Repli : scan des désignations.
     // ─── Labels ───────────────────────────────────────────────────────────────
     labelsMP: json("labels_mp").$type<string[]>(),                      // ["AB", "FLO", "MH"...]
     labelsClient: json("labels_client").$type<string[]>(),              // ["AB", "WFTO"...]

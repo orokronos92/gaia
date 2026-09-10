@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { CHAMPS_FICHE_EDITABLES, updateFicheEtiquetteChamps, updateDossier, type ChampsFicheEditables } from "@/db/queries/fiches";
 import type { StatutMention } from "@/lib/audit/statut-mention";
 import { CHAMPS_PRODUIT_EDITABLES, updateProduitChamps } from "@/db/queries/produits";
+import { resoudreGamme } from "@/db/queries/gammes";
 import {
   CHAMPS_DEGUSTATION_EDITABLES,
   upsertDegustationChamps,
@@ -104,6 +105,19 @@ export async function updateChampsAction(input: unknown) {
   }
   if (Object.keys(champs).length === 0) {
     throw new Error("Aucun champ modifiable fourni.");
+  }
+
+  // La gamme choisie dans la liste vaut aussi un rattachement au référentiel.
+  // Le libellé reste écrit — beaucoup d'écrans le lisent — mais c'est
+  // l'identifiant qui fait foi, et lui seul survit à un renommage.
+  if (data.table === "produit" && ("gamme" in champs || "sousGamme" in champs)) {
+    const nomGamme = typeof champs.gamme === "string" ? champs.gamme : null;
+    if (nomGamme) {
+      const sous = typeof champs.sousGamme === "string" ? champs.sousGamme : null;
+      const ids = await resoudreGamme(nomGamme, sous);
+      champs.gammeId = ids.gammeId;
+      if ("sousGamme" in champs) champs.sousGammeId = ids.sousGammeId;
+    }
   }
 
   let avant: Record<string, string | null>;
