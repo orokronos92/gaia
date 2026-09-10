@@ -195,3 +195,44 @@ describe("garde-fous du corpus", () => {
     expect(lire("MT165 MATE SPORTIF.xlsx").anomalies).toEqual([]);
   });
 });
+
+/**
+ * Classeurs trafiqués volontairement (2026-09-10) — recettes FABRIQUÉES, pas des
+ * données JDG : aucun des cinq classeurs réels ne porte de coche Demeter, donc
+ * toute la chaîne Demeter n'avait jamais été exercée sur un fichier.
+ *
+ * Ces deux-là ont aussi révélé un vrai défaut : convertis en .xls, ils perdent
+ * le titre de la colonne D (« COMMERCE EQUITABLE ») sur la ligne d'en-tête du
+ * tableau en vigueur, alors que la ligne jumelle du tableau précédent le garde.
+ * Le lecteur refusait alors d'interpréter la colonne et perdait les coches — et
+ * ne le disait que dans un journal serveur.
+ */
+describe("classeurs trafiqués — chaîne Demeter et en-tête amputé", () => {
+  it("emprunte le titre manquant à l'en-tête jumelle et le signale", () => {
+    const fiche = lire("TA737-trafique-demeter-separe.xls");
+    expect(fiche.tableau.colonnes.equitable).toBe("D");
+    expect(fiche.tableau.colonnes.pourcentageEtiquette).toBe("G");
+    expect(fiche.anomalies.join(" ")).toContain("COMMERCE ÉQUITABLE");
+    expect(fiche.anomalies.join(" ")).toContain("ligne 30");
+  });
+
+  it("lit les trois Demeter et les deux équitables portés par des lignes distinctes", () => {
+    const fiche = lire("TA737-trafique-demeter-separe.xls");
+    expect(fiche.tableau.lignes.filter((l) => l.estDemeter).map((l) => l.codeArticle)).toEqual([
+      "HB170",
+      "TN592",
+      "EF231",
+    ]);
+    expect(fiche.tableau.lignes.filter((l) => l.estEquitable).map((l) => l.codeArticle)).toEqual([
+      "AS076",
+      "AS066",
+    ]);
+  });
+
+  it("un même ingrédient peut être Demeter ET équitable", () => {
+    const fiche = lire("TA737-trafique-demeter-cumul.xls");
+    const sorwathe = fiche.tableau.lignes.find((l) => l.codeArticle === "TN592");
+    expect(sorwathe?.estDemeter).toBe(true);
+    expect(sorwathe?.estEquitable).toBe(true);
+  });
+});

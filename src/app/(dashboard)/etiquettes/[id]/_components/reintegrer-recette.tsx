@@ -58,6 +58,21 @@ export function ReintegrerDocumentMenu({ ficheId }: ReintegrerDocumentMenuProps)
                                 " — à arbitrer depuis l'onglet Recette.",
                             duration: 12000,
                         })
+                    } else if (r.anomalies && r.anomalies.length > 0) {
+                        // Le classeur a été lu, mais pas sans réserve : on le dit
+                        // au moment de l'import, pas dans un journal serveur.
+                        toast.warning(ok(r), {
+                            description: r.anomalies.join(" "),
+                            duration: 15000,
+                        })
+                    } else if (r.sourceExtraction === "IA_DEGRADEE") {
+                        toast.warning(ok(r), {
+                            description:
+                                "Gabarit de classeur non reconnu : la composition a été lue par l'IA et " +
+                                "les mentions Demeter et commerce équitable n'ont PAS été lues. " +
+                                "À renseigner à la main depuis l'onglet Recette.",
+                            duration: 15000,
+                        })
                     } else {
                         toast.success(ok(r), { description: "À valider par Marie." })
                     }

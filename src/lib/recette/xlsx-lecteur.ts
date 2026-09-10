@@ -21,8 +21,10 @@ import { etendue, normaliser, texteCellule } from "./xlsx-cellules";
 import { lireCasesACocher, reponseCase, type CaseACocher } from "./xlsx-cases";
 import {
   colonnesDEntete,
+  completerColonnes,
   lireTableau,
   numeroVersion,
+  type NomColonne,
   type TableauRecetteLu,
 } from "./xlsx-tableau";
 
@@ -44,6 +46,17 @@ const CHAMPS_ENTETE = [
   { champ: "descriptifModification", exact: [], prefixe: "DESCRIPTIF DE LA MODIFICATION" },
   { champ: "raisonModification", exact: [], prefixe: "RAISON DE LA MODIFICATION" },
 ] as const;
+
+/** Column names as Marie would say them, for anomaly messages. */
+const LIBELLE_LISIBLE: Partial<Record<NomColonne, string>> = {
+  codeArticle: "CODE ARTICLE",
+  designation: "DÉSIGNATION",
+  demeter: "DEMETER",
+  equitable: "COMMERCE ÉQUITABLE",
+  kg: "QTÉ EN KG",
+  pourcentage: "QTÉ EN %",
+  pourcentageEtiquette: "% pour liste d'ingrédient",
+};
 
 const QUESTION_INCIDENCE = "LA MODIFICATION A UNE INCIDENCE SUR";
 const OPTION_ETIQUETAGE = "ETIQUETAGE";
@@ -186,13 +199,26 @@ export function lireFicheRecetteXlsx(buffer: ArrayBuffer): FicheRecetteLue | nul
     const bornes = feuille ? etendue(feuille) : null;
     if (!feuille || !bornes) continue;
 
-    const tableaux: TableauRecetteLu[] = [];
-    let premiereEntete = -1;
+    // Deux passes : on relève d'abord toutes les lignes d'en-tête de la feuille,
+    // pour qu'une ligne amputée d'un titre puisse l'emprunter à sa jumelle.
+    const entetes: { ligne: number; colonnes: Partial<Record<NomColonne, number>> }[] = [];
     for (let r = bornes.s.r; r <= bornes.e.r; r++) {
       const colonnes = colonnesDEntete(feuille, r, bornes.s.c, bornes.e.c);
-      if (!colonnes) continue;
-      if (premiereEntete < 0) premiereEntete = r;
-      tableaux.push(lireTableau(feuille, onglet, r, colonnes, bornes, anomalies));
+      if (colonnes) entetes.push({ ligne: r, colonnes });
+    }
+    if (entetes.length === 0) continue;
+
+    const tableaux: TableauRecetteLu[] = [];
+    const premiereEntete = entetes[0].ligne;
+    for (const entete of entetes) {
+      const voisins = entetes.filter((e) => e !== entete).map((e) => e.colonnes);
+      for (const { colonne } of completerColonnes(entete.colonnes, voisins)) {
+        anomalies.push(
+          `${onglet} ligne ${entete.ligne + 1} : le titre de la colonne ${LIBELLE_LISIBLE[colonne] ?? colonne}` +
+            ` est vide — repris de l'autre en-tête de la feuille. Vérifier le classeur.`
+        );
+      }
+      tableaux.push(lireTableau(feuille, onglet, entete.ligne, entete.colonnes, bornes, anomalies));
     }
     if (tableaux.length > 0) parOnglet.push({ onglet, tableaux, premiereEntete });
   }

@@ -83,6 +83,43 @@ export function colonnesDEntete(
     : null;
 }
 
+/**
+ * Completes a header row from the other header rows of the same sheet.
+ *
+ * A modification form repeats the same template twice — the superseded version
+ * then the new one — so the two tables share a column layout by construction.
+ * Converting such a workbook to the old .xls format can empty a header cell: the
+ * chimpanzé sheet keeps "COMMERCE EQUITABLE" in D17 and loses it in D30, and the
+ * ticks below D30 would then be dropped in silence. Borrowing the label from a
+ * sibling header on the SAME sheet stays evidence-based — it is another row of
+ * the same form saying what that column is — where guessing by position would
+ * be the very thing this reader exists to remove.
+ *
+ * Returns the columns it had to borrow, so the caller can say so out loud.
+ */
+export function completerColonnes(
+  cible: Partial<Record<NomColonne, number>>,
+  voisins: Partial<Record<NomColonne, number>>[]
+): { colonne: NomColonne; index: number }[] {
+  const occupes = new Set(Object.values(cible));
+  const empruntees: { colonne: NomColonne; index: number }[] = [];
+
+  for (const nom of Object.keys(LIBELLES_COLONNES) as NomColonne[]) {
+    if (cible[nom] !== undefined) continue;
+    const proposes = new Set(
+      voisins.map((v) => v[nom]).filter((i): i is number => i !== undefined)
+    );
+    // Deux voisins qui ne s'accordent pas ne prouvent rien : on n'emprunte pas.
+    if (proposes.size !== 1) continue;
+    const index = [...proposes][0];
+    if (occupes.has(index)) continue;
+    cible[nom] = index;
+    occupes.add(index);
+    empruntees.push({ colonne: nom, index });
+  }
+  return empruntees;
+}
+
 export function contientTotal(
   feuille: xlsx.WorkSheet,
   ligne: number,

@@ -22,6 +22,14 @@ export interface ReintegrerResult {
     listePreservee?: boolean
     /** Ce que la dégustation proposait, non appliqué — Marie arbitre. */
     listeProposee?: string
+    /**
+     * Ce que la lecture du classeur a relevé d'anormal. Une extraction qui se
+     * défend en silence ne se défend pas : un titre de colonne manquant a fait
+     * perdre des coches « commerce équitable » sans que personne le voie.
+     */
+    anomalies?: string[]
+    /** DETERMINISTE (classeur lu) ou IA_DEGRADEE (gabarit non reconnu). */
+    sourceExtraction?: string
 }
 
 /**
@@ -96,7 +104,12 @@ export async function reintegrerRecetteAction(formData: FormData): Promise<Reint
     })
 
     revalidatePath(`/etiquettes/${ficheId}`)
-    return { ok: true, nbIngredients: importee.calc.ingredients.length }
+    return {
+        ok: true,
+        nbIngredients: importee.calc.ingredients.length,
+        anomalies: importee.anomalies,
+        sourceExtraction: importee.source,
+    }
 }
 
 /**
