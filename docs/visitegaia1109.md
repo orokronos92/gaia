@@ -188,14 +188,51 @@ l'étiquette.
 **L'enjeu est direct** : notre contrôle 13.2 cherche `FR-BIO-01` en dur sur le
 BAT. Si la seconde réponse est la bonne, il est faux sur ces produits.
 
-### 🟡 M14. Quels labels figurent sur l'étiquette ?
+### 🟠 M14. Trois endroits parlent de certification, et rien ne les relie
 
-L'application distingue les labels de la **matière première** (`AB` sur la
-plupart des produits) et ceux du **produit fini** (`AB`, `AB + WFTO`, renseignés
-sur 2 produits seulement).
+Votre fiche recette porte **deux lignes de cases à cocher** — `LABELS MP` et
+`LABELS CLIENT` — avec les mêmes intitulés : AB, MH, FFL, WFTO, Autre. Nous
+lisons les deux, et nous les stockons séparément. S'y ajoute un troisième champ,
+l'**organisme certificateur**, saisi ailleurs.
 
-Lesquels apparaissent sur l'étiquette, et qui décide de la différence ? Nous
-affichons aujourd'hui les premiers, sans certitude que ce soit les bons.
+Ce que nous avons aujourd'hui, sur 151 produits :
+
+| | Renseigné | Exemple |
+|---|---|---|
+| Labels matière première | 8 produits | Maté sportif : `AB + MH` |
+| Labels client | 8 produits | Maté sportif : `AB + WFTO` |
+| Organisme certificateur | 4 produits | `CERES`, `ACT Thaïland`, `AT-BIO-301` |
+
+Sur 3 produits les deux listes sont identiques (`AB` / `AB`) ; sur les 5 autres
+elles diffèrent — et la différence n'est jamais anodine : le Maté sportif porte
+**MH** en matière première et **WFTO** en revendication client. Ce ne sont ni
+les mêmes organismes ni la même portée.
+
+**Nos questions :**
+
+1. **Que veut dire chacune des deux lignes de votre fiche recette ?** Nous
+   comprenons « ce que portent les matières achetées » d'un côté, « ce que le
+   produit fini revendique » de l'autre. Est-ce bien cela ?
+2. **Laquelle des deux part sur l'étiquette ?** Nous affichons aujourd'hui les
+   labels matière première en grand sur la fiche produit, et les labels client
+   en petit ailleurs. Si c'est l'inverse qui compte, nous avons mis en avant la
+   mauvaise.
+3. **Que signifie `MH` ?** Il apparaît sur 3 produits en matière première et
+   jamais côté client. Nous n'avons pas su l'identifier.
+4. **Une revendication client doit-elle toujours être justifiée par une matière ?**
+   Autrement dit, `WFTO` côté client sans `WFTO` côté matière : anomalie à
+   signaler, ou situation normale — la certification portant alors sur
+   l'entreprise et non sur l'ingrédient ?
+5. **Où placer l'organisme certificateur ?** Il vit aujourd'hui dans une
+   troisième zone, sans lien avec les deux listes. Est-ce une propriété du
+   produit fini, de la matière, ou du fournisseur ?
+
+**Ce que la réponse change chez nous.** Si les deux listes doivent se
+correspondre, la comparaison devient un contrôle mécanique — deux listes, une
+différence, un constat — et le point 13.3 (« les labels non officiels sont-ils
+justifiés par la matière première ? ») cesse d'être confié à un modèle pour
+devenir du calcul. Et les trois zones se regroupent en un seul endroit sur la
+fiche, au lieu d'obliger Marie à faire défiler pour comparer ce qui doit l'être.
 
 *(Et si vous nous fournissez les logos vectoriels — AB, Eurofeuille, Demeter,
 WFTO, Fairtrade, Elephant Friendly, Fair for Life —, l'application peut les
