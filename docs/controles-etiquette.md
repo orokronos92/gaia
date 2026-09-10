@@ -2,11 +2,11 @@
 
 **Source** : registre `src/lib/audit/control-checklist.ts` — ce document en est
 **généré**, il ne le paraphrase pas. Toute divergence est un bug du document.
-**Dernière génération** : 8 septembre 2026.
+**Dernière génération** : 10 septembre 2026.
 
 L'audit transpose **PRO-QHS-013** (procédure JDG de vérification d'étiquetage,
 v.1 du 30/03/2023), complété par **MOP-PRO-029** pour le code article et le
-Gencode. **39 points de contrôle**, tous exécutés à chaque lancement — un
+Gencode. **44 points de contrôle**, tous exécutés à chaque lancement — un
 contrôle absent est un oubli, un contrôle muet est un mensonge par omission.
 
 ---
@@ -16,16 +16,16 @@ contrôle absent est un oubli, un contrôle muet est un mensonge par omission.
 Chaque point porte une **voie**, et la voie décide de l'exécutant. C'est un
 contrat dur : un point déterministe n'est **jamais** soumis à un modèle.
 
-| Voie | 39 points | Qui tranche | Coût |
+| Voie | 44 points | Qui tranche | Coût |
 |---|---|---|---|
-| **Code · fiche** | 16 | Du code pur, sur les données de la fiche : calcul, seuil, comparaison de chaînes | 0 jeton |
-| **Code · BAT** | 10 | Du code pur, sur le PDF du BAT : mesure de tracés, de corps de police, de positions | 0 jeton |
-| **Modèle** | 9 | Mistral, pour l'interprétation d'une règle rédigée — jamais pour un calcul | facturé |
+| **Code · fiche** | 20 | Du code pur, sur les données de la fiche : calcul, seuil, comparaison de chaînes | 0 jeton |
+| **Code · BAT** | 13 | Du code pur, sur le PDF du BAT : mesure de tracés, de corps de police, de positions | 0 jeton |
+| **Modèle** | 7 | Mistral, pour l'interprétation d'une règle rédigée — jamais pour un calcul | facturé |
 | **Œil** | 4 | Marie, sur le BAT : ce que ni le code ni le modèle ne savent encore lire | 0 jeton |
 
 **Le contrôle est gratuit.** Le bouton « Contrôler » exécute les
-26 points de code sans consommer un jeton. Le bouton
-« Analyse IA » n'ajoute que les 9 points où un modèle fait mieux —
+33 points de code sans consommer un jeton. Le bouton
+« Analyse IA » n'ajoute que les 7 points où un modèle fait mieux —
 reconnaître un dessin, juger une équivalence de sens.
 
 ## 2. Ce que dit un résultat
@@ -63,7 +63,7 @@ disant.
 
 ---
 
-## 4. Les 39 points
+## 4. Les 44 points
 
 ### Dénomination de la denrée
 
@@ -74,6 +74,8 @@ disant.
 | **1.2** † | Arôme présent : la mention « aromatisé / goût / saveur » figure-t-elle en dénomination, conforme au tableau §1.2 ? | Modèle | — | PRO-QHS-013 §1.2 ; STEPI ; règl. 1334/2008 |
 | **1.3** † | La mention « parfumé » est-elle utilisée UNIQUEMENT pour une aromatisation par enfleurage ? | Modèle | — | PRO-QHS-013 §1.2 |
 | **1.4** | La dénomination figure-t-elle dans le même champ visuel que le poids net, en caractères droits et lisibles ? | Code · BAT | zone | PRO-QHS-013 §1 ; INCO art. 9/13 |
+| **1.5** | La dénomination portée par la fiche figure-t-elle à l'identique sur le BAT ? | Code · BAT | zone | PRO-QHS-013 §1 ; INCO art. 9 et 13 |
+| **1.6** † | Infusion : la dénomination légale est-elle l'un des noms usuels autorisés (tisane, infusion, mélange de plantes à infusion…) ? | Code · fiche | — | PRO-QHS-013 §1.3 ; STEPI |
 
 ### Liste des ingrédients
 
@@ -96,8 +98,8 @@ disant.
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **4.1** | Le produit relève-t-il d'une catégorie exemptée (infusions, thés, mélanges sans modification de la valeur nutritionnelle) ? | Modèle | — | PRO-QHS-013 §2.3 ; annexe 1 |
-| **4.2** | Si l'aromatisation modifie la valeur nutritionnelle (ex. caramel) : la mention « Informations nutritionnelles moyennes pour 100 ml… » figure-t-elle ? | Modèle | — | PRO-QHS-013 §2.3 |
+| **4.1** | Le produit relève-t-il d'une catégorie exemptée (infusions, thés, mélanges sans modification de la valeur nutritionnelle) ? | Code · fiche | — | PRO-QHS-013 §2.3 ; annexe 1 |
+| **4.2** | Si l'aromatisation modifie la valeur nutritionnelle (ex. caramel) : la mention « Informations nutritionnelles moyennes pour 100 ml… » figure-t-elle ? | Code · fiche | — | PRO-QHS-013 §2.3 |
 
 ### Particularités
 
@@ -113,6 +115,7 @@ disant.
 |---|---|---|---|---|
 | **6.1** | Quantité nette exprimée en unité de masse (g ou kg) ? | Code · fiche | zone + **propose** | PRO-QHS-013 §4 |
 | **6.2** | Hauteur des chiffres conforme (2 mm si ≤ 50 g ; 3 mm si 50-200 g ; 4 mm si 200-1000 g ; 6 mm si > 1000 g), dans le même champ visuel que la dénomination ? | Code · BAT | zone | PRO-QHS-013 §4 |
+| **6.3** | Le nombre de tasses annoncé correspond-il au poids net divisé par 2 g ? | Code · fiche | — | PRO-QHS-013 §3.2 ; §15 |
 
 ### Conservation et mode d'emploi
 
@@ -139,7 +142,7 @@ disant.
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **10.1** | Code-barres IMPRIMÉ sur le BAT identique au Gencode déclaré en fiche ? | Œil | — | PRO-QHS-013 §8 ; annexe 4 ; MOP-PRO-029 §3 |
+| **10.1** | Code-barres IMPRIMÉ sur le BAT identique au Gencode déclaré en fiche ? | Œil | **12.1** Triman | PRO-QHS-013 §8 ; annexe 4 ; MOP-PRO-029 §3 |
 
 ### Métrologie
 
@@ -152,7 +155,7 @@ disant.
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
 | **12.1** | Triman présent, ≥ 1×1 cm (ou ≥ 0,6×0,6 cm si contrainte technique) ? | Œil | — | PRO-QHS-013 §10.1 ; décret 2022-975 |
-| **12.2** | Cartouche Info-Tri complet (Triman + « le tri + facile » + éléments séparés par + + destination), règles de dématérialisation selon surface respectées ? | Œil | — | PRO-QHS-013 §10.2 ; annexe 5 ; loi AGEC art. 17 |
+| **12.2** | Cartouche Info-Tri complet (Triman + « le tri + facile » + éléments séparés par + + destination), règles de dématérialisation selon surface respectées ? | Œil | **13.4** Point Vert absent | PRO-QHS-013 §10.2 ; annexe 5 ; loi AGEC art. 17 |
 
 ### Labels
 
@@ -162,6 +165,8 @@ disant.
 | **13.2** | Code de l'organisme de contrôle du dernier opérateur présent (FR-BIO-01) ? | Code · BAT | zone | PRO-QHS-013 §11.1 |
 | **13.3** | Labels non officiels (WFTO, Fairtrade, Elephant Friendly, FFL, Demeter…) justifiés par la matière première et correctement apposés ? | Modèle | — | PRO-QHS-013 §11.2 ; annexe 7 |
 | **13.4** | Logo Point Vert bien ABSENT (interdit depuis le 01/01/2021, loi AGEC) ? | Œil | — | PRO-QHS-013 §11.2 ; loi 2020-105 |
+| **13.5** † | Thé transporté à la voile : bandeau de gamme ET phrase du transporteur imprimés ensemble ? | Code · BAT | zone | PRO-QHS-013 §11.2 |
+| **13.6** † | Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ? | Code · BAT | zone | PRO-QHS-013 §11.2 |
 
 ### Typographie
 
@@ -183,8 +188,6 @@ disant.
 | **16.2** | Le chiffre de conditionnement correspond-il au poids net déclaré ? | Code · fiche | — | MOP-PRO-029 §2.1.3 |
 | **16.3** | Le Gencode déclaré décode-t-il le même article et le même conditionnement, avec une clé valide ? | Code · fiche | — | MOP-PRO-029 §3 |
 | **16.4** | Le Gencode est-il porté par ce seul produit ? | Code · fiche | — | MOP-PRO-029 §3 ; GS1 |
-
----
 
 ## 5. Ce qui n'est pas encore automatisé
 

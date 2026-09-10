@@ -1,5 +1,5 @@
 /**
- * La checklist complète de Marie — les 39 points, sans exception.
+ * La checklist complète de Marie — tout le registre, sans exception.
  *
  * L'écran d'audit n'est pas un rapport de conformité, c'est **sa liste de
  * travail** : elle doit y voir tout ce qui reste à faire sur cette fiche et ses

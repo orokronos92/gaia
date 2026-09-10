@@ -7,7 +7,7 @@ paragraphe par paragraphe.
 
 **Source** : registre `src/lib/audit/control-checklist.ts`. Les identifiants,
 libellés, voies et références sont **extraits du code**, pas recopiés.
-**Généré le 9 septembre 2026** — 42 points.
+**Généré le 10 septembre 2026** — 44 points.
 
 ---
 
@@ -19,11 +19,11 @@ un contrôle de voie « code » n'est jamais soumis à un modèle de langage.
 | Voie | Points | Qui répond | IA |
 |---|---|---|---|
 | 🟩 **Code · fiche** | 20 | Du code, sur les données de la fiche et de la recette : calcul, seuil, comparaison de chaînes | non |
-| 🟦 **Code · BAT** | 11 | Du code, sur le PDF du bon à tirer : mesure de tracés, de corps de police, de positions | non |
+| 🟦 **Code · BAT** | 13 | Du code, sur le PDF du bon à tirer : mesure de tracés, de corps de police, de positions | non |
 | 🟨 **Modèle** | 7 | Un modèle de langage ou de vision, pour l'interprétation d'une règle rédigée ou la reconnaissance d'un dessin | oui |
 | ⬜ **Œil** | 4 | La Qualité, sur le bon à tirer : ce que ni le code ni le modèle ne savent lire aujourd'hui | — |
 
-**31 des 42 contrôles s'exécutent sans aucune IA**, à chaque
+**33 des 44 contrôles s'exécutent sans aucune IA**, à chaque
 lancement, sans consommer de jeton. Les 7 contrôles de voie « modèle »
 ne s'exécutent que sur demande explicite.
 
@@ -388,6 +388,32 @@ Un modèle de vision reconnaît les logos non officiels — WFTO, Fairtrade, Ele
 Le logo Point Vert est interdit depuis le 1ᵉʳ janvier 2021. Le contrôle vise donc une absence — et une absence ne se prouve pas par empreinte : ne pas reconnaître un dessin ne dit pas qu'il n'y est pas. Il restera à l'œil.
 
 *Données lues* : BAT : reconnaissance d'image.
+
+### 🟦 13.5 — Thé transporté à la voile : bandeau de gamme ET phrase du transporteur imprimés ensemble ?
+
+**Voie** : Code · BAT · **Sans IA** : oui  
+**Référence** : PRO-QHS-013 §11.2
+
+*Conditionnel* — ne s'applique qu'à la gamme « THÉ TRANSPORTÉ À LA VOILE » (3 références).
+
+Le code cherche deux marqueurs distincts sur le BAT : le bandeau de gamme « THÉ TRANSPORTÉ À LA VOILE » et la phrase que le transporteur impose d'imprimer avec lui (« Le vent comme énergie de transport… Ensemble, changeons de cap ! »). Les séparer dit lequel des deux manque — et c'est la phrase qui manque, jamais le bandeau. À noter : le mot « Anemos » est le nom du label côté TOWT, il n'est jamais imprimé sur l'étiquette ; le chercher sur le BAT ne trouverait rien.
+
+Quand le BAT porte les deux mais que la zone « Mention Anemos » de la fiche est vide, le contrôle demande de **compléter la fiche**, pas de corriger l'étiquette.
+
+*Données lues* : fiche : gamme, zone Anemos. BAT : texte.
+
+### 🟦 13.6 — Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ?
+
+**Voie** : Code · BAT · **Sans IA** : oui  
+**Référence** : PRO-QHS-013 §11.2
+
+*Conditionnel* — ne s'applique qu'à la gamme « LES ENGAGÉS » (11 références, 3 sous-gammes).
+
+Le descriptif de l'association change à chaque produit — 8 associations pour 11 références. Le contrôle ne le mesure donc pas : il vérifie les deux éléments invariants, le bandeau de sous-gamme (« AGIR POUR LA NATURE / L'ÉDUCATION / LA CULTURE ») et la ligne de don. Le bandeau sans le don serait une promesse sans son engagement.
+
+Le contrôle du texte de l'association lui-même suppose un référentiel des bénéficiaires ; il n'est pas livré.
+
+*Données lues* : fiche : gamme, zone Les Engagés. BAT : texte.
 
 ## 14. Taille des caractères
 

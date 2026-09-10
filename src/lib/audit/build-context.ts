@@ -51,6 +51,17 @@ function detectInfusion(input: AuditInput): boolean {
   return !CAMELLIA_KEYWORDS.some((k) => texte.includes(k));
 }
 
+/**
+ * La gamme porte-t-elle ce motif ?
+ *
+ * On cherche un fragment, pas l'intitulé complet : la base écrit « LES ENGAGÉS »
+ * et « Les Militants » avec des casses et des accents qui ne s'accordent pas, et
+ * « THE TRANSPORTE A LA VOILE » sans accents du tout.
+ */
+function gammeEst(gamme: string | null | undefined, motif: string): boolean {
+  return normalize(gamme ?? "").includes(motif);
+}
+
 function detectContientReglisse(input: AuditInput): boolean {
   if (input.produit.contientReglisse === true) return true;
   return scanDesignations(input, REGLISSE_KEYWORDS);
@@ -73,5 +84,7 @@ export function buildAuditContext(input: AuditInput): AuditContext {
     // No backing data yet — surface/origin controls stay manual or LLM.
     surfaceFacePrincipaleCm2: null,
     origineMpUnique: undefined,
+    gammeAnemos: gammeEst(produit.gamme, "voile"),
+    gammeEngages: gammeEst(produit.gamme, "engag"),
   };
 }

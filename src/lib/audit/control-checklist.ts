@@ -246,15 +246,31 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     libelle: "Logo Point Vert bien ABSENT (interdit depuis le 01/01/2021, loi AGEC) ?",
     reference: "PRO-QHS-013 §11.2 ; loi 2020-105",
   },
+  // Deux gammes portent leur mention volontaire sans qu'aucun point ne la
+  // regardait : le 13.3 les couvrait en théorie, mais il est confié au modèle et
+  // sa question porte sur la justification du label, pas sur la présence de la
+  // phrase. Le BAT, lui, sait répondre à celle-ci tout seul.
+  {
+    id: "13.5", ordre: 37, section: "LABELS", typeControle: "MENTION_ANEMOS", mode: "bat",
+    libelle: "Thé transporté à la voile : bandeau de gamme ET phrase du transporteur imprimés ensemble ?",
+    reference: "PRO-QHS-013 §11.2",
+    applicableSi: (c) => c.gammeAnemos === true,
+  },
+  {
+    id: "13.6", ordre: 38, section: "LABELS", typeControle: "MENTION_ENGAGES", mode: "bat",
+    libelle: "Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ?",
+    reference: "PRO-QHS-013 §11.2",
+    applicableSi: (c) => c.gammeEngages === true,
+  },
   // 14. TYPOGRAPHIE
   {
-    id: "14.1", ordre: 37, section: "TYPOGRAPHIE", typeControle: "TYPO_HAUTEUR_X", mode: "bat",
+    id: "14.1", ordre: 39, section: "TYPOGRAPHIE", typeControle: "TYPO_HAUTEUR_X", mode: "bat",
     libelle: "Hauteur de x des mentions obligatoires conforme à la face la plus grande (0,9 mm si < 80 cm² ; ≥ 1,2 mm si > 80 cm²) ?",
     reference: "PRO-QHS-013 §12 ; INCO art. 13.2/13.3/16.2",
   },
   // 15. CODE ÉTIQUETTE
   {
-    id: "15.1", ordre: 38, section: "CODE_ETIQUETTE", typeControle: "CODE_ETIQUETTE", mode: "deterministic",
+    id: "15.1", ordre: 40, section: "CODE_ETIQUETTE", typeControle: "CODE_ETIQUETTE", mode: "deterministic",
     libelle: "Code étiquette présent sur la contre-étiquette ?",
     reference: "PRO-QHS-013 §13",
   },
@@ -263,12 +279,12 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   // code produit, le poids net et le code-barres déclarés racontent la même
   // histoire. Le point 10.1, lui, compare le code-barres IMPRIMÉ à celui-ci.
   {
-    id: "16.1", ordre: 39, section: "CODE_ARTICLE", typeControle: "CODE_CONDITIONNEMENT", mode: "deterministic",
+    id: "16.1", ordre: 41, section: "CODE_ARTICLE", typeControle: "CODE_CONDITIONNEMENT", mode: "deterministic",
     libelle: "Le code produit porte-t-il un chiffre de conditionnement (1 à 7) ?",
     reference: "MOP-PRO-029 §2.1.3",
   },
   {
-    id: "16.2", ordre: 40, section: "CODE_ARTICLE", typeControle: "CODE_POIDS_COHERENT", mode: "deterministic",
+    id: "16.2", ordre: 42, section: "CODE_ARTICLE", typeControle: "CODE_POIDS_COHERENT", mode: "deterministic",
     libelle: "Le chiffre de conditionnement correspond-il au poids net déclaré ?",
     reference: "MOP-PRO-029 §2.1.3",
   },
@@ -279,12 +295,12 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   // une question pour JDG ; en attendant, le livrer produirait 119 avertissements
   // sur 172 fiches, ce qui apprend à ne plus les lire.
   {
-    id: "16.3", ordre: 41, section: "CODE_ARTICLE", typeControle: "GENCODE_COHERENT", mode: "deterministic",
+    id: "16.3", ordre: 43, section: "CODE_ARTICLE", typeControle: "GENCODE_COHERENT", mode: "deterministic",
     libelle: "Le Gencode déclaré décode-t-il le même article et le même conditionnement, avec une clé valide ?",
     reference: "MOP-PRO-029 §3",
   },
   {
-    id: "16.4", ordre: 42, section: "CODE_ARTICLE", typeControle: "GENCODE_UNICITE", mode: "deterministic",
+    id: "16.4", ordre: 44, section: "CODE_ARTICLE", typeControle: "GENCODE_UNICITE", mode: "deterministic",
     libelle: "Le Gencode est-il porté par ce seul produit ?",
     reference: "MOP-PRO-029 §3 ; GS1",
   },

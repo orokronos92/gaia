@@ -116,6 +116,8 @@ export const CONTROL_TYPES = [
   "EUROFEUILLE",
   "CODE_OC",
   "LABELS_NON_OFFICIELS",
+  "MENTION_ANEMOS",
+  "MENTION_ENGAGES",
   "POINT_VERT_ABSENT",
   "TYPO_HAUTEUR_X",
   "CODE_ETIQUETTE",
@@ -146,6 +148,16 @@ export interface AuditContext {
   contientReglisse?: boolean;
   surfaceFacePrincipaleCm2?: number | null;
   origineMpUnique?: boolean; // > 50 % from a single origin
+  /**
+   * Les gammes qui portent leur propre mention obligatoire (§11.2).
+   *
+   * On dérive de `produits.gamme`, jamais du champ de mention de la fiche : la
+   * gamme est renseignée sur la totalité du catalogue, les champs de mention ne
+   * le sont pas encore. Un point d'applicabilité adossé à un champ vide ne
+   * s'applique jamais.
+   */
+  gammeAnemos?: boolean; // THE TRANSPORTE A LA VOILE — 3 références
+  gammeEngages?: boolean; // LES ENGAGÉS — 11 références, 3 sous-gammes
 }
 
 /** A control point in the checklist (static metadata + applicability). */
@@ -242,6 +254,8 @@ export interface AuditFicheData {
 export interface AuditProduitData {
   /** Code article JDG (MOP-PRO-029 §2.1) — identité du produit. */
   codePf?: string | null;
+  /** Gamme JDG — décide des mentions volontaires exigibles (§11.2). */
+  gamme?: string | null;
   typeTheFr?: string | null;
   denominationFr?: string | null;
   estAromatise?: boolean;

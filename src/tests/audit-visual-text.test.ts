@@ -155,3 +155,138 @@ describe("mention WFTO — deux marqueurs, pas un verdict", () => {
     expect(runTextRobot(BAT_MT265, { ...FICHE_MT265, phraseWfto: "/" }).find((c) => c.id === "TXT_WFTO")).toBeUndefined();
   });
 });
+
+/**
+ * Golden Anemos — texte réel de ETCVA6262V5 « Le souffle des mers », la contre
+ * étiquette du seul thé transporté à la voile qui soit aussi WFTO.
+ */
+const BAT_TA6262 = `THÉ TRANSPORTÉ À LA VOILE
+depuis le Vietnam - Coopérative Bân Liên
+Le vent comme énergie de transport permet de
+réduire largement les émissions de gaz à effet de
+serre et d'atténuer les impacts sur la biodiversité.
+Ensemble, changeons de cap !
+Le souffle des mers
+INGRÉDIENTS
+Thé vert*, écorces de grenade* 20%, cardamome* 5%.
+*Issu de l'agriculture biologique.
+ETCVA6262V5
+poids net
+80g`;
+
+/**
+ * Golden Les Engagés — ETCBA5086V5 « L'Esprit de la forêt », sous-gamme AGIR
+ * POUR LA NATURE, bénéficiaire SFEPM.
+ */
+const BAT_TA5086 = `AGIR POUR LA NATURE
+0,50 € REVERSÉS À SFEPM
+La Société Française pour l'Etude et la Protection des
+Mammifères œuvre à la conservation des mammifères
+sauvages. sfepm.org
+L'Esprit de la forêt
+ETCBA5086V5`;
+
+/**
+ * Golden Demeter — ETCVA6212V7 « Jardin sous la lune ». La note ** y est
+ * imprimée, mais « demeter est LE LABEL … biodynamique. » au lieu de
+ * « demeter est LA MARQUE … biodynamique CERTIFIÉE » (§11.1).
+ */
+const BAT_TA6212 = `Thé vert**, écorces de mandarine**, tulsi* 10%,
+cardamome* 9%, amarante*. *Issu de l'agriculture
+biologique. **Issu de l'agriculture biologique et
+biodynamique. demeter est le label des produits issus
+de l'agriculture biodynamique.
+ETCVA6212V7`;
+
+describe("mentions de gamme — la gamme déclenche, pas le champ de fiche", () => {
+  const voile: BatTextInput = { gamme: "THE TRANSPORTE A LA VOILE" };
+  const engages: BatTextInput = { gamme: "LES ENGAGÉS" };
+
+  it("ne s'exécute pas hors de la gamme concernée", () => {
+    const r = runTextRobot(BAT_MT265, FICHE_MT265);
+    expect(r.find((c) => c.id === "TXT_ANEMOS")).toBeUndefined();
+    expect(r.find((c) => c.id === "TXT_ENGAGES")).toBeUndefined();
+    expect(r.find((c) => c.id === "TXT_DEMETER")).toBeUndefined();
+  });
+
+  it("s'exécute sur la seule foi de la gamme, champ de fiche vide", () => {
+    // C'est tout l'enjeu du branchement : les quatre champs de mention sont
+    // vides sur 178 fiches. Les attendre reviendrait à ne jamais contrôler.
+    const c = byId(runTextRobot(BAT_TA6262, voile), "TXT_ANEMOS");
+    expect(c.checklistId).toBe("13.5");
+    expect(c.statut).toBe("WARNING");
+    expect(c.manqueSurLaFiche).toBe("la mention Anemos");
+    expect(c.justification).toContain("présents sur le BAT");
+  });
+
+  it("valide quand le BAT porte tout et que la fiche est renseignée", () => {
+    const c = byId(
+      runTextRobot(BAT_TA6262, { ...voile, phraseAnemos: "Le vent comme énergie de transport…" }),
+      "TXT_ANEMOS"
+    );
+    expect(c.statut).toBe("PASS");
+    expect(c.manqueSurLaFiche).toBeUndefined();
+  });
+
+  it("signale le bandeau sans sa phrase — le cas que le §11.2 vise", () => {
+    const sansPhrase = BAT_TA6262.replace("Ensemble, changeons de cap !", "");
+    const c = byId(runTextRobot(sansPhrase, voile), "TXT_ANEMOS");
+    expect(c.statut).toBe("WARNING");
+    expect(c.justification).toContain("impose les deux ensemble");
+  });
+
+  it("mesure Les Engagés sur le bandeau et la ligne de don, pas sur le descriptif", () => {
+    // Le texte de l'association change à chaque produit — 8 associations pour
+    // 11 références. Seuls le bandeau et le don sont invariants.
+    const c = byId(runTextRobot(BAT_TA5086, engages), "TXT_ENGAGES");
+    expect(c.checklistId).toBe("13.6");
+    expect(c.manqueSurLaFiche).toBe("la mention Les Engagés");
+    expect(c.justification).toContain("présents sur le BAT");
+  });
+
+  it("signale la sous-gamme sans ligne de don", () => {
+    const sansDon = BAT_TA5086.replace("0,50 € REVERSÉS À SFEPM", "");
+    expect(byId(runTextRobot(sansDon, engages), "TXT_ENGAGES").justification).toContain(
+      "impose les deux ensemble"
+    );
+  });
+
+  it("le champ de fiche saisi déclenche à lui seul, hors gamme", () => {
+    const c = byId(runTextRobot(BAT_TA6262, { phraseAnemos: "Le vent comme énergie…" }), "TXT_ANEMOS");
+    expect(c.statut).toBe("PASS");
+  });
+
+  it("traite « / » comme « non concerné », comme pour WFTO", () => {
+    expect(
+      runTextRobot(BAT_TA6262, { phraseAnemos: "/" }).find((c) => c.id === "TXT_ANEMOS")
+    ).toBeUndefined();
+  });
+});
+
+describe("note ** Demeter — déclenchée par la recette, jugée sur les termes", () => {
+  it("prend la formulation de TA6212 en défaut, sans la déclarer absente", () => {
+    const c = byId(runTextRobot(BAT_TA6212, { estDemeter: true }), "TXT_DEMETER");
+    expect(c.checklistId).toBe("2.4");
+    expect(c.statut).toBe("WARNING");
+    expect(c.justification).toContain("pas dans les termes du §11.1");
+    expect(c.justification).toContain("demeter est la marque");
+  });
+
+  it("valide la formulation du §11.1", () => {
+    const conforme = BAT_TA6212.replace(
+      "demeter est le label des produits issus\nde l'agriculture biodynamique.",
+      "demeter est la marque des produits issus de l'agriculture biodynamique certifiée"
+    );
+    const c = byId(
+      runTextRobot(conforme, { estDemeter: true, phraseDemeter: "**Issu de l'agriculture…" }),
+      "TXT_DEMETER"
+    );
+    expect(c.statut).toBe("PASS");
+  });
+
+  it("signale la note absente quand la recette porte un ingrédient Demeter", () => {
+    const c = byId(runTextRobot(BAT_MT265, { ...FICHE_MT265, estDemeter: true }), "TXT_DEMETER");
+    expect(c.statut).toBe("WARNING");
+    expect(c.justification).toContain("n'a pas été retrouvée");
+  });
+});

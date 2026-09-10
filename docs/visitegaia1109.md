@@ -228,6 +228,81 @@ bloquent chacune un contrôle :
   le contrôle 1.3 est « sans objet » sur la totalité du catalogue.
 - **« Jardins » et « Producteur »** : une entité ou deux ?
 
+### 🔴 M17. La note Demeter n'est pas imprimée dans les termes de votre propre procédure
+
+PRO-QHS-013 §11.1 impose, mot pour mot :
+
+> **Issu de l'agriculture biologique et biodynamique. demeter est **la marque**
+> des produits issus de l'agriculture biodynamique **certifiée**
+
+`TA6212` « Jardin sous la lune » imprime :
+
+> **Issu de l'agriculture biologique et biodynamique. demeter est **le label**
+> des produits issus de l'agriculture biodynamique.
+
+« marque » devient « label », et « certifiée » disparaît. Sur une mention de
+cahier des charges, deux mots ne sont pas un détail de style.
+
+- Quelle formulation fait foi — la procédure, ou l'étiquette en rayon ?
+- Si c'est la procédure : combien d'étiquettes sont à reprendre ?
+
+### 🟠 M18. Trois produits déclarent un ingrédient Demeter sans porter la note **
+
+`TA6992` (Green Pep's), `TA737` et `TA7372` (Malin comme un chimpanzé) ont une
+recette qui déclare un ingrédient certifié Demeter — le SENCHA pour l'un, le
+**SORWATHE OP1** (`TN592`) pour les deux autres, coché Demeter dans le
+référentiel matières. Leurs étiquettes, elles, n'impriment que
+« *Issu de l'agriculture biologique » : ni double astérisque, ni note Demeter.
+
+Une des deux sources se trompe, et nous ne pouvons pas trancher à votre place :
+
+- Le SORWATHE OP1 et le SENCHA sont-ils réellement certifiés Demeter ?
+- Si oui, ces trois étiquettes omettent une mention obligatoire.
+- Si non, c'est le référentiel matières qui est à corriger.
+
+*Notre table des matières premières ne compte que 7 lignes aujourd'hui : c'est
+un début de référentiel, pas une source de vérité. D'où la question plutôt qu'un
+verdict.*
+
+### 🟠 M19. « Les Engagés » : le texte des associations n'a pas de longueur de référence
+
+Onze références, huit associations. Les descriptifs imprimés vont de **125 à
+246 caractères** :
+
+| Association | Caractères |
+|---|---|
+| Kokopelli | 125 |
+| LPO | 137 |
+| Les Amanins | 147 |
+| Adapei Papillons Blancs | 167 |
+| Be Together | 181 |
+| SFEPM | 206 |
+| Fonds de dotation Les Jardins de Gaïa | 246 |
+
+Une contrainte de **185 caractères** nous a été rapportée. Appliquée telle
+quelle, elle refuserait deux étiquettes qui sont en rayon — dont celle de votre
+propre fonds de dotation.
+
+- Y a-t-il une longueur maximale, et laquelle ?
+- Est-elle un plafond dur, ou un repère de maquette ?
+- Qui tient la liste des associations et le texte validé de chacune ? Nous
+  aimerions en faire un référentiel, comme pour les matières premières.
+
+*Au passage : Kokopelli est imprimée « REVERSÉS À l'ASSOCIATION KOKOPELLI » sur
+`TA6182` et « REVERSÉS À l' ASSOCIATION KOKOPELLI » sur `TA7412` — une espace
+d'écart entre deux étiquettes de la même association. C'est exactement ce qu'un
+référentiel supprime.*
+
+### 🟡 M20. Anemos : une phrase figée aujourd'hui, mais l'est-elle par nature ?
+
+Les trois thés transportés à la voile portent la même phrase au caractère près,
+et la même ligne d'origine « depuis le Vietnam - Coopérative Bân Liên ». Nous
+avons figé la phrase du transporteur dans le contrôle ; nous avons laissé la
+ligne d'origine libre, en supposant qu'une future référence viendrait d'ailleurs.
+
+- La phrase TOWT est-elle imposée mot pour mot, ou adaptable ?
+- La ligne d'origine change-t-elle avec la coopérative ?
+
 ### 🟠 M8. Un code fabricant erroné dans un Gencode
 
 `TA6692` porte l'EAN `3585810866925`, dont le code fabricant se lit **8581** au
@@ -537,6 +612,8 @@ Pour équilibrer : ces questions existent parce que l'application les a trouvée
 - Les documents source d'un import sont désormais **conservés** — un import raté
   reste rejouable.
 - Le coût d'un import complet, mesuré : **0,006 $**.
-- **Cinq mentions obligatoires** cherchées directement sur le BAT — réglisse,
-  les trois mentions d'allégation, WFTO — en plus de la conservation et de
-  l'adresse. C'est ce qui a produit M9, M10 et F8, sans consommer un jeton.
+- **Huit mentions obligatoires** cherchées directement sur le BAT — réglisse,
+  les trois mentions d'allégation, WFTO, la note Demeter, le thé transporté à la
+  voile et Les Engagés — en plus de la conservation et de l'adresse. C'est ce qui
+  a produit M9, M10, M17, M18, M19 et F8, sans consommer un jeton.
+- **44 points de contrôle** au registre, dont 33 exécutés par du code seul.

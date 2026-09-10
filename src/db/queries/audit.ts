@@ -65,6 +65,7 @@ export const getAuditInputForFiche = cache(
       },
       produit: {
         codePf: produit.codePf,
+        gamme: produit.gamme,
         typeTheFr: produit.typeTheFr,
         denominationFr: produit.denominationFr,
         estAromatise: produit.estAromatise,
@@ -149,6 +150,14 @@ export const getBatTextInputForFiche = cache(
         mentionConservation: fiche.mentionConservation,
         mentionFabricant: fiche.mentionFabricant,
         phraseWfto: fiche.phraseWftoFr,
+        // Les trois zones ajoutées le 09/09 arrivent enfin au moteur : elles
+        // étaient en base, affichées et éditables, et personne ne les lisait.
+        // La gamme les accompagne — c'est elle qui rend la mention exigible.
+        gamme: produit.gamme,
+        estDemeter,
+        phraseDemeter: fiche.phraseDemeterFr,
+        phraseAnemos: fiche.phraseAnemosFr,
+        phraseEngages: fiche.phraseEngagesFr,
       },
     };
   }

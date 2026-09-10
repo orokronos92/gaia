@@ -129,7 +129,7 @@ jour. Un import complet a été mesuré à **0,006 $**.
 
 ## 6. Les contrôles réglementaires
 
-**42 points de contrôle**, transposition de PRO-QHS-013 et MOP-PRO-029.
+**44 points de contrôle**, transposition de PRO-QHS-013 et MOP-PRO-029.
 
 | Voie | Points | IA |
 |---|---|---|
@@ -138,7 +138,7 @@ jour. Un import complet a été mesuré à **0,006 $**.
 | Modèle | 7 | oui |
 | Œil de la Qualité | 4 | — |
 
-**31 des 42 contrôles s'exécutent sans consommer un jeton**, à chaque
+**33 des 44 contrôles s'exécutent sans consommer un jeton**, à chaque
 lancement. Le détail de chacun figure dans `docs/controles-definitions.md`.
 
 Ce que ces contrôles ont mesuré sur l'ensemble du catalogue : 17 Eurofeuilles
@@ -169,7 +169,7 @@ Chacune est épinglée à une version connue.
 
 | Document | Objet |
 |---|---|
-| `controles-definitions.md` | Les 42 contrôles, définis un par un |
+| `controles-definitions.md` | Les 44 contrôles, définis un par un |
 | `controles-etiquette.md` | La grille de contrôle, par section de la procédure |
 | `visitegaia1109.md` | Les questions ouvertes, classées par interlocuteur |
 | `tech-debt.md` | Registre de la dette technique assumée |

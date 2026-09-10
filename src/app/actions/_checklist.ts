@@ -62,7 +62,8 @@ async function preuvesDesBat(ficheId: string) {
 }
 
 /**
- * La checklist telle que la Qualité doit la voir : les 39 points, enrichis de ce
+ * La checklist telle que la Qualité doit la voir : tous les points du registre,
+ * enrichis de ce
  * que les BAT montrent, et refermés là où elle a déjà tranché.
  */
 export interface ChecklistChargee {

@@ -58,15 +58,24 @@ function contientReglisse(ingredients?: string | null): boolean {
 }
 
 /**
- * Le produit revendique-t-il WFTO ?
+ * Une phrase de gamme est-elle SAISIE sur la fiche ?
  *
- * Le champ « labels client » ne le déclare que sur 2 produits du catalogue : il
- * est inutilisable. Le champ « Mention WFTO » de la fiche, lui, est tenu — 96
- * fiches portent la phrase JDG au mot près et 51 portent « / », la convention
- * maison pour « non concerné ». On s'en sert comme drapeau, pas comme référence.
+ * Le champ « labels client » ne déclare WFTO que sur 2 produits du catalogue :
+ * il est inutilisable. Le champ « Mention WFTO », lui, est tenu — 96 fiches
+ * portent la phrase JDG au mot près et 51 portent « / », la convention maison
+ * pour « non concerné ». On s'en sert comme drapeau, pas comme référence.
+ *
+ * Les trois autres champs de mention (Demeter, Anemos, Les Engagés) sont nés
+ * vides : ils ne peuvent servir que de drapeau POSITIF — saisis, ils déclenchent
+ * le contrôle ; vides, ils ne prouvent rien, et c'est la gamme qui décide.
  */
-function revendiqueWfto(phrase?: string | null): boolean {
+function phraseSaisie(phrase?: string | null): boolean {
   return !/^[\s/–—-]*$/.test(phrase ?? "");
+}
+
+/** La gamme du produit porte-t-elle ce motif ? */
+function gammeEst(gamme: string | null | undefined, motif: string): boolean {
+  return normalize(gamme ?? "").includes(motif);
 }
 
 /**
@@ -120,6 +129,18 @@ export interface BatTextInput {
   mentionFabricant?: string | null;
   /** Champ « Mention WFTO » de la fiche — sert de drapeau, pas de référence. */
   phraseWfto?: string | null;
+  /**
+   * La gamme du produit. C'est elle qui rend une mention de gamme exigible, pas
+   * le champ de la fiche : `gamme` est renseignée sur 178 fiches sur 178, les
+   * champs de mention le sont sur zéro. Attendre qu'ils se remplissent pour
+   * contrôler reviendrait à ne jamais contrôler.
+   */
+  gamme?: string | null;
+  /** Au moins un ingrédient certifié Demeter dans la recette courante (§11.1). */
+  estDemeter?: boolean;
+  phraseDemeter?: string | null;
+  phraseAnemos?: string | null;
+  phraseEngages?: string | null;
 }
 
 export interface BatTextCheck {
@@ -163,6 +184,162 @@ export interface BatTextCheck {
    * dire épargne à Marie de chercher le texte dont il parle.
    */
   reperes?: import("./reperes").RepereBat[];
+}
+
+/**
+ * §11.2 — les mentions de gamme, sur le modèle exact de WFTO.
+ *
+ * JDG a dix gammes et plusieurs portent leur mention volontaire. Deux d'entre
+ * elles s'imprimaient sans qu'aucun contrôle ne les regarde :
+ *
+ *   - **Anemos** (thé transporté à la voile) — 3 références. Le mot « Anemos »
+ *     n'apparaît nulle part sur l'étiquette : ce qui s'imprime, c'est le bandeau
+ *     « THÉ TRANSPORTÉ À LA VOILE » et la phrase du transporteur. Chercher
+ *     « anemos » sur le BAT ne trouverait rien — c'est le nom du label côté
+ *     TOWT, pas le texte de l'emballage.
+ *   - **Les Engagés** — 11 références, trois sous-gammes. Le texte de
+ *     l'association change à chaque produit ; ce qui ne change pas, c'est le
+ *     bandeau « AGIR POUR … » et la ligne de don « 0,50 € REVERSÉS À … ». Ce
+ *     sont eux qu'on mesure, pas le descriptif.
+ *
+ * Deux marqueurs plutôt qu'un verdict, comme pour WFTO : la revendication (ce
+ * qui annonce la gamme au consommateur) et la phrase qui doit l'accompagner.
+ * Séparés, ils disent LEQUEL des deux manque — et c'est presque toujours le
+ * second qui manque, jamais le premier.
+ */
+interface MentionGamme {
+  id: string;
+  checklistId: string;
+  libelle: string;
+  /** Ce qui annonce la gamme sur l'étiquette. */
+  revendication: readonly string[];
+  /** La phrase que le §11.2 impose d'imprimer avec elle. */
+  phrase: readonly string[];
+  /** Comment la nommer dans un constat. */
+  nomRevendication: string;
+  nomPhrase: string;
+  /** Le champ de fiche correspondant, pour le signaler s'il est vide. */
+  champFiche: string;
+}
+
+const MENTION_ANEMOS: MentionGamme = {
+  id: "TXT_ANEMOS",
+  checklistId: "13.5",
+  libelle: "Mention « transporté à la voile » complète sur le BAT ?",
+  revendication: ["transporte a la voile"],
+  phrase: ["changeons de cap"],
+  nomRevendication: "le bandeau « THÉ TRANSPORTÉ À LA VOILE »",
+  nomPhrase: "la phrase du transporteur (« …Ensemble, changeons de cap ! »)",
+  champFiche: "la mention Anemos",
+};
+
+const MENTION_ENGAGES: MentionGamme = {
+  id: "TXT_ENGAGES",
+  checklistId: "13.6",
+  libelle: "Mention « Les Engagés » complète sur le BAT ?",
+  revendication: ["agir pour"],
+  phrase: ["reverses a"],
+  nomRevendication: "le bandeau « AGIR POUR … »",
+  nomPhrase: "la ligne de don (« 0,50 € REVERSÉS À … »)",
+  champFiche: "la mention Les Engagés",
+};
+
+function checkMentionGamme(
+  batN: string,
+  m: MentionGamme,
+  phraseFiche: string | null | undefined
+): BatTextCheck {
+  const base = {
+    id: m.id,
+    origine: "texte" as const,
+    checklistId: m.checklistId,
+    rubrique: "Labels",
+    libelle: m.libelle,
+  };
+  const revendique = m.revendication.every((t) => batN.includes(t));
+  const accompagnee = m.phrase.every((t) => batN.includes(t));
+
+  if (revendique && accompagnee) {
+    // Le BAT porte tout ; si la fiche, elle, est muette, c'est elle qu'il reste
+    // à compléter — et le dire ainsi évite de faire passer pour un doute sur
+    // l'étiquette ce qui n'est qu'une case vide chez nous.
+    return {
+      ...base,
+      statut: phraseSaisie(phraseFiche) ? "PASS" : "WARNING",
+      justification: phraseSaisie(phraseFiche)
+        ? `${m.nomRevendication} et ${m.nomPhrase} sont présents sur le BAT.`
+        : `${m.nomRevendication} et ${m.nomPhrase} sont présents sur le BAT, mais ${m.champFiche} n'est pas renseignée sur la fiche.`,
+      ...(phraseSaisie(phraseFiche) ? {} : { manqueSurLaFiche: m.champFiche }),
+    };
+  }
+  if (revendique) {
+    return {
+      ...base,
+      statut: "WARNING",
+      justification: `${m.nomRevendication} est imprimé, mais ${m.nomPhrase} n'a pas été retrouvé sur les faces analysées — le §11.2 impose les deux ensemble.`,
+    };
+  }
+  return {
+    ...base,
+    statut: "WARNING",
+    justification: accompagnee
+      ? `${m.nomPhrase} est imprimé, mais ${m.nomRevendication} n'a pas été retrouvé sur les faces analysées.`
+      : `Produit de cette gamme, mais ni ${m.nomRevendication} ni ${m.nomPhrase} n'ont été retrouvés sur les faces analysées.`,
+  };
+}
+
+/**
+ * §11.1 — la note ** qui accompagne un ingrédient Demeter.
+ *
+ * Le déclencheur n'est pas l'étiquette mais la RECETTE : dès qu'une ligne porte
+ * la certification, la note devient obligatoire. Elle est due au mot près, et
+ * l'écart se mesure : TA6212 « Jardin sous la lune » imprime « demeter est LE
+ * LABEL des produits issus de l'agriculture biodynamique. » là où le §11.1
+ * demande « demeter est LA MARQUE des produits issus de l'agriculture
+ * biodynamique CERTIFIÉE ». Deux mots, sur une mention de cahier des charges.
+ *
+ * D'où deux marqueurs séparés : la note existe-t-elle, et est-elle dans les
+ * termes. Un contrôle qui n'aurait cherché que la phrase entière aurait répondu
+ * « absente » — et personne n'aurait vu qu'elle est là, à deux mots près.
+ */
+const DEMETER_NOTE = "biologique et biodynamique";
+const DEMETER_TERMES = "demeter est la marque des produits issus";
+
+function checkDemeter(batN: string, phraseFiche: string | null | undefined): BatTextCheck {
+  const base = {
+    id: "TXT_DEMETER",
+    origine: "texte" as const,
+    checklistId: "2.4",
+    rubrique: "Labels",
+    libelle: "Note ** Demeter imprimée dans les termes du §11.1 ?",
+  };
+  const note = batN.includes(DEMETER_NOTE);
+  const termes = batN.includes(DEMETER_TERMES);
+
+  if (note && termes) {
+    return {
+      ...base,
+      statut: phraseSaisie(phraseFiche) ? "PASS" : "WARNING",
+      justification: phraseSaisie(phraseFiche)
+        ? "Note ** Demeter présente sur le BAT, dans les termes du §11.1."
+        : "Note ** Demeter présente sur le BAT, mais la mention Demeter n'est pas renseignée sur la fiche.",
+      ...(phraseSaisie(phraseFiche) ? {} : { manqueSurLaFiche: "la mention Demeter" }),
+    };
+  }
+  if (note) {
+    return {
+      ...base,
+      statut: "WARNING",
+      justification:
+        "La note ** est imprimée, mais pas dans les termes du §11.1 : « **Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée ».",
+    };
+  }
+  return {
+    ...base,
+    statut: "WARNING",
+    justification:
+      "Ingrédient certifié Demeter dans la recette, mais la note ** correspondante n'a pas été retrouvée sur les faces analysées.",
+  };
 }
 
 /** Normalize for comparison: fold case/accents/space AND glue number+unit. */
@@ -348,8 +525,23 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
     }
   }
 
-  if (revendiqueWfto(input.phraseWfto)) {
+  if (phraseSaisie(input.phraseWfto)) {
     results.push(checkWfto(batN));
+  }
+
+  // Les trois mentions de gamme branchées le 10/09. Le déclencheur est la
+  // GAMME — remplie partout — et non le champ de la fiche, vide partout : sinon
+  // aucun de ces contrôles ne s'exécuterait jamais. Le champ, saisi, déclenche
+  // aussi : une mention revendiquée à la main mérite d'être vérifiée même si la
+  // gamme ne l'annonçait pas.
+  if (gammeEst(input.gamme, "voile") || phraseSaisie(input.phraseAnemos)) {
+    results.push(checkMentionGamme(batN, MENTION_ANEMOS, input.phraseAnemos));
+  }
+  if (gammeEst(input.gamme, "engag") || phraseSaisie(input.phraseEngages)) {
+    results.push(checkMentionGamme(batN, MENTION_ENGAGES, input.phraseEngages));
+  }
+  if (input.estDemeter === true || phraseSaisie(input.phraseDemeter)) {
+    results.push(checkDemeter(batN, input.phraseDemeter));
   }
 
   return results.filter((c): c is BatTextCheck => c !== null);
