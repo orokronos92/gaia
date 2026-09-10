@@ -221,7 +221,7 @@ export const RecetteCalculator = forwardRef<RecetteCalculatorHandle, RecetteCalc
                 <ColLabel label="Masquer %" />
               </TableHead>
               <TableHead className="text-center">
-                <ColLabel label="Demeter" />
+                <ColLabel label="Demeter ✱✱" />
               </TableHead>
               <TableHead className="text-center">
                 <ColLabel label="Équitable" />

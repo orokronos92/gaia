@@ -8,19 +8,30 @@ import { cn } from "@/lib/utils";
  * Demeter/fair-trade markers) — any future read-only view reuses the same atoms.
  */
 
-/** Demeter / fair-trade marker. */
+/**
+ * Row marker for Demeter / fair trade.
+ *
+ * The glyph is the label's own convention, not decoration: one star means
+ * organic, TWO mean Demeter (PRO-QHS-013 §11.1). Both toggles used to render a
+ * single star, so the screen taught Marie the opposite of the rule — a Demeter
+ * ingredient showed the organic mark.
+ *
+ * Fair trade deliberately gets no star at all: §11.1 defines no per-ingredient
+ * marker for it, and the artwork prints none. Giving it one would promise a
+ * symbol that never reaches the label — a check simply records the fact.
+ */
 export function Pastille({ on, ton }: { on: boolean; ton: "emerald" | "indigo" }) {
   if (!on) return <span className="text-stone-300 dark:text-stone-600">—</span>;
   return (
     <span
       className={cn(
-        "inline-flex size-5 items-center justify-center rounded-full text-xs font-bold",
+        "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-bold leading-none",
         ton === "emerald"
           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300"
           : "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
       )}
     >
-      ✱
+      {ton === "emerald" ? "✱✱" : "✓"}
     </span>
   );
 }
