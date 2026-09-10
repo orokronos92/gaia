@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { CHAMPS_FICHE_EDITABLES, updateFicheEtiquetteChamps, updateDossier, type ChampsFicheEditables } from "@/db/queries/fiches";
 import type { StatutMention } from "@/lib/audit/statut-mention";
 import { CHAMPS_PRODUIT_EDITABLES, updateProduitChamps } from "@/db/queries/produits";
+import { estViolationUnicite } from "@/lib/erreurs-postgres";
 import { resoudreGamme } from "@/db/queries/gammes";
 import {
   CHAMPS_DEGUSTATION_EDITABLES,
@@ -25,10 +26,6 @@ const Schema = z.object({
   champs: z.record(z.string(), z.string().nullable()),
 });
 
-/** Violation de contrainte d'unicité Postgres (23505), quel que soit le driver. */
-function estCollisionUnicite(e: unknown): boolean {
-  return typeof e === "object" && e !== null && "code" in e && (e as { code: unknown }).code === "23505";
-}
 
 const WHITELIST: Record<"fiche" | "produit" | "degustation", Set<string>> = {
   fiche: new Set(CHAMPS_FICHE_EDITABLES),
@@ -131,7 +128,7 @@ export async function updateChampsAction(input: unknown) {
     try {
       ({ avant } = await updateFicheEtiquetteChamps(data.id, champs as ChampsFicheEditables));
     } catch (e) {
-      if (estCollisionUnicite(e) && "codeEtiquette" in champs) {
+      if (estViolationUnicite(e) && "codeEtiquette" in champs) {
         throw new Error(
           `Le code étiquette « ${champs.codeEtiquette} » est déjà porté par une autre fiche.`
         );

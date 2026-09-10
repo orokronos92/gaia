@@ -8,6 +8,7 @@ import { writeAuditLog } from "@/db/queries/audit-logs"
 import { getBatTextInputForFiche } from "@/db/queries/audit"
 import { updateFicheEtiquetteChamps } from "@/db/queries/fiches"
 import { updateProduitChamps } from "@/db/queries/produits"
+import { estViolationUnicite } from "@/lib/erreurs-postgres"
 import { chargerChecklist } from "./_checklist"
 
 const Schema = z.object({
@@ -59,7 +60,7 @@ export async function appliquerPropositionAction(raw: unknown): Promise<Proposit
                 ? await updateFicheEtiquetteChamps(ficheId, { [champ]: valeur })
                 : await updateProduitChamps(data.produitId, { [champ]: valeur }))
     } catch (e) {
-        if (typeof e === "object" && e !== null && "code" in e && (e as { code: unknown }).code === "23505") {
+        if (estViolationUnicite(e)) {
             return { ok: false, error: `« ${valeur} » est déjà enregistré sur une autre fiche.` }
         }
         throw e

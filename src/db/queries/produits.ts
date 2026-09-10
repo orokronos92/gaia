@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { and, count, desc, eq, isNull, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
+import { estViolationUnicite } from "@/lib/erreurs-postgres";
 import { produits, fichesEtiquettes } from "@/db/schema";
 
 /**
@@ -136,7 +137,7 @@ export async function updateProduitChamps(
       .where(eq(produits.id, produitId));
   } catch (e) {
     // codePf is UNIQUE — surface a readable message instead of the raw PG error.
-    if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "23505") {
+    if (estViolationUnicite(e)) {
       throw new Error("Ce code modèle est déjà utilisé par un autre produit.");
     }
     throw e;

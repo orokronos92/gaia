@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/db/queries/audit-logs";
+import { estViolationUnicite } from "@/lib/erreurs-postgres";
 import {
   basculerActivite,
   definirObligation,
@@ -58,13 +59,7 @@ const CHEMIN = "/referentiels/gammes";
  * journaux du serveur.
  */
 function traduireErreur(e: unknown, nom: string): string {
-  for (let cause: unknown = e, profondeur = 0; cause && profondeur < 5; profondeur++) {
-    if (typeof cause !== "object") break;
-    if ("code" in cause && (cause as { code: unknown }).code === "23505") {
-      return `« ${nom} » existe déjà.`;
-    }
-    cause = (cause as { cause?: unknown }).cause;
-  }
+  if (estViolationUnicite(e)) return `« ${nom} » existe déjà.`;
   console.error("[referentiel-gammes] échec d'écriture", e);
   return "Échec de l'enregistrement.";
 }
