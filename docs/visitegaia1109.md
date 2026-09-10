@@ -239,6 +239,69 @@ WFTO, Fairtrade, Elephant Friendly, Fair for Life —, l'application peut les
 afficher plutôt que leur sigle. Leur usage étant encadré par vos annexes 6 et 7,
 c'est votre autorisation qu'il nous faut, pas seulement les fichiers.)*
 
+### 🔴 M21. Gammes et sous-gammes : le champ est libre, et il éteint des contrôles
+
+La gamme d'un produit **déclenche des contrôles réglementaires** : la mention
+Anemos pour les thés transportés à la voile, la ligne de don pour Les Engagés.
+L'application les déclenche en cherchant un mot dans le libellé de la gamme —
+« voile », « engag ». Le champ étant libre, une casse différente ou un
+renommage éteint le contrôle **sans le dire**.
+
+Ce n'est pas théorique. Sur 151 produits, le champ porte **12 valeurs pour
+environ 7 gammes réelles** :
+
+| Écrit en base | Produits | |
+|---|---|---|
+| LES GRANDS CLASSIQUES | 89 | |
+| LES BIENFAITRICES | 20 | |
+| LES GRANDS CRUS | 16 | |
+| LES ENGAGÉS | 10 | |
+| SELECTION DE NOËL | 5 | |
+| LES PRECIEUX DU JAPON ET DE TAIWAN | 3 | |
+| LES PRIMEURS | 2 | |
+| `Grand classiques` | 2 | même gamme, autre casse |
+| `Les Engagés` | 1 | même gamme, autre casse |
+| `Les Militants` | 1 | **ancien nom ?** |
+| `Inconnue` | 1 | valeur de repli écrite par l'import |
+| `THE TRANSPORTE A LA VOILE` | 1 | une mention écrite dans le champ gamme |
+
+Trois conséquences constatées :
+
+- **TA737 « Malin comme un chimpanzé »** est en gamme `Les Militants`. Son BAT
+  imprime pourtant « AGIR POUR LA NATURE » et « 0,50 € REVERSÉS À PROJET POUR LA
+  CONSERVATION DES GRANDS SINGES ». Le contrôle de la ligne de don ne s'y
+  applique pas.
+- **TA6262 et TA7462**, les deux thés Anemos, sont en gamme
+  `Grand classiques`. Le contrôle de la mention « transporté à la voile » ne
+  s'y applique pas non plus, alors que leur dénomination le porte.
+- Le seul produit sur lequel ce contrôle se déclenche est `TN5512`, parce que
+  quelqu'un a écrit la mention **dans** le champ gamme. Le contrôle ne
+  fonctionne que grâce à une erreur de saisie.
+
+**Nos questions :**
+
+1. **« Les Militants » et « Les Engagés » sont-ils la même gamme renommée ?**
+   Les fiches recette de 2022 écrivent « militants », celles de 2025 « LES
+   ENGAGES ». Toute la reprise des données en dépend.
+2. **Quelle est la liste officielle de vos gammes et sous-gammes ?** Nous
+   voulons la figer dans un référentiel que la Qualité tient, au lieu d'un champ
+   de saisie libre.
+3. **Une sous-gamme peut-elle appartenir à plusieurs gammes ?** Trois le font
+   aujourd'hui : `LES INFUSIONS DE PLANTES` (32 produits) est à la fois sous
+   *Les Bienfaitrices* et *Les Grands Classiques*, `Matcha` sous *Les Grands
+   Classiques* et *Les Grands Crus*, `PRIMEURS 2025` sous *Les Grands Crus* et
+   *Les Primeurs* — alors que `LES PRIMEURS` est aussi une gamme à part entière.
+4. **Un produit change-t-il de gamme au cours de sa vie ?** Une opération
+   caritative qui se termine, une refonte de collection. Si oui, faut-il garder
+   la trace du changement — les paquets déjà imprimés portent encore l'ancienne
+   mention.
+5. **94 produits sur 151 n'ont aucune sous-gamme.** Est-ce normal, ou
+   l'information manque-t-elle ?
+
+*(À terme, l'objectif est que la gamme porte elle-même ses obligations —
+« cette gamme exige la mention Anemos » — au lieu que l'application le devine
+d'après son nom. Un renommage cesserait alors de casser un contrôle.)*
+
 ### 🟡 M15. La liste des conditionnements
 
 Le champ contient aujourd'hui quatre valeurs : `Vrac` (127 produits),
