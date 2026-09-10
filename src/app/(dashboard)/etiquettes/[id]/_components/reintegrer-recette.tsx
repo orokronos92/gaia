@@ -114,11 +114,11 @@ export function ReintegrerDocumentMenu({ ficheId }: ReintegrerDocumentMenuProps)
                         variant="outline"
                         disabled={pending}
                         title="Recharger un document source — écrase la cible"
-                        className="bg-white hover:bg-stone-50 border-stone-200 shadow-sm rounded-xl font-medium"
+                        className="h-11 rounded-xl border-2 border-sky-300 bg-sky-50 px-5 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-100"
                     >
-                        {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                        {pending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <FileUp className="mr-2 h-5 w-5" />}
                         Ré-intégrer
-                        <ChevronDown className="ml-1.5 h-3.5 w-3.5 opacity-60" />
+                        <ChevronDown className="ml-1.5 h-4 w-4 opacity-70" />
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

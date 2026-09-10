@@ -739,17 +739,23 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                     </div>
                 </div>
 
+                {/* Les trois gestes que Marie fait vraiment sur une fiche. Ils
+                    étaient en blanc sur blanc, derrière un « Mettre à
+                    disposition » vert plein qui n'était relié à rien — le bouton
+                    le plus visible de la page ne faisait rien, et sa fonction
+                    est de toute façon rendue par le statut juste à côté
+                    (décision 2026-09-10). Chacun porte maintenant sa couleur :
+                    ce qui entre, ce qui se garde, ce qui se recopie. */}
                 <div className="flex items-center gap-3 shrink-0">
                     <ReintegrerDocumentMenu ficheId={labelData.id} />
                     <Button
                         type="button"
-                        variant="outline"
                         onClick={sauvegarder}
                         disabled={savingVersion}
                         title="Archive l'état complet de la fiche comme une version (historique)"
-                        className="bg-white hover:bg-stone-50 border-stone-200 shadow-sm rounded-xl font-medium"
+                        className="h-11 rounded-xl bg-emerald-600 px-5 text-base font-semibold text-white shadow-sm shadow-emerald-700/20 hover:bg-emerald-700"
                     >
-                        {savingVersion ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {savingVersion ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                         Sauvegarder
                     </Button>
                     <Button
@@ -757,13 +763,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                         variant="outline"
                         onClick={dupliquer}
                         disabled={duplicating}
-                        className="bg-white hover:bg-stone-50 border-stone-200 shadow-sm rounded-xl font-medium"
+                        title="Crée une nouvelle fiche à partir de celle-ci"
+                        className="h-11 rounded-xl border-2 border-amber-300 bg-amber-50 px-5 text-base font-semibold text-amber-800 shadow-sm hover:bg-amber-100"
                     >
-                        {duplicating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />}
+                        {duplicating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Copy className="mr-2 h-5 w-5" />}
                         Dupliquer
-                    </Button>
-                    <Button className="bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-700/20 text-white rounded-xl font-medium">
-                        Mettre à disposition
                     </Button>
                 </div>
             </div>
