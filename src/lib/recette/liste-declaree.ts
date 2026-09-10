@@ -16,8 +16,13 @@
 /** Trailing legend, e.g. "*Issu de l'agriculture biologique." — not an ingredient. */
 const DEBUT_LEGENDE = /(?:^|[.;])\s*(\*+)\s*[A-Za-zÀ-ÖØ-öø-ÿ]/;
 
-/** Same list separators as the pre-fill parser: a comma before a digit is a decimal. */
-const SEPARATEURS = /\s[–—-]\s|[;\n·]|,(?!\d)/g;
+/**
+ * Same list separators as the pre-fill parser: a comma before a digit is a
+ * decimal, not a separator. Applied only OUTSIDE parentheses — JDG writes
+ * "arôme naturel (citron, mandarine) 2 %", and splitting inside it invented an
+ * ingredient called "mandarine)" and an orphan percentage with it.
+ */
+const SEPARATEUR = /^(\s[–—-]\s|[;\n·]|,(?!\d))/;
 const POURCENT = /(\d+(?:[.,]\d+)?)\s*%/;
 const PREFIXE_LISTE = /^\s*(liste\s+d['’]ingr[ée]dient[s]?|ingr[ée]dients?)\s*:?\s*/i;
 
@@ -34,6 +39,32 @@ export interface ListeDeclaree {
   legende: string | null;
 }
 
+/** Splits on list separators, ignoring anything nested in parentheses. */
+function decouper(texte: string): string[] {
+  const morceaux: string[] = [];
+  let courant = "";
+  let profondeur = 0;
+
+  for (let i = 0; i < texte.length; i++) {
+    const c = texte[i];
+    if (c === "(" || c === "[") profondeur++;
+    else if (c === ")" || c === "]") profondeur = Math.max(0, profondeur - 1);
+
+    if (profondeur === 0) {
+      const coupe = SEPARATEUR.exec(texte.slice(i));
+      if (coupe) {
+        morceaux.push(courant);
+        courant = "";
+        i += coupe[0].length - 1;
+        continue;
+      }
+    }
+    courant += c;
+  }
+  morceaux.push(courant);
+  return morceaux;
+}
+
 export function lireListeDeclaree(texte: string | null | undefined): ListeDeclaree {
   if (!texte || texte.trim() === "") return { entrees: [], legende: null };
 
@@ -44,7 +75,7 @@ export function lireListeDeclaree(texte: string | null | undefined): ListeDeclar
   const legende = coupure ? sansPrefixe.slice(finListe).trim() : null;
 
   const entrees: EntreeDeclaree[] = [];
-  for (const brut of partieListe.split(SEPARATEURS)) {
+  for (const brut of decouper(partieListe)) {
     const token = brut.trim();
     if (token === "") continue;
 

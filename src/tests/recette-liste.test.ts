@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { genererListeIngredients, type IngredientListe } from "../lib/recette/liste-ingredients";
+import { lireListeDeclaree } from "@/lib/recette/liste-declaree";
 
 const ing = (
   designation: string,
@@ -67,5 +68,45 @@ describe("genererListeIngredients — liste déclarée déterministe", () => {
   it("masques absent → comportement inchangé (tous les %)", () => {
     const ings = [ing("Maté", 60, 1), ing("Citron", 40, 2)];
     expect(genererListeIngredients(ings)).toBe("Maté* 60 %, Citron* 40 %.");
+  });
+});
+
+/**
+ * Lecture de la liste DÉCLARÉE — celle recopiée de la fiche dégustation, avec
+ * ses marqueurs. Ils sont le sujet ici : une étoile pour bio, deux pour Demeter,
+ * et c'est leur désaccord avec la recette que le contrôle 2.5 rapporte.
+ */
+describe("lireListeDeclaree", () => {
+  it("compte les étoiles de chaque entrée et isole la légende", () => {
+    const r = lireListeDeclaree(
+      "thé noir**, honeybush*, thym* 1%. *Issu de l’agriculture biologique. **… et biodynamique."
+    );
+    expect(r.entrees.map((e) => [e.designation, e.marqueurs])).toEqual([
+      ["thé noir", 2],
+      ["honeybush", 1],
+      ["thym", 1],
+    ]);
+    // La légende porte ses propres étoiles : les compter comme un ingrédient
+    // inventerait un Demeter de plus.
+    expect(r.legende).toContain("biodynamique");
+  });
+
+  it("ne coupe pas une parenthèse : « arôme naturel (citron, mandarine) » est un ingrédient", () => {
+    const r = lireListeDeclaree("thé vert*, arôme naturel (citron, mandarine)* 2%, gingembre* 15,5%.");
+    expect(r.entrees.map((e) => e.designation)).toEqual([
+      "thé vert",
+      "arôme naturel (citron, mandarine)",
+      "gingembre",
+    ]);
+    expect(r.entrees[1].pourcentage).toBe(2);
+  });
+
+  it("une virgule décimale n'est pas un séparateur", () => {
+    expect(lireListeDeclaree("gingembre* 15,5%").entrees[0].pourcentage).toBe(15.5);
+  });
+
+  it("texte absent → aucune entrée, aucune conclusion", () => {
+    expect(lireListeDeclaree(null).entrees).toEqual([]);
+    expect(lireListeDeclaree("   ").entrees).toEqual([]);
   });
 });
