@@ -80,8 +80,12 @@ export default async function ProductsPage(
         retire: row.retireLe !== null,
     }));
 
+    // `data-wide` : le catalogue est un tableau, pas une colonne de lecture. Sa
+    // laisse à 1280 px lui coupait la colonne d'actions — « Retirer du
+    // catalogue » et « Supprimer » — pendant que l'écran gardait des marges
+    // vides de chaque côté (décision 2026-09-10).
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 h-full">
+        <div data-wide className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4 h-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-light tracking-tight text-emerald-950 dark:text-stone-50">
@@ -102,7 +106,7 @@ export default async function ProductsPage(
                 </div>
             </div>
 
-            <div className="rounded-2xl border-none bg-white/60 backdrop-blur-xl shadow-xl shadow-stone-200/50 dark:bg-stone-900/60 mt-4 overflow-hidden">
+            <div className="rounded-2xl border-none bg-white/60 backdrop-blur-xl shadow-xl shadow-stone-200/50 dark:bg-stone-900/60 mt-4">
                 <div className="p-5 border-b border-stone-200/50 flex items-center justify-between">
                     <ProductSearch />
                 </div>

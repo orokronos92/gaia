@@ -107,7 +107,11 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                         <TableHead className="font-medium text-stone-500 hidden md:table-cell">Famille de texte</TableHead>
                         <TableHead className="font-medium text-stone-500">Gamme Origine</TableHead>
                         <TableHead className="font-medium text-stone-500">Statut Fiche</TableHead>
-                        <TableHead className="text-right font-medium text-stone-500 w-[220px] whitespace-nowrap">Actions</TableHead>
+                        {/* Épinglée à droite : même sur un écran étroit, où le tableau
+                            défile, retirer ou supprimer un produit reste atteignable.
+                            Sans ça la colonne passait hors cadre sans le moindre
+                            indice qu'elle existait. */}
+                        <TableHead className="sticky right-0 z-20 bg-stone-50 text-right font-medium text-stone-500 w-[220px] whitespace-nowrap shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)] dark:bg-stone-800">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -141,7 +145,7 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                     <span className="text-xs text-stone-400 italic">Aucune fiche</span>
                                 )}
                             </TableCell>
-                            <TableCell className="text-right whitespace-nowrap">
+                            <TableCell className="sticky right-0 z-10 bg-white text-right whitespace-nowrap shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)] group-hover:bg-stone-50 dark:bg-stone-900">
                                 <div className="flex items-center justify-end gap-1">
                                     {product.ficheId ? (
                                         <Link href={`/etiquettes/${product.ficheId}`}>

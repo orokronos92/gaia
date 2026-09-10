@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
                 <div className="relative z-10 flex w-full">
                     <Sidebar />
-                    <div className="flex flex-1 flex-col sm:gap-2 sm:pb-4 sm:pl-64 relative">
+                    <div className="relative flex min-w-0 flex-1 flex-col sm:gap-2 sm:pb-4 sm:pl-64">
                         <Header />
                         {/*
                           1280 px conviennent à une page qui se lit en colonne.
@@ -36,8 +36,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                           `data-wide`, plutôt qu'accordé à toutes : aucune autre
                           n'est touchée, et un navigateur sans `:has()` retombe
                           sur la largeur d'aujourd'hui.
+
+                          `min-w-0` est ce qui rend l'ensemble tenable : sans
+                          lui, un enfant flex ne descend jamais sous la largeur
+                          de son contenu, et un tableau large poussait la page
+                          entière au-delà de la fenêtre. Avec, le tableau défile
+                          chez lui et la page reste dans son cadre.
+
+                          Il ne fixe plus une seconde laisse à 1600 px. Un écran
+                          large gardait alors 600 px de marge vide de chaque
+                          côté pendant que le tableau produits, qui en demande
+                          1456, restait coupé et défilait. Une page qui se
+                          déclare large prend la place disponible ; celles qui
+                          veulent quand même une limite de lecture la posent
+                          chez elles, comme le fait la fiche étiquette.
                         */}
-                        <main className="flex-1 items-start gap-4 p-4 sm:px-8 sm:py-4 md:gap-8 max-w-7xl has-[[data-wide]]:max-w-[1600px] mx-auto w-full">
+                        <main className="min-w-0 flex-1 items-start gap-4 p-4 sm:px-8 sm:py-4 md:gap-8 max-w-7xl has-[[data-wide]]:max-w-none mx-auto w-full">
                             {children}
                         </main>
                     </div>
