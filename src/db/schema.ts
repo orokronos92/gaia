@@ -247,6 +247,19 @@ export const fichesEtiquettes = pgTable("fiches_etiquettes", {
     id: uuid("id").primaryKey().defaultRandom(),
     produitId: uuid("produit_id").references(() => produits.id, { onDelete: 'cascade' }).notNull(),
     codeEtiquette: varchar("code_etiquette", { length: 100 }).unique(),
+    /**
+     * Le code étiquette d'une fiche dont le produit a été supprimé.
+     *
+     * `codeEtiquette` est unique sur tout le catalogue, archives comprises : un
+     * produit supprimé retenait donc son code pour toujours et empêchait le
+     * produit vivant de le porter. Constaté le 2026-09-10 sur ETCNA7372V5, tenu
+     * par l'un des quatre TA7372 supprimés le matin même.
+     *
+     * La suppression libère désormais le code et le range ici — l'archive garde
+     * son histoire, le catalogue récupère son identifiant. Même intention que
+     * l'unicité PARTIELLE déjà en place sur `produits.code_pf`.
+     */
+    codeEtiquetteLibere: varchar("code_etiquette_libere", { length: 100 }),
     denominationLegale: varchar("denomination_legale", { length: 255 }),
     texteCommercialFr: text("texte_commercial_fr"),
     texteCommercialEn: text("texte_commercial_en"),

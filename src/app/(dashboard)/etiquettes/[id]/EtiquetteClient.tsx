@@ -1412,6 +1412,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         <> — conservé aux archives sous <span className="font-mono">{labelData.refArchive}</span></>
                                     )}
                                     {labelData.motifArchivage && <> · motif : « {labelData.motifArchivage} »</>}
+                                    {/* Le code étiquette a été rendu au catalogue à la
+                                        suppression : le taire ici perdrait l'identité du BAT
+                                        de cette fiche (décision 2026-09-10). */}
+                                    {labelData.codeEtiquetteLibere && (
+                                        <> · code étiquette <span className="font-mono">{labelData.codeEtiquetteLibere}</span>, rendu au catalogue</>
+                                    )}
                                     . Cette fiche reste consultable ; elle ne peut plus être modifiée
                                     depuis le catalogue.
                                 </p>

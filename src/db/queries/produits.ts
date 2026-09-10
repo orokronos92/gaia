@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { and, count, desc, eq, isNull, isNotNull } from "drizzle-orm";
+import { and, count, desc, eq, isNull, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { estViolationUnicite } from "@/lib/erreurs-postgres";
 import { produits, fichesEtiquettes } from "@/db/schema";
@@ -267,6 +267,26 @@ export async function archiverProduit(
         misAJourLe: new Date(),
       })
       .where(eq(produits.id, params.produitId));
+
+    // Le code étiquette est unique sur tout le catalogue, archives comprises :
+    // le laisser sur une fiche supprimée le retiendrait pour toujours, et le
+    // produit vivant qui le porte vraiment ne pourrait plus l'enregistrer.
+    // Il passe donc dans `codeEtiquetteLibere` — l'archive garde son histoire,
+    // le catalogue récupère son identifiant. Même intention que l'unicité
+    // partielle déjà en place sur `code_pf` (décision 2026-09-10).
+    await tx
+      .update(fichesEtiquettes)
+      .set({
+        codeEtiquetteLibere: sql`${fichesEtiquettes.codeEtiquette}`,
+        codeEtiquette: null,
+        misAJourLe: new Date(),
+      })
+      .where(
+        and(
+          eq(fichesEtiquettes.produitId, params.produitId),
+          isNotNull(fichesEtiquettes.codeEtiquette)
+        )
+      );
 
     return { refArchive, codePf: produit.codePf, denomination: produit.denominationFr };
   });

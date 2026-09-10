@@ -25,6 +25,7 @@ export default async function EtiquetteDetailPage(
             produitId: fichesEtiquettes.produitId,
             title: produits.denominationFr,
             code: fichesEtiquettes.codeEtiquette,
+            codeEtiquetteLibere: fichesEtiquettes.codeEtiquetteLibere,
             codePf: produits.codePf,
             codeEan: produits.codeEan,
             gamme: produits.gamme,
