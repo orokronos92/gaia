@@ -209,6 +209,14 @@ export const ingredientsRecette = pgTable("ingredients_recette", {
     codeArticle: varchar("code_article", { length: 50 }).notNull(),
     designation: varchar("designation", { length: 255 }).notNull(),
     /**
+     * La dénomination telle qu'elle sera IMPRIMÉE, quand elle diffère du nom
+     * R&D. La recette dit « SORWATHE OP1 », l'étiquette doit dire « thé noir » :
+     * l'un n'est pas une dénomination légale, l'autre ne dit pas au magasinier
+     * quel lot peser. null = personne n'a encore relu la ligne, l'affichage
+     * retombe sur `designation` (décision 2026-09-10).
+     */
+    designationEtiquette: varchar("designation_etiquette", { length: 255 }),
+    /**
      * Marqueur « * issu de l'agriculture biologique » de l'étiquette
      * (PRO-QHS-013 §11.1). Vrai par défaut : chez JDG tout est bio, et la fiche
      * recette ne porte aucune colonne BIO — c'est implicite. Marie corrige au cas
