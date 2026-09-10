@@ -210,7 +210,7 @@ export type ControlResult = z.infer<typeof ControlResultSchema> & {
     perimee: boolean;
   };
   /** Une valeur que le BAT porte et que la fiche pourrait enregistrer. */
-  proposition?: { table: "produit" | "fiche"; champ: "poidsNet" | "codeEtiquette"; valeur: string; source: string };
+  proposition?: { table: "produit" | "fiche"; champ: "poidsNet" | "codeEtiquette" | "phraseDemeterFr"; valeur: string; source: string };
   /** Où regarder sur le BAT, en fractions de la face rendue. */
   reperes?: {
     face: number;

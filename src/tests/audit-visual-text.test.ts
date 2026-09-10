@@ -325,3 +325,53 @@ describe("statut de mention — la Qualité décide, la donnée déduit", () => 
     expect(c.checklistId).toBe("13.6");
   });
 });
+
+/**
+ * La mention Demeter proposée à la fiche.
+ *
+ * L'application savait que la mention était due, connaissait son texte au mot
+ * près — il servait déjà à contrôler le BAT — et demandait quand même à la
+ * Qualité de le retaper. Conséquence : un BAT parfaitement imprimé restait en
+ * alerte à cause d'un champ vide, sur les quatre produits Demeter du catalogue.
+ */
+describe("mention Demeter — proposition à la fiche", () => {
+  const BAT_AVEC_NOTE =
+    "INGRÉDIENTS thé noir**, honeybush**. **Issu de l'agriculture biologique et biodynamique. " +
+    "demeter est la marque des produits issus de l'agriculture biodynamique certifiée.";
+
+  const demeter = (bat: string, phrase: string | null) =>
+    runTextRobot(bat, {
+      ...FICHE_MT265,
+      estDemeter: true,
+      statutDemeter: "AUTO",
+      phraseDemeter: phrase,
+    }).find((c) => c.id === "TXT_DEMETER");
+
+  it("propose le texte du §11.1 quand la fiche ne le porte pas", () => {
+    const c = demeter(BAT_AVEC_NOTE, null);
+    expect(c?.proposition?.champ).toBe("phraseDemeterFr");
+    expect(c?.proposition?.table).toBe("fiche");
+    expect(c?.proposition?.source).toContain("§11.1");
+    expect(c?.proposition?.valeur).toContain("biologique et biodynamique");
+    expect(c?.proposition?.valeur).toContain("demeter est la marque");
+  });
+
+  it("propose aussi quand le BAT n'imprime pas la note — la fiche dit au graphisme quoi imprimer", () => {
+    expect(demeter("INGRÉDIENTS thé noir*.", null)?.proposition?.champ).toBe("phraseDemeterFr");
+  });
+
+  it("ne propose plus rien une fois la mention saisie, et le point passe", () => {
+    const c = demeter(
+      BAT_AVEC_NOTE,
+      "**Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée."
+    );
+    expect(c?.proposition).toBeUndefined();
+    expect(c?.statut).toBe("PASS");
+  });
+
+  it("la valeur proposée est celle que le contrôle attend : la saisir fait passer le point", () => {
+    const proposee = demeter(BAT_AVEC_NOTE, null)?.proposition?.valeur;
+    expect(proposee).toBeDefined();
+    expect(demeter(BAT_AVEC_NOTE, proposee as string)?.statut).toBe("PASS");
+  });
+});

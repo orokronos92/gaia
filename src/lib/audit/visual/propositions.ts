@@ -12,6 +12,11 @@
  *
  * Elle propose donc, en un clic, et c'est la Qualité qui enregistre. Le geste
  * reste le sien, daté et signé ; on lui épargne seulement la saisie.
+ *
+ * Une proposition peut aussi venir d'ailleurs que du BAT. La mention Demeter est
+ * de celles-là : son texte est fixé par PRO-QHS-013 §11.1, pas par l'étiquette.
+ * La proposer depuis la procédure vaut mieux que de la recopier du BAT — c'est
+ * précisément le raisonnement circulaire décrit plus haut que ça évite.
  */
 
 import { decomposerCodeArticle } from "../code-article";
@@ -30,7 +35,7 @@ export interface Proposition {
    */
   table: "produit" | "fiche";
   /** Champ visé, tel que la liste blanche de sa table le nomme. */
-  champ: "poidsNet" | "codeEtiquette";
+  champ: "poidsNet" | "codeEtiquette" | "phraseDemeterFr";
   valeur: string;
   /** D'où elle vient — Marie doit pouvoir vérifier avant de cliquer. */
   source: string;

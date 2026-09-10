@@ -296,6 +296,28 @@ function checkMentionGamme(
 const DEMETER_NOTE = "biologique et biodynamique";
 const DEMETER_TERMES = "demeter est la marque des produits issus";
 
+/**
+ * Le texte du §11.1, au mot près — proposé à la fiche quand la mention est due
+ * et que personne ne l'a saisie.
+ *
+ * Il vient de la PROCÉDURE, jamais du BAT. Recopier sur la fiche ce qui est
+ * imprimé sur l'étiquette rendrait circulaire le contrôle qui compare ensuite
+ * les deux (voir `propositions.ts`) ; ici la source est extérieure aux deux, et
+ * la comparaison garde son sens. Le mot « demeter » reste en minuscules : le
+ * §11.1 le veut en gras italique, ce que le style du BAT vérifie à part.
+ */
+const DEMETER_PHRASE_TYPE =
+  "**Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée.";
+
+/** La fiche n'a pas la mention : on lui propose celle de la procédure. */
+const propositionDemeter = () =>
+  ({
+    table: "fiche",
+    champ: "phraseDemeterFr",
+    valeur: DEMETER_PHRASE_TYPE,
+    source: "PRO-QHS-013 §11.1",
+  }) as const;
+
 function checkDemeter(batN: string, phraseFiche: string | null | undefined): BatTextCheck {
   const base = {
     id: "TXT_DEMETER",
@@ -314,15 +336,23 @@ function checkDemeter(batN: string, phraseFiche: string | null | undefined): Bat
       justification: phraseSaisie(phraseFiche)
         ? "Note ** Demeter présente sur le BAT, dans les termes du §11.1."
         : "Note ** Demeter présente sur le BAT, mais la mention Demeter n'est pas renseignée sur la fiche.",
-      ...(phraseSaisie(phraseFiche) ? {} : { manqueSurLaFiche: "la mention Demeter" }),
+      ...(phraseSaisie(phraseFiche)
+        ? {}
+        : { manqueSurLaFiche: "la mention Demeter", proposition: propositionDemeter() }),
     };
   }
+  // La fiche doit porter le texte même quand le BAT ne l'imprime pas — c'est
+  // elle qui dit au graphisme ce qu'il faut imprimer, pas l'inverse.
+  const manque = phraseSaisie(phraseFiche)
+    ? {}
+    : { manqueSurLaFiche: "la mention Demeter", proposition: propositionDemeter() };
+
   if (note) {
     return {
       ...base,
       statut: "WARNING",
-      justification:
-        "La note ** est imprimée, mais pas dans les termes du §11.1 : « **Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée ».",
+      justification: `La note ** est imprimée, mais pas dans les termes du §11.1 : « ${DEMETER_PHRASE_TYPE} ».`,
+      ...manque,
     };
   }
   return {
@@ -330,6 +360,7 @@ function checkDemeter(batN: string, phraseFiche: string | null | undefined): Bat
     statut: "WARNING",
     justification:
       "Ingrédient certifié Demeter dans la recette, mais la note ** correspondante n'a pas été retrouvée sur les faces analysées.",
+    ...manque,
   };
 }
 

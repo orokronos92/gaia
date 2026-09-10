@@ -140,7 +140,9 @@ Un produit à un seul ingrédient peut légitimement omettre sa liste, à condit
 
 Deux lectures du BAT. Les marqueurs d'abord : une étoile pour un ingrédient bio, deux pour un ingrédient Demeter, avec la mention de certification correspondante. Le style ensuite : le mot « demeter » doit être en gras italique — vérifié sur la police du PDF, pas à l'œil.
 
-*Données lues* : BAT : mots, marqueurs et métriques de police.
+Quand la mention Demeter est due et que la fiche ne la porte pas, le contrôle **propose son texte** — celui du §11.1, au mot près — que la Qualité enregistre d'un clic. La proposition vient de la procédure et jamais du BAT : recopier sur la fiche ce qui est imprimé sur l'étiquette rendrait circulaire le contrôle qui compare ensuite les deux.
+
+*Données lues* : BAT : mots, marqueurs et métriques de police. Fiche : mention Demeter saisie.
 
 ### 🟦 2.5 — La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ?
 
