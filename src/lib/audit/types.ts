@@ -10,6 +10,8 @@
 
 import { z } from "zod";
 
+import type { StatutMention } from "./statut-mention";
+
 /** Who evaluates a control point. The mode decides the executor — hard rule. */
 /**
  * Qui répond à un point de contrôle.
@@ -149,15 +151,13 @@ export interface AuditContext {
   surfaceFacePrincipaleCm2?: number | null;
   origineMpUnique?: boolean; // > 50 % from a single origin
   /**
-   * Les gammes qui portent leur propre mention obligatoire (§11.2).
-   *
-   * On dérive de `produits.gamme`, jamais du champ de mention de la fiche : la
-   * gamme est renseignée sur la totalité du catalogue, les champs de mention ne
-   * le sont pas encore. Un point d'applicabilité adossé à un champ vide ne
-   * s'applique jamais.
+   * Les mentions de gamme dues sur ce produit (§11.2), statut de la fiche
+   * RÉSOLU — pas la gamme brute. Un `NON` de la Qualité rend le point « sans
+   * objet », et l'y laisse : c'est la différence avec une dérogation, qui
+   * referme la ligne et la rouvre au contrôle suivant.
    */
-  gammeAnemos?: boolean; // THE TRANSPORTE A LA VOILE — 3 références
-  gammeEngages?: boolean; // LES ENGAGÉS — 11 références, 3 sous-gammes
+  mentionAnemos?: boolean; // gamme « THÉ TRANSPORTÉ À LA VOILE », sauf décision contraire
+  mentionEngages?: boolean; // gamme « LES ENGAGÉS », sauf décision contraire
 }
 
 /** A control point in the checklist (static metadata + applicability). */
@@ -249,6 +249,15 @@ export interface AuditFicheData {
   mentionFabricant?: string | null;
   codeEtiquette?: string | null;
   denominationLegale?: string | null;
+  /** Les mentions de gamme : ce que la Qualité a décidé, et ce qu'elle a écrit. */
+  statutWfto?: StatutMention | null;
+  statutDemeter?: StatutMention | null;
+  statutAnemos?: StatutMention | null;
+  statutEngages?: StatutMention | null;
+  phraseWftoFr?: string | null;
+  phraseDemeterFr?: string | null;
+  phraseAnemosFr?: string | null;
+  phraseEngagesFr?: string | null;
 }
 
 export interface AuditProduitData {

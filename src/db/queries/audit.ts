@@ -62,6 +62,14 @@ export const getAuditInputForFiche = cache(
         mentionFabricant: fiche.mentionFabricant,
         codeEtiquette: fiche.codeEtiquette,
         denominationLegale: fiche.denominationLegale,
+        statutWfto: fiche.statutWfto,
+        statutDemeter: fiche.statutDemeter,
+        statutAnemos: fiche.statutAnemos,
+        statutEngages: fiche.statutEngages,
+        phraseWftoFr: fiche.phraseWftoFr,
+        phraseDemeterFr: fiche.phraseDemeterFr,
+        phraseAnemosFr: fiche.phraseAnemosFr,
+        phraseEngagesFr: fiche.phraseEngagesFr,
       },
       produit: {
         codePf: produit.codePf,
@@ -150,14 +158,17 @@ export const getBatTextInputForFiche = cache(
         mentionConservation: fiche.mentionConservation,
         mentionFabricant: fiche.mentionFabricant,
         phraseWfto: fiche.phraseWftoFr,
-        // Les trois zones ajoutées le 09/09 arrivent enfin au moteur : elles
-        // étaient en base, affichées et éditables, et personne ne les lisait.
-        // La gamme les accompagne — c'est elle qui rend la mention exigible.
+        // Les quatre mentions de gamme : ce que la Qualité a décidé (le statut),
+        // et ce dont on déduit en son absence (la gamme, la recette).
         gamme: produit.gamme,
         estDemeter,
         phraseDemeter: fiche.phraseDemeterFr,
         phraseAnemos: fiche.phraseAnemosFr,
         phraseEngages: fiche.phraseEngagesFr,
+        statutWfto: fiche.statutWfto,
+        statutDemeter: fiche.statutDemeter,
+        statutAnemos: fiche.statutAnemos,
+        statutEngages: fiche.statutEngages,
       },
     };
   }

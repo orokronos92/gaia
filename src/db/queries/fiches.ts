@@ -2,6 +2,7 @@ import { cache } from "react";
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
+import type { StatutMention } from "@/lib/audit/statut-mention";
 import {
   fichesEtiquettes,
   produits,
@@ -38,11 +39,31 @@ export const CHAMPS_FICHE_EDITABLES = [
   "allergenes",
   "allegationsSanteFr",
   "phraseWftoFr",
+  // Et l'état de chacune. C'est lui que l'audit lit : la Qualité éteint ou
+  // allume une mention sans avoir à déroger point par point à chaque contrôle.
+  "statutWfto",
+  "statutDemeter",
+  "statutAnemos",
+  "statutEngages",
   "mentionConservation",
   "mentionFabricant",
 ] as const;
 
 export type ChampFicheEditable = (typeof CHAMPS_FICHE_EDITABLES)[number];
+
+/**
+ * Le type d'un champ éditable dépend de son nom.
+ *
+ * Les quatre `statut…` sont un enum NOT NULL : les traiter comme du texte
+ * nullable laisserait passer un `null` que Postgres refuserait à l'écriture, et
+ * une valeur hors enum que Drizzle accepterait de composer. La règle est dite
+ * ici plutôt que rappelée à chaque appel.
+ */
+type ValeurChampFiche<K extends ChampFicheEditable> = K extends `statut${string}`
+  ? StatutMention
+  : string | null;
+
+export type ChampsFicheEditables = { [K in ChampFicheEditable]?: ValeurChampFiche<K> };
 
 /**
  * Aligns the fiche's declared ingredient list with a validated recette (Lot 5):
@@ -80,7 +101,7 @@ export const getFicheProduitId = cache(async (ficheId: string): Promise<string |
  */
 export async function updateFicheEtiquetteChamps(
   ficheId: string,
-  champs: Partial<Record<ChampFicheEditable, string | null>>
+  champs: ChampsFicheEditables
 ): Promise<{ avant: Record<string, string | null> }> {
   const before = await db.query.fichesEtiquettes.findFirst({
     where: eq(fichesEtiquettes.id, ficheId),

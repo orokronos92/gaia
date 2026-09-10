@@ -43,6 +43,10 @@ export const CHAMPS_PRODUIT_EDITABLES = [
   "sousDesignationFr",
   // Champs du dossier PMI. Ils étaient affichés et jamais saisissables : une
   // donnée que l'import n'avait pas attrapée était perdue pour toujours.
+  // La gamme décide des mentions volontaires exigibles : la laisser en lecture
+  // seule ferait du mode « AUTO » un piège, puisque sa déduction ne serait pas
+  // corrigeable. Elle est NOT NULL — l'action serveur refuse de la vider.
+  "gamme",
   "sousGamme",
   // Déplacé depuis « Données complémentaires » : il vit désormais dans la carte
   // Identité, à côté de la certification qu'il désigne, et nulle part ailleurs.
@@ -80,6 +84,24 @@ export type ChampProduitEditable = (typeof CHAMPS_PRODUIT_EDITABLES)[number];
 export const getConditionnementsConnus = cache(async (): Promise<string[]> => {
   const lignes = await db
     .selectDistinct({ valeur: produits.conditionnement })
+    .from(produits)
+    .where(isNull(produits.archiveLe));
+  return lignes
+    .map((l) => l.valeur?.trim())
+    .filter((v): v is string => !!v)
+    .sort((a, b) => a.localeCompare(b, "fr"));
+});
+
+/**
+ * Les gammes déjà employées au catalogue, pour guider la saisie.
+ *
+ * Suggestions, pas liste fermée : JDG en crée. Mais une gamme mal orthographiée
+ * fait retomber une mention volontaire en « sans objet » sans que personne le
+ * voie — autant proposer celles qui existent.
+ */
+export const getGammesConnues = cache(async (): Promise<string[]> => {
+  const lignes = await db
+    .selectDistinct({ valeur: produits.gamme })
     .from(produits)
     .where(isNull(produits.archiveLe));
   return lignes

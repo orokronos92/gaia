@@ -15,6 +15,13 @@
  */
 
 import { FABRICANT_JDG_TOKENS, normalize } from "../canonical";
+import {
+  estGammeAnemos,
+  estGammeEngages,
+  mentionDue,
+  phraseSaisie,
+  type StatutMention,
+} from "../statut-mention";
 import type { ControlStatus } from "../types";
 
 /** JDG mandatory conservation mention — invariant tokens. */
@@ -57,26 +64,7 @@ function contientReglisse(ingredients?: string | null): boolean {
   return normalize(ingredients ?? "").includes("reglisse");
 }
 
-/**
- * Une phrase de gamme est-elle SAISIE sur la fiche ?
- *
- * Le champ « labels client » ne déclare WFTO que sur 2 produits du catalogue :
- * il est inutilisable. Le champ « Mention WFTO », lui, est tenu — 96 fiches
- * portent la phrase JDG au mot près et 51 portent « / », la convention maison
- * pour « non concerné ». On s'en sert comme drapeau, pas comme référence.
- *
- * Les trois autres champs de mention (Demeter, Anemos, Les Engagés) sont nés
- * vides : ils ne peuvent servir que de drapeau POSITIF — saisis, ils déclenchent
- * le contrôle ; vides, ils ne prouvent rien, et c'est la gamme qui décide.
- */
-function phraseSaisie(phrase?: string | null): boolean {
-  return !/^[\s/–—-]*$/.test(phrase ?? "");
-}
 
-/** La gamme du produit porte-t-elle ce motif ? */
-function gammeEst(gamme: string | null | undefined, motif: string): boolean {
-  return normalize(gamme ?? "").includes(motif);
-}
 
 /**
  * §11.2 — la mention WFTO, en deux marqueurs plutôt qu'un verdict.
@@ -130,10 +118,8 @@ export interface BatTextInput {
   /** Champ « Mention WFTO » de la fiche — sert de drapeau, pas de référence. */
   phraseWfto?: string | null;
   /**
-   * La gamme du produit. C'est elle qui rend une mention de gamme exigible, pas
-   * le champ de la fiche : `gamme` est renseignée sur 178 fiches sur 178, les
-   * champs de mention le sont sur zéro. Attendre qu'ils se remplissent pour
-   * contrôler reviendrait à ne jamais contrôler.
+   * La gamme du produit — la DÉDUCTION quand la mention est laissée en `AUTO`.
+   * Ce n'est plus elle qui décide : c'est le statut que la Qualité a posé.
    */
   gamme?: string | null;
   /** Au moins un ingrédient certifié Demeter dans la recette courante (§11.1). */
@@ -141,6 +127,11 @@ export interface BatTextInput {
   phraseDemeter?: string | null;
   phraseAnemos?: string | null;
   phraseEngages?: string | null;
+  /** Ce que la Qualité a décidé pour chaque mention — `AUTO` par défaut. */
+  statutWfto?: StatutMention | null;
+  statutDemeter?: StatutMention | null;
+  statutAnemos?: StatutMention | null;
+  statutEngages?: StatutMention | null;
 }
 
 export interface BatTextCheck {
@@ -525,22 +516,20 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
     }
   }
 
-  if (phraseSaisie(input.phraseWfto)) {
+  // Les quatre mentions de gamme. Le statut décide, la donnée ne fait que
+  // déduire : en `AUTO` on retombe sur la gamme du produit, la recette ou la
+  // phrase déjà saisie, mais un `NON` de la Qualité éteint le contrôle et un
+  // `OUI` l'allume, quoi que dise la base.
+  if (mentionDue(input.statutWfto, phraseSaisie(input.phraseWfto))) {
     results.push(checkWfto(batN));
   }
-
-  // Les trois mentions de gamme branchées le 10/09. Le déclencheur est la
-  // GAMME — remplie partout — et non le champ de la fiche, vide partout : sinon
-  // aucun de ces contrôles ne s'exécuterait jamais. Le champ, saisi, déclenche
-  // aussi : une mention revendiquée à la main mérite d'être vérifiée même si la
-  // gamme ne l'annonçait pas.
-  if (gammeEst(input.gamme, "voile") || phraseSaisie(input.phraseAnemos)) {
+  if (mentionDue(input.statutAnemos, estGammeAnemos(input.gamme) || phraseSaisie(input.phraseAnemos))) {
     results.push(checkMentionGamme(batN, MENTION_ANEMOS, input.phraseAnemos));
   }
-  if (gammeEst(input.gamme, "engag") || phraseSaisie(input.phraseEngages)) {
+  if (mentionDue(input.statutEngages, estGammeEngages(input.gamme) || phraseSaisie(input.phraseEngages))) {
     results.push(checkMentionGamme(batN, MENTION_ENGAGES, input.phraseEngages));
   }
-  if (input.estDemeter === true || phraseSaisie(input.phraseDemeter)) {
+  if (mentionDue(input.statutDemeter, input.estDemeter === true || phraseSaisie(input.phraseDemeter))) {
     results.push(checkDemeter(batN, input.phraseDemeter));
   }
 

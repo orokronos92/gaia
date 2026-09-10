@@ -7,7 +7,7 @@ import { getPublicUrl } from "@/lib/utils/s3-client"
 import { getFichiersProduit } from "@/db/queries/fichiers-etiquettes"
 import { getDocumentsProduit, getLienDocument } from "@/db/queries/documents-import"
 import { getRecetteOutputForProduit } from "@/db/queries/recettes"
-import { getConditionnementsConnus } from "@/db/queries/produits"
+import { getConditionnementsConnus, getGammesConnues } from "@/db/queries/produits"
 import { getVersionsFiche } from "@/db/queries/fiches"
 
 export default async function EtiquetteDetailPage(
@@ -64,6 +64,12 @@ export default async function EtiquetteDetailPage(
             phraseDemeterFr: fichesEtiquettes.phraseDemeterFr,
             phraseAnemosFr: fichesEtiquettes.phraseAnemosFr,
             phraseEngagesFr: fichesEtiquettes.phraseEngagesFr,
+            // L'état de chaque mention : ce que l'audit lit, et ce que la
+            // Qualité pilote depuis la carte.
+            statutWfto: fichesEtiquettes.statutWfto,
+            statutDemeter: fichesEtiquettes.statutDemeter,
+            statutAnemos: fichesEtiquettes.statutAnemos,
+            statutEngages: fichesEtiquettes.statutEngages,
             mentionNutritionnelleFr: fichesEtiquettes.mentionNutritionnelleFr,
             mentionConservation: fichesEtiquettes.mentionConservation,
             mentionFabricant: fichesEtiquettes.mentionFabricant,
@@ -112,6 +118,7 @@ export default async function EtiquetteDetailPage(
     // Recette QUID (SPEC-03) — lue côté serveur, mappée en RecetteAgentOutput.
     const recette = await getRecetteOutputForProduit(data[0].produitId);
     const conditionnementsConnus = await getConditionnementsConnus();
+    const gammesConnues = await getGammesConnues();
 
     // Historique des versions (editable-fiche / versioning).
     const versions = await getVersionsFiche(id);
@@ -161,6 +168,7 @@ export default async function EtiquetteDetailPage(
         <EtiquetteClient
             labelData={labelData}
             conditionnementsConnus={conditionnementsConnus}
+            gammesConnues={gammesConnues}
             recette={recette}
             versions={versions}
             documentsSource={documentsSource}

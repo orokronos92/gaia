@@ -18,6 +18,15 @@ export const notifications = pgTable("notifications", {
     creeLe: timestamp("cree_le").defaultNow().notNull(),
 });
 
+/**
+ * L'état d'une mention de gamme sur une fiche.
+ *
+ * `AUTO` déduit de la donnée — gamme du produit, recette Demeter. `OUI` et `NON`
+ * sont la parole de la Qualité, et elle prime : c'est elle qui fait foi, la base
+ * n'est qu'un échantillon de ce que JDG imprime réellement.
+ */
+export const StatutMention = pgEnum("statut_mention", ["AUTO", "OUI", "NON"]);
+
 export const StatutEtiquette = pgEnum("statut_etiquette", [
     "DRAFT", "QUALITY_REVIEW", "QUALITY_VALIDATED", "DESIGN_IN_PROGRESS",
     "DESIGN_REVIEW", "DESIGN_VALIDATED", "SENT_TO_PRINTER", "BAT_RECEIVED",
@@ -235,6 +244,19 @@ export const fichesEtiquettes = pgTable("fiches_etiquettes", {
     phraseAnemosFr: text("phrase_anemos_fr"),
     phraseEngagesFr: text("phrase_engages_fr"),
     /**
+     * Et l'état de chacune — ce que l'audit lit, à la place de la gamme.
+     *
+     * Le texte dit ce qui doit être imprimé, l'état dit si la mention est due.
+     * Les séparer donne à la Qualité un geste qui tient : un `NON` sort le point
+     * de sa liste et l'y laisse, là où une dérogation le rouvre au contrôle
+     * suivant. Migration 0018 : les 51 « / » de la phrase WFTO y sont devenus
+     * `NON`.
+     */
+    statutWfto: StatutMention("statut_wfto").notNull().default("AUTO"),
+    statutDemeter: StatutMention("statut_demeter").notNull().default("AUTO"),
+    statutAnemos: StatutMention("statut_anemos").notNull().default("AUTO"),
+    statutEngages: StatutMention("statut_engages").notNull().default("AUTO"),
+    /**
      * Mention nutritionnelle du §2.3, due quand l'aromatisation modifie la
      * valeur nutritionnelle. La procédure en donne le texte au mot près ; le
      * champ reste libre, certaines contenances pouvant l'écarter.
@@ -378,6 +400,7 @@ export const TypeFichierEtiquette = pgEnum("type_fichier_etiquette", ["BAT", "SO
 
 /** Whether the naming rule proposed the link, or a human established it. */
 export const OrigineAssociation = pgEnum("origine_association", ["AUTO", "MANUEL"]);
+
 
 /**
  * Explicit product ↔ label-file link.

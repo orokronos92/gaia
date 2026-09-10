@@ -178,3 +178,48 @@ export function EditableText({
   const display = value && value.trim() !== "" ? value : placeholder;
   return <p className={className}>{display}</p>;
 }
+
+/**
+ * A closed choice on a card — same lifecycle as <EditableText/>.
+ *
+ * Read mode renders whatever the caller wants to show (usually the resolved
+ * state in words), because a raw enum value tells Marie nothing about why a
+ * control fired.
+ */
+export function EditableSelect({
+  section,
+  field,
+  value,
+  options,
+  className,
+  children,
+}: {
+  section: EditableSection;
+  field: string;
+  value: string;
+  options: { value: string; label: string }[];
+  className?: string;
+  /** Read-mode rendering. Falls back to the matching option's label. */
+  children?: React.ReactNode;
+}) {
+  if (!section.editing) {
+    return (
+      <span className={className}>
+        {children ?? options.find((o) => o.value === value)?.label ?? value}
+      </span>
+    );
+  }
+  return (
+    <select
+      value={section.draft[field] ?? value}
+      onChange={(e) => section.setField(field, e.target.value)}
+      className="rounded-lg border border-stone-300 bg-white px-2 py-1 text-xs font-semibold text-stone-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}

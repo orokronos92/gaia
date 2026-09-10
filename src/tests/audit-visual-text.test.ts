@@ -290,3 +290,38 @@ describe("note ** Demeter — déclenchée par la recette, jugée sur les termes
     expect(c.justification).toContain("n'a pas été retrouvée");
   });
 });
+
+describe("statut de mention — la Qualité décide, la donnée déduit", () => {
+  const voile: BatTextInput = { gamme: "THE TRANSPORTE A LA VOILE" };
+
+  it("« AUTO » retombe sur la gamme — c'est le défaut de toute fiche", () => {
+    expect(runTextRobot(BAT_TA6262, { ...voile, statutAnemos: "AUTO" }).find((c) => c.id === "TXT_ANEMOS")).toBeDefined();
+  });
+
+  it("« NON » éteint le contrôle malgré la gamme", () => {
+    // Le geste que Marie n'avait pas : la dérogation referme la ligne et la
+    // rouvre au contrôle suivant, le statut la referme pour de bon.
+    expect(runTextRobot(BAT_TA6262, { ...voile, statutAnemos: "NON" }).find((c) => c.id === "TXT_ANEMOS")).toBeUndefined();
+  });
+
+  it("« OUI » allume le contrôle malgré la gamme", () => {
+    const c = byId(runTextRobot(BAT_TA6262, { gamme: "LES GRANDS CLASSIQUES", statutAnemos: "OUI" }), "TXT_ANEMOS");
+    expect(c.statut).toBe("WARNING");
+  });
+
+  it("« NON » éteint aussi Demeter, que la recette le déclare ou non", () => {
+    expect(
+      runTextRobot(BAT_TA6212, { estDemeter: true, statutDemeter: "NON" }).find((c) => c.id === "TXT_DEMETER")
+    ).toBeUndefined();
+  });
+
+  it("« NON » sur WFTO remplace la convention « / »", () => {
+    const wfto = { ...FICHE_MT265, phraseWfto: "Membre certifié World Fair Trade Organization…" };
+    expect(runTextRobot(BAT_MT265, { ...wfto, statutWfto: "NON" }).find((c) => c.id === "TXT_WFTO")).toBeUndefined();
+  });
+
+  it("« OUI » sur Les Engagés déclenche hors gamme", () => {
+    const c = byId(runTextRobot(BAT_TA5086, { gamme: "LES GRANDS CRUS", statutEngages: "OUI" }), "TXT_ENGAGES");
+    expect(c.checklistId).toBe("13.6");
+  });
+});

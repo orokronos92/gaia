@@ -254,13 +254,13 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
     id: "13.5", ordre: 37, section: "LABELS", typeControle: "MENTION_ANEMOS", mode: "bat",
     libelle: "Thé transporté à la voile : bandeau de gamme ET phrase du transporteur imprimés ensemble ?",
     reference: "PRO-QHS-013 §11.2",
-    applicableSi: (c) => c.gammeAnemos === true,
+    applicableSi: (c) => c.mentionAnemos === true,
   },
   {
     id: "13.6", ordre: 38, section: "LABELS", typeControle: "MENTION_ENGAGES", mode: "bat",
     libelle: "Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ?",
     reference: "PRO-QHS-013 §11.2",
-    applicableSi: (c) => c.gammeEngages === true,
+    applicableSi: (c) => c.mentionEngages === true,
   },
   // 14. TYPOGRAPHIE
   {

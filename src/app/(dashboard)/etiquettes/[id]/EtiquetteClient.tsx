@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import {
     CheckCircle2,
     AlertTriangle,
@@ -33,7 +33,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { choisirAllegationAction, dupliquerFicheAction, sauvegarderVersionAction } from "@/app/actions/etiquettes"
-import { useEditableSection, EditButtons, EditableText, type EditableSection } from "@/components/etiquettes/editable-section"
+import { useEditableSection, EditButtons, EditableText, EditableSelect, type EditableSection } from "@/components/etiquettes/editable-section"
 import { VersionsHistorique } from "@/components/etiquettes/versions-historique"
 import { DocumentsSource, type DocumentSourceVue } from "./_components/documents-source"
 import { SupprimerProduit } from "@/components/produits/supprimer-produit"
@@ -43,6 +43,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { estGammeAnemos, estGammeEngages, phraseSaisie } from "@/lib/audit/statut-mention"
 import { RecettePanel } from "@/components/recette/RecettePanel"
 import { RecetteListeCards } from "./_components/recette-liste-cards"
 import { StatutSelect } from "./_components/statut-select"
@@ -129,17 +130,66 @@ function ChampPmi({ label, field, value, section, tonLabel = "text-blue-500", to
  * une invitation à les faire diverger. Vide, la zone se dit vide plutôt que de
  * disparaître : une mention due et absente est précisément ce qu'il faut voir.
  */
-function ZoneGamme({ section, titre, field, value }: { section: EditableSection; titre: string; field: string; value: string | null | undefined }) {
+const CHOIX_STATUT = [
+    { value: "AUTO", label: "Auto" },
+    { value: "OUI", label: "Oui" },
+    { value: "NON", label: "Non" },
+]
+
+/**
+ * Une mention de gamme : son état, puis son texte.
+ *
+ * L'état est ce que l'audit lit. Le laisser implicite obligeait Marie à déroger
+ * point par point à chaque contrôle, sur une décision qu'elle avait déjà prise ;
+ * ici elle la pose une fois. En lecture, l'état résolu est écrit en toutes
+ * lettres AVEC sa raison — « Auto » seul ne dit pas pourquoi un contrôle s'est
+ * déclenché, et un contrôle dont on ne comprend pas le déclencheur ne se corrige
+ * pas, il se contourne.
+ */
+function ZoneGamme({ section, titre, field, value, statutField, statut, deduit, raison, raisonAbsente }: {
+    section: EditableSection
+    titre: string
+    field: string
+    value: string | null | undefined
+    statutField: string
+    statut: string | null | undefined
+    /** Ce que la donnée laisse penser — ne sert qu'en « Auto ». */
+    deduit: boolean
+    /** Pourquoi la donnée la rend due — lu quand elle l'est. */
+    raison: string
+    /** Et pourquoi elle ne l'est pas. Une raison au négatif ne se déduit pas de
+     *  l'autre : « sans objet (gamme) » ne dit pas laquelle, ni ce qui manque. */
+    raisonAbsente: string
+}) {
+    const etat = statut ?? "AUTO"
+    const due = etat === "NON" ? false : etat === "OUI" ? true : deduit
     return (
-        <div className="rounded-2xl border border-emerald-100/50 bg-emerald-50/50 p-4">
-            <Badge variant="outline" className="mb-2 border-emerald-200 bg-white text-[10px] font-bold uppercase tracking-widest text-emerald-700">{titre}</Badge>
+        <div className={cn(
+            "rounded-2xl border p-4",
+            due ? "border-emerald-100/50 bg-emerald-50/50" : "border-stone-200/70 bg-stone-50/60"
+        )}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+                <Badge variant="outline" className={cn(
+                    "bg-white text-[10px] font-bold uppercase tracking-widest",
+                    due ? "border-emerald-200 text-emerald-700" : "border-stone-200 text-stone-500"
+                )}>{titre}</Badge>
+                <EditableSelect
+                    section={section}
+                    field={statutField}
+                    value={etat}
+                    options={CHOIX_STATUT}
+                    className={cn("text-[11px] font-semibold", due ? "text-emerald-700" : "text-stone-400")}
+                >
+                    {etat === "AUTO" ? `Auto → ${due ? `requise (${raison})` : `sans objet (${raisonAbsente})`}` : etat === "OUI" ? "Requise — décidé" : "Sans objet — décidé"}
+                </EditableSelect>
+            </div>
             <EditableText
                 section={section}
                 field={field}
                 value={value ?? null}
                 placeholder={`Aucune ${titre.toLowerCase()} renseignée.`}
                 multiline
-                className="text-sm font-medium text-emerald-900"
+                className={cn("text-sm font-medium", due ? "text-emerald-900" : "text-stone-500")}
             />
         </div>
     )
@@ -232,7 +282,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[] }) {
+export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [], gammesConnues = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[]; gammesConnues?: string[] }) {
     // State
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
@@ -244,6 +294,22 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
     const [auditVisData, setAuditVisData] = useState<AuditVisuelTexteResult | null>(null)
     const [allegChoisie, setAllegChoisie] = useState<string | null>(labelData.allegationChoisie ?? null)
     const [allegSaving, setAllegSaving] = useState<string | null>(null)
+
+    /**
+     * Ce que la donnée laisse penser de chaque mention — la DÉDUCTION du mode
+     * « Auto ».
+     *
+     * Calculée ici avec les mêmes fonctions que l'audit (`statut-mention` est un
+     * module pur, sans base). Deux implémentations diveregeraient le jour où la
+     * gamme change d'intitulé, et l'écran annoncerait alors « sans objet » sur un
+     * contrôle qui se déclenche.
+     */
+    const mentionsDeduites = useMemo(() => ({
+        wfto: phraseSaisie(labelData.phraseWftoFr),
+        demeter: (recette?.ingredients ?? []).some((i) => i.estDemeter),
+        anemos: estGammeAnemos(labelData.gamme),
+        engages: estGammeEngages(labelData.gamme),
+    }), [labelData.phraseWftoFr, labelData.gamme, recette])
 
     // Editable-fiche phase 2 — Mentions Légales (reference instance of the pattern).
     const mentionsSection = useEditableSection({
@@ -270,6 +336,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
         champs: {
             denominationFr: labelData.title,
             codePf: labelData.codePf,
+            // La gamme rejoint sa pastille. Elle décide des mentions volontaires
+            // exigibles (§11.2) : en lecture seule, le mode « Auto » de ces
+            // mentions serait une déduction que personne ne peut corriger.
+            gamme: labelData.gamme,
             sousGamme: labelData.sousGamme,
         },
     })
@@ -348,6 +418,12 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             phraseAnemosFr: labelData.phraseAnemosFr,
             phraseEngagesFr: labelData.phraseEngagesFr,
             mentionNutritionnelleFr: labelData.mentionNutritionnelleFr,
+            // L'état de chaque mention. C'est lui que l'audit lit : Marie éteint
+            // ou allume un contrôle depuis la carte, sans avoir à déroger.
+            statutWfto: labelData.statutWfto ?? "AUTO",
+            statutDemeter: labelData.statutDemeter ?? "AUTO",
+            statutAnemos: labelData.statutAnemos ?? "AUTO",
+            statutEngages: labelData.statutEngages ?? "AUTO",
         },
     })
 
@@ -632,7 +708,19 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                         <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
-                            Gamme: <span className="text-stone-900 ml-1">{labelData.gamme}</span>
+                            Gamme:{" "}
+                            {dossierSection.editing ? (
+                                <input
+                                    type="text"
+                                    value={dossierSection.draft.gamme ?? ""}
+                                    onChange={(e) => dossierSection.setField("gamme", e.target.value)}
+                                    list="suggestions-gamme"
+                                    placeholder="gamme"
+                                    className="ml-1 w-56 bg-transparent border-b border-emerald-300 text-stone-900 focus:border-emerald-500 focus:outline-none"
+                                />
+                            ) : (
+                                <span className="text-stone-900 ml-1">{valeurOu(labelData.gamme)}</span>
+                            )}
                         </Badge>
                         <Badge variant="outline" className="bg-white border-stone-200 text-stone-600 font-medium">
                             Sous-Gamme:{" "}
@@ -648,6 +736,9 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                 <span className="text-stone-900 ml-1">{valeurOu(labelData.sousGamme)}</span>
                             )}
                         </Badge>
+                        <datalist id="suggestions-gamme">
+                            {gammesConnues.map((g) => <option key={g} value={g} />)}
+                        </datalist>
                         <span className="text-stone-300 mx-1">•</span>
                         <span className="text-sm font-medium text-stone-500 flex items-center gap-1.5 border border-stone-100 bg-stone-50 px-2 py-0.5 rounded-md">
                             <Clock className="h-3.5 w-3.5" /> Modifié le {labelData.date ?? 'N/A'}
@@ -1142,10 +1233,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             sienne ; seule celle de WFTO existait, les trois
                                             autres n'avaient nulle part où vivre. */}
                                         <div className="grid gap-4 lg:grid-cols-2">
-                                            <ZoneGamme section={textesSection} titre="Mention WFTO" field="phraseWftoFr" value={labelData.phraseWftoFr} />
-                                            <ZoneGamme section={textesSection} titre="Mention Demeter" field="phraseDemeterFr" value={labelData.phraseDemeterFr} />
-                                            <ZoneGamme section={textesSection} titre="Mention Anemos" field="phraseAnemosFr" value={labelData.phraseAnemosFr} />
-                                            <ZoneGamme section={textesSection} titre="Mention Les Engagés" field="phraseEngagesFr" value={labelData.phraseEngagesFr} />
+                                            <ZoneGamme section={textesSection} titre="Mention WFTO" field="phraseWftoFr" value={labelData.phraseWftoFr}
+                                                statutField="statutWfto" statut={labelData.statutWfto} deduit={mentionsDeduites.wfto} raison="phrase saisie" raisonAbsente="aucune phrase saisie" />
+                                            <ZoneGamme section={textesSection} titre="Mention Demeter" field="phraseDemeterFr" value={labelData.phraseDemeterFr}
+                                                statutField="statutDemeter" statut={labelData.statutDemeter} deduit={mentionsDeduites.demeter} raison="ingrédient Demeter en recette" raisonAbsente="aucun ingrédient Demeter en recette" />
+                                            <ZoneGamme section={textesSection} titre="Mention Anemos" field="phraseAnemosFr" value={labelData.phraseAnemosFr}
+                                                statutField="statutAnemos" statut={labelData.statutAnemos} deduit={mentionsDeduites.anemos} raison="gamme" raisonAbsente="hors gamme" />
+                                            <ZoneGamme section={textesSection} titre="Mention Les Engagés" field="phraseEngagesFr" value={labelData.phraseEngagesFr}
+                                                statutField="statutEngages" statut={labelData.statutEngages} deduit={mentionsDeduites.engages} raison="gamme" raisonAbsente="hors gamme" />
                                         </div>
 
                                         {/* §2.3 — due quand l'aromatisation modifie la valeur

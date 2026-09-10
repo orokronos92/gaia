@@ -10,6 +10,7 @@ import {
   normalize,
   REGLISSE_KEYWORDS,
 } from "./canonical";
+import { estGammeAnemos, estGammeEngages, mentionDue } from "./statut-mention";
 import type { AuditContext, AuditInput } from "./types";
 
 function scanDesignations(input: AuditInput, keywords: readonly string[]): boolean {
@@ -51,17 +52,6 @@ function detectInfusion(input: AuditInput): boolean {
   return !CAMELLIA_KEYWORDS.some((k) => texte.includes(k));
 }
 
-/**
- * La gamme porte-t-elle ce motif ?
- *
- * On cherche un fragment, pas l'intitulé complet : la base écrit « LES ENGAGÉS »
- * et « Les Militants » avec des casses et des accents qui ne s'accordent pas, et
- * « THE TRANSPORTE A LA VOILE » sans accents du tout.
- */
-function gammeEst(gamme: string | null | undefined, motif: string): boolean {
-  return normalize(gamme ?? "").includes(motif);
-}
-
 function detectContientReglisse(input: AuditInput): boolean {
   if (input.produit.contientReglisse === true) return true;
   return scanDesignations(input, REGLISSE_KEYWORDS);
@@ -84,7 +74,9 @@ export function buildAuditContext(input: AuditInput): AuditContext {
     // No backing data yet — surface/origin controls stay manual or LLM.
     surfaceFacePrincipaleCm2: null,
     origineMpUnique: undefined,
-    gammeAnemos: gammeEst(produit.gamme, "voile"),
-    gammeEngages: gammeEst(produit.gamme, "engag"),
+    // La gamme déduit, le statut décide. `applicableSi` reçoit la décision, pas
+    // la donnée : un « NON » de la Qualité rend le point sans objet pour de bon.
+    mentionAnemos: mentionDue(fiche.statutAnemos, estGammeAnemos(produit.gamme)),
+    mentionEngages: mentionDue(fiche.statutEngages, estGammeEngages(produit.gamme)),
   };
 }

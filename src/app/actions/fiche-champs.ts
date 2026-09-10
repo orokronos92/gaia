@@ -4,7 +4,8 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/auth";
-import { CHAMPS_FICHE_EDITABLES, updateFicheEtiquetteChamps, updateDossier } from "@/db/queries/fiches";
+import { CHAMPS_FICHE_EDITABLES, updateFicheEtiquetteChamps, updateDossier, type ChampsFicheEditables } from "@/db/queries/fiches";
+import type { StatutMention } from "@/lib/audit/statut-mention";
 import { CHAMPS_PRODUIT_EDITABLES, updateProduitChamps } from "@/db/queries/produits";
 import {
   CHAMPS_DEGUSTATION_EDITABLES,
@@ -49,6 +50,16 @@ export async function updateChampsAction(input: unknown) {
 
   const allowed = WHITELIST[data.table];
   const champs: Record<string, string | boolean | string[] | null> = {};
+  /**
+   * Un statut de mention est un enum NOT NULL, pas du texte.
+   *
+   * Le formulaire n'envoie que des chaînes : on vérifie ici que celle-ci est
+   * l'une des trois, et on refuse plutôt que de retomber sur `AUTO`. Retomber
+   * effacerait sans bruit une décision de la Qualité — l'inverse exact de ce
+   * que ces colonnes servent à garantir.
+   */
+  const estStatutMention = (v: string): v is StatutMention =>
+    v === "AUTO" || v === "OUI" || v === "NON";
   for (const [k, v] of Object.entries(data.champs)) {
     if (!allowed.has(k)) continue;
     if (data.table === "produit") {
@@ -74,8 +85,19 @@ export async function updateChampsAction(input: unknown) {
       if (k === "codePf" && val === "") {
         throw new Error("Le code modèle ne peut pas être vide.");
       }
+      if (k === "gamme" && val === "") {
+        throw new Error("La gamme ne peut pas être vide.");
+      }
       champs[k] = val;
     } else {
+      if (data.table === "fiche" && k.startsWith("statut")) {
+        const val = (v ?? "").trim();
+        if (!estStatutMention(val)) {
+          throw new Error(`Statut de mention invalide pour « ${k} » : « ${val} ».`);
+        }
+        champs[k] = val;
+        continue;
+      }
       // fiche & degustation: nullable → "" becomes null
       champs[k] = v && v.trim() !== "" ? v : null;
     }
@@ -93,7 +115,7 @@ export async function updateChampsAction(input: unknown) {
     // même. Sans traduction, Marie reçoit le message brut de Postgres et ne sait
     // pas que le code est déjà pris ailleurs.
     try {
-      ({ avant } = await updateFicheEtiquetteChamps(data.id, champs));
+      ({ avant } = await updateFicheEtiquetteChamps(data.id, champs as ChampsFicheEditables));
     } catch (e) {
       if (estCollisionUnicite(e) && "codeEtiquette" in champs) {
         throw new Error(
