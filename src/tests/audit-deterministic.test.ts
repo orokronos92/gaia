@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { computeRecette, type IngredientRecetteInput } from "../lib/business-rules/recette";
 import { auditDeterministic } from "../lib/audit/deterministic";
+import { checkCoherenceRecetteListe } from "../lib/audit/deterministic/ingredients";
 import type { AuditIngredient, AuditInput, ControlResult } from "../lib/audit/types";
 
 // Golden MT265 (MT165_MATE_SPORTIF.xlsx). Maté is Ilex paraguariensis, NOT
@@ -46,14 +47,14 @@ const INGREDIENTS_TEXTE =
 
 describe("Voie A déterministe — golden MT265", () => {
   // 12 points PRO-QHS-013 + 4 points MOP-PRO-029 (code article et Gencode).
-  it("couvre les 20 points déterministes et valide chaque verdict (Zod)", () => {
+  it("couvre les 21 points déterministes et valide chaque verdict (Zod)", () => {
     const input: AuditInput = {
       fiche: { ingredientsFr: INGREDIENTS_TEXTE, allergenes: "non" },
       produit: { typeTheFr: "Mélange de plantes", estAromatise: true },
       ingredients: buildIngredients(),
     };
     const r = auditDeterministic(input);
-    expect(r).toHaveLength(20);
+    expect(r).toHaveLength(21);
     // Every verdict carries a justification and a valid status.
     for (const c of r) {
       expect(c.mode).toBe("deterministic");
@@ -272,5 +273,74 @@ describe("§3.2 — le nombre de tasses suit le poids net", () => {
   it("ne conclut rien quand une des deux valeurs manque", () => {
     expect(tasses("100 g", null)?.action).toBe("COMPLETER");
     expect(tasses(null, "50")?.action).toBe("COMPLETER");
+  });
+});
+
+/**
+ * 2.5 — cohérence recette ↔ liste déclarée.
+ *
+ * Les deux sources sont deux documents JDG distincts : la fiche recette porte
+ * les coches de certification, la fiche dégustation porte le texte d'étiquette.
+ * Le 2026-09-10, un chimpanzé trafiqué avec cinq matières Demeter est passé
+ * intégralement — recette, validation, audit — sans que rien ne relève que la
+ * liste imprimée ne portait pas un seul « ** ».
+ */
+describe("2.5 — cohérence entre la recette et la liste déclarée", () => {
+  const demeterSur = (codes: string[]): AuditIngredient[] =>
+    buildIngredients().map((i) => ({ ...i, estDemeter: codes.includes(i.codeArticle) }));
+
+  const verdict = (ingredients: AuditIngredient[], texte: string | null, statutDemeter?: "AUTO" | "OUI" | "NON") =>
+    checkCoherenceRecetteListe({
+      fiche: { ingredientsFr: texte, ...(statutDemeter ? { statutDemeter } : {}) },
+      produit: {},
+      ingredients,
+    } as AuditInput);
+
+  it("liste et recette d'accord, sans Demeter → PASS", () => {
+    expect(verdict(buildIngredients(), INGREDIENTS_TEXTE).statut).toBe("PASS");
+  });
+
+  it("recette Demeter, liste sans « ** » → FAIL nommant les matières", () => {
+    const r = verdict(demeterSur(["MT100", "EF015"]), INGREDIENTS_TEXTE);
+    expect(r.statut).toBe("FAIL");
+    expect(r.justification).toContain("Maté vert");
+    expect(r.justification).toContain("Gingembre");
+  });
+
+  it("liste avec « ** » alors que la recette n'a aucun Demeter → FAIL (revendication infondée)", () => {
+    const texte = INGREDIENTS_TEXTE.replace("maté vert*", "maté vert**");
+    const r = verdict(buildIngredients(), texte);
+    expect(r.statut).toBe("FAIL");
+    expect(r.justification).toContain("aucune matière de la recette n'est Demeter");
+  });
+
+  it("la Qualité a tranché NON : l'absence de « ** » n'est plus une faute", () => {
+    expect(verdict(demeterSur(["MT100"]), INGREDIENTS_TEXTE, "NON").statut).not.toBe("FAIL");
+  });
+
+  it("la Qualité a tranché OUI : le « ** » devient exigible même sans Demeter en recette", () => {
+    const r = verdict(buildIngredients(), INGREDIENTS_TEXTE, "OUI");
+    expect(r.statut).toBe("FAIL");
+    expect(r.justification).toContain("Qualité");
+  });
+
+  it("compte les entrées : un ingrédient de la recette absent de l'étiquette → WARNING", () => {
+    const texte = "maté vert* 62%, gingembre* 15,5%, guarana* 6%. *Issu de l'agriculture biologique.";
+    const r = verdict(buildIngredients(), texte);
+    expect(r.statut).toBe("WARNING");
+    expect(r.justification).toContain("3 entrée(s) pour 8 ligne(s)");
+  });
+
+  it("un % imprimé introuvable dans la recette → WARNING", () => {
+    const texte = INGREDIENTS_TEXTE.replace("62%", "70%");
+    const r = verdict(buildIngredients(), texte);
+    expect(r.statut).toBe("WARNING");
+    expect(r.justification).toContain("70 %");
+  });
+
+  it("sans recette ou sans liste, il ne conclut pas", () => {
+    expect(verdict([], INGREDIENTS_TEXTE).statut).toBe("WARNING");
+    expect(verdict(buildIngredients(), null).statut).toBe("WARNING");
+    expect(verdict(buildIngredients(), null).action).toBe("COMPLETER");
   });
 });

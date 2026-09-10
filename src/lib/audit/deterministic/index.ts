@@ -22,7 +22,11 @@ import {
   checkGencodeCoherent,
   checkGencodeUnicite,
 } from "./code-article";
-import { checkIngrMono, checkIngrOrdreDecroissant } from "./ingredients";
+import {
+  checkCoherenceRecetteListe,
+  checkIngrMono,
+  checkIngrOrdreDecroissant,
+} from "./ingredients";
 import {
   checkCodeEtiquette,
   checkNomUsuelInfusion,
@@ -46,6 +50,7 @@ const CHECKS: Record<string, CheckFn> = {
   // not stored data. See control-checklist.ts.
   "2.2": checkIngrOrdreDecroissant,
   "2.3": checkIngrMono,
+  "2.5": checkCoherenceRecetteListe,
   "3.1": checkQuid,
   "3.2": checkRounding,
   "3.3": checkQuidAjustement100,

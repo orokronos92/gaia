@@ -7,7 +7,7 @@ paragraphe par paragraphe.
 
 **Source** : registre `src/lib/audit/control-checklist.ts`. Les identifiants,
 libellés, voies et références sont **extraits du code**, pas recopiés.
-**Généré le 10 septembre 2026** — 44 points.
+**Généré le 10 septembre 2026** — 45 points.
 
 ---
 
@@ -141,6 +141,19 @@ Un produit à un seul ingrédient peut légitimement omettre sa liste, à condit
 Deux lectures du BAT. Les marqueurs d'abord : une étoile pour un ingrédient bio, deux pour un ingrédient Demeter, avec la mention de certification correspondante. Le style ensuite : le mot « demeter » doit être en gras italique — vérifié sur la police du PDF, pas à l'œil.
 
 *Données lues* : BAT : mots, marqueurs et métriques de police.
+
+### 🟩 2.5 — La liste d'ingrédients déclarée concorde-t-elle avec la recette (matières Demeter marquées « ** », nombre d'ingrédients, pourcentages) ?
+
+**Voie** : Code · fiche · **Sans IA** : oui  
+**Référence** : PRO-QHS-013 §2.1, §11.1
+
+Deux documents JDG décrivent le même produit et peuvent se contredire. La fiche recette porte la composition et les coches Demeter et commerce équitable ; la fiche dégustation porte le texte d'étiquette, écrit à la main avec les dénominations destinées au consommateur — « thé noir », là où la recette écrit « SORWATHE OP1 ». Aucun des deux ne peut être réécrit dans l'autre : les noms fournisseur ne sont pas des dénominations légales, et c'est le texte d'étiquette que l'audit compare au BAT.
+
+Le contrôle les confronte donc, sans rien modifier. Il alerte quand la recette déclare des matières Demeter que la liste imprimée ne marque pas — et, plus grave, quand la liste revendique un « ** » qu'aucune matière de la recette ne justifie. Il signale aussi un ingrédient de la recette absent de l'étiquette, et un pourcentage imprimé qui ne correspond à aucune ligne de la recette.
+
+La décision de la Qualité prime : un statut Demeter fixé à NON éteint la question, un OUI rend le « ** » exigible quoi que dise la recette.
+
+*Données lues* : Recette (coches Demeter, nombre de lignes, % étiquette) + liste d'ingrédients déclarée de la fiche + statut de mention Demeter.
 
 ## 3. Déclaration quantitative (QUID)
 
