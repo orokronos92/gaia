@@ -1,8 +1,7 @@
-import { FlaskConical, Percent, Tag, EyeOff, AlertTriangle } from "lucide-react";
+import { FlaskConical, Tag, EyeOff, AlertTriangle } from "lucide-react";
 
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 import { differentielDepuisTexte } from "@/lib/recette/differentiel";
-import { genererListeIngredients } from "@/lib/recette/liste-ingredients";
 
 export interface RecetteListeCardsProps {
   recette: RecetteAgentOutput | null;
@@ -14,20 +13,21 @@ const nb = (v: number, d = 3) =>
   v.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: d });
 
 /**
- * Les trois états d'une composition, dans l'ordre où on les traverse.
+ * Les états d'une composition, dans l'ordre où on les traverse.
  *
- * Il y en avait deux, qui affichaient la même chose : toutes deux rendaient le
- * pourcentage arrondi, et ne se distinguaient que si Marie avait masqué un
- * ingrédient — ce qui n'arrive que sur un produit du catalogue. Deux cartes
- * jumelles ne disent pas deux choses, elles font douter des deux.
+ * L'arrondi QUID avait sa propre carte. Ce n'est pas une recette : c'est une
+ * colonne de la recette de production, calculée à partir des mêmes kilos. Lui
+ * donner une carte entière laissait croire à trois étapes là où il n'y en a que
+ * deux, et faisait douter des deux autres (décision 2026-09-10).
  *
- * Chacune a maintenant **sa propre source**, et la chaîne se lit d'un regard :
- *
- *   ce qu'on pèse  →  ce qu'on calcule  →  ce qui est déclaré
- *   kg et % bruts     % arrondis, Σ=100    le texte comparé au BAT
+ *   ce qu'on pèse et ce qu'on en calcule  →  ce qui est déclaré
+ *   kg, % brut, % arrondi Σ=100              le texte comparé au BAT
  *
  * Chaque flèche est un endroit où une erreur entre, et chacune a son point de
  * contrôle : l'arrondi en 3.2, l'ajustement en 3.3, la liste elle-même en 2.2.
+ *
+ * La place libérée revient à la RECETTE ÉTIQUETTE (lot C) : le brouillon que
+ * Marie habille de dénominations légales, et que l'audit comparera au BAT.
  */
 export function RecetteListeCards({ recette, ingredientsFr }: RecetteListeCardsProps) {
   if (!recette || recette.ingredients.length === 0) {
@@ -41,7 +41,6 @@ export function RecetteListeCards({ recette, ingredientsFr }: RecetteListeCardsP
   const ings = [...recette.ingredients].sort((a, b) => a.ordreTri - b.ordreTri);
   const masques = recette.ingredients.map((i) => i.masquerEtiquette);
   const nbMasques = masques.filter(Boolean).length;
-  const quid = genererListeIngredients(recette.ingredients, undefined, masques);
   const totalBrut = ings.reduce((s, i) => s + i.pourcentageBrut, 0);
   const totalKg = ings.reduce((s, i) => s + i.quantiteKg, 0);
 
@@ -58,43 +57,46 @@ export function RecetteListeCards({ recette, ingredientsFr }: RecetteListeCardsP
   const denominationsDivergentes = ecarts.filter((e) => e.type !== "pourcentage").length;
 
   return (
-    <div className="grid gap-3 xl:grid-cols-3">
+    <div className="grid gap-3 xl:grid-cols-2">
       <Carte
         icone={FlaskConical}
         titre="Recette de production"
-        sousTitre="ce qui est pesé"
+        sousTitre={nbMasques > 0 ? `ce qui est pesé · ${nbMasques} % masqué${nbMasques > 1 ? "s" : ""}` : "ce qui est pesé et calculé"}
         ton="stone"
       >
         <table className="w-full text-xs">
+          <thead>
+            <tr className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
+              <th className="pb-1 text-left font-bold">Ingrédient</th>
+              <th className="pb-1 pr-2 text-right font-bold">kg</th>
+              <th className="pb-1 pr-2 text-right font-bold">% brut</th>
+              <th className="pb-1 text-right font-bold text-sky-700">% arrondi</th>
+            </tr>
+          </thead>
           <tbody>
             {ings.map((i) => (
               <tr key={`${i.codeArticle}-${i.ordreTri}`} className="border-b border-stone-100 last:border-0">
-                <td className="py-1 pr-2 font-medium text-stone-700">{i.designation}</td>
+                <td className="py-1 pr-2 font-medium text-stone-700">
+                  {i.designation}
+                  {i.masquerEtiquette && (
+                    <EyeOff className="ml-1 inline size-3 text-stone-400" aria-label="% masqué sur l'étiquette" />
+                  )}
+                </td>
                 <td className="py-1 pr-2 text-right tabular-nums text-stone-500">{nb(i.quantiteKg)} kg</td>
-                <td className="py-1 text-right font-semibold tabular-nums text-stone-700">{nb(i.pourcentageBrut)} %</td>
+                <td className="py-1 pr-2 text-right tabular-nums text-stone-500">{nb(i.pourcentageBrut)} %</td>
+                <td className="py-1 text-right font-semibold tabular-nums text-sky-800">{nb(i.pourcentageEtiquette, 2)} %</td>
               </tr>
             ))}
             <tr>
               <td className="pt-1.5 text-[10px] font-bold uppercase tracking-widest text-stone-400">Total</td>
-              <td className="pt-1.5 text-right tabular-nums text-stone-500">{nb(totalKg)} kg</td>
-              <td className="pt-1.5 text-right font-bold tabular-nums text-stone-500">{nb(totalBrut)} %</td>
+              <td className="pt-1.5 pr-2 text-right tabular-nums text-stone-500">{nb(totalKg)} kg</td>
+              <td className="pt-1.5 pr-2 text-right tabular-nums text-stone-500">{nb(totalBrut)} %</td>
+              <td className="pt-1.5 text-right font-bold tabular-nums text-sky-800">
+                {nb(recette.totalPourcentageEtiquette, 2)} %
+              </td>
             </tr>
           </tbody>
         </table>
-      </Carte>
-
-      <Carte
-        icone={Percent}
-        titre="QUID arrondi"
-        sousTitre={`Σ ${nb(recette.totalPourcentageEtiquette, 2)} %`}
-        ton="sky"
-        badge={
-          nbMasques > 0
-            ? { icone: EyeOff, texte: `${nbMasques} % masqué${nbMasques > 1 ? "s" : ""}` }
-            : undefined
-        }
-      >
-        <p className="text-sm font-medium leading-relaxed text-sky-900">{quid}</p>
       </Carte>
 
       <Carte
