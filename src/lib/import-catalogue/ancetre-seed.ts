@@ -56,6 +56,7 @@ export function ancetreDepuisSeed(ligne: LigneObjet): { codePf: string; ancetre:
     labelsClient: null,
     // The seed's default: "Vrac" for every product whose column was empty.
     conditionnement: t("CONDITIONNEMENT") ?? "Vrac",
+    volumineux: null,
   };
   const fiche: Partial<ChampsFiche> = {
     denominationLegale: String(denomination),
@@ -70,6 +71,9 @@ export function ancetreDepuisSeed(ligne: LigneObjet): { codePf: string; ancetre:
     // Migration 0018 later turned a "/" phrase into statut NON and an empty phrase.
     ...lirePhraseWfto(t("PHRASE WFTO FR")),
     phraseEngagesFr: null,
+    phraseAnemosFr: null,
+    mentionNutritionnelleFr: null,
+    listeIngredientsBddFr: null,
     sousDesignationDe: t("SOUS DES DE"),
     ingredientsDe: t("INGREDIENTS DE"),
     sousDesignationIt: t("SOUS DES IT"),

@@ -14,6 +14,13 @@ export interface RecetteListeCardsProps {
    * sept. Affiché pour mémoire ; l'audit lit la recette étiquette.
    */
   ingredientsFr?: string | null;
+  /**
+   * The printed list as the catalogue workbook gives it (migration 0031), FR
+   * and EN. It stands as the recette étiquette until a recipe exists — for older
+   * recipes it is the only record — and the controls read it then.
+   */
+  listeBddFr?: string | null;
+  listeBddEn?: string | null;
   ficheId: string;
 }
 
@@ -37,7 +44,7 @@ const nb = (v: number, d = 3) =>
  * La place libérée revient à la RECETTE ÉTIQUETTE (lot C) : le brouillon que
  * Marie habille de dénominations légales, et que l'audit comparera au BAT.
  */
-export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteListeCardsProps) {
+export function RecetteListeCards({ recette, ingredientsFr, listeBddFr, listeBddEn, ficheId }: RecetteListeCardsProps) {
   // Les trois cartes se montrent toujours, même vides.
   //
   // Sans recette, elles disparaissaient toutes les trois derrière un encadré
@@ -125,6 +132,19 @@ export function RecetteListeCards({ recette, ingredientsFr, ficheId }: RecetteLi
 
       {aRecette ? (
         <RecetteEtiquetteCarte ficheId={ficheId} recette={recette} />
+      ) : listeBddFr?.trim() ? (
+        <Carte icone={Tag} titre="Recette étiquette" sousTitre="issue de la BDD étiquettes, comparée au BAT" ton="sky">
+          <p className="text-sm font-medium leading-relaxed text-sky-950">{listeBddFr}</p>
+          {listeBddEn?.trim() && (
+            <p className="mt-2 border-t border-sky-100 pt-2 text-xs leading-relaxed text-sky-900/80">
+              <span className="mr-1 font-bold text-sky-700">EN</span>
+              {listeBddEn}
+            </p>
+          )}
+          <p className="mt-2 text-[11px] text-stone-400">
+            Liste reprise telle quelle de la base étiquettes. Une fiche recette intégrée la remplace.
+          </p>
+        </Carte>
       ) : (
         <Carte icone={Tag} titre="Recette étiquette" sousTitre="ce qui sera imprimé, comparé au BAT" ton="sky">
           <Vide

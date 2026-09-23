@@ -335,6 +335,13 @@ export const fichesEtiquettes = pgTable("fiches_etiquettes", {
     texteCommercialEn: text("texte_commercial_en"),
     ingredientsFr: text("ingredients_fr"),
     ingredientsEn: text("ingredients_en"),
+    /**
+     * La liste imprimée telle que la BDD étiquettes v2 la donne (migration 0031).
+     * Distincte de `ingredientsFr`, texte du comité de dégustation : elle sert de
+     * recette étiquette tant qu'aucune recette n'existe, et s'efface devant la
+     * recette dès qu'une fiche recette est ré-intégrée.
+     */
+    listeIngredientsBddFr: text("liste_ingredients_bdd_fr"),
     allergenes: text("allergenes"),
     allegationsSanteFr: text("allegations_sante_fr"),
     allegationsSanteEn: text("allegations_sante_en"),

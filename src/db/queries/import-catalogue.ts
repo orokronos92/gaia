@@ -44,7 +44,7 @@ export async function chargerEtatCatalogue(): Promise<EtatCatalogue> {
     estAromatise: p.estAromatise, codeEan: p.codeEan, poidsNet: p.poidsNet, tempsInfusion: p.tempsInfusion,
     tempInfusion: p.tempInfusion, poidsTasse: p.poidsTasse, nbTasses: p.nbTasses,
     plusieursInfusions: p.plusieursInfusions, mentionEcocert: p.mentionEcocert, labelsClient: p.labelsClient,
-    conditionnement: p.conditionnement,
+    conditionnement: p.conditionnement, volumineux: p.volumineux,
     // A product without a range id predates migration 0022; an empty id compares as "no value".
     gammeId: p.gammeId ?? "", sousGammeId: p.sousGammeId,
   }));
@@ -55,6 +55,7 @@ export async function chargerEtatCatalogue(): Promise<EtatCatalogue> {
     ingredientsFr: f.ingredientsFr, ingredientsEn: f.ingredientsEn, allergenes: f.allergenes,
     allegationsSanteFr: f.allegationsSanteFr, allegationsSanteEn: f.allegationsSanteEn,
     phraseWftoFr: f.phraseWftoFr, statutWfto: f.statutWfto, phraseEngagesFr: f.phraseEngagesFr,
+    phraseAnemosFr: f.phraseAnemosFr, mentionNutritionnelleFr: f.mentionNutritionnelleFr, listeIngredientsBddFr: f.listeIngredientsBddFr,
     sousDesignationDe: f.sousDesignationDe, ingredientsDe: f.ingredientsDe,
     sousDesignationIt: f.sousDesignationIt, ingredientsIt: f.ingredientsIt,
     sousDesignationNl: f.sousDesignationNl, ingredientsNl: f.ingredientsNl,

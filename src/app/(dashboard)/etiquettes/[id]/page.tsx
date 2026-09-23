@@ -56,6 +56,7 @@ export default async function EtiquetteDetailPage(
             plusieursInfusions: produits.plusieursInfusions,
             texteCommercialFr: fichesEtiquettes.texteCommercialFr,
             ingredientsFr: fichesEtiquettes.ingredientsFr,
+            listeIngredientsBddFr: fichesEtiquettes.listeIngredientsBddFr,
             ingredientsEn: fichesEtiquettes.ingredientsEn,
             ingredientsDe: fichesEtiquettes.ingredientsDe,
             ingredientsIt: fichesEtiquettes.ingredientsIt,

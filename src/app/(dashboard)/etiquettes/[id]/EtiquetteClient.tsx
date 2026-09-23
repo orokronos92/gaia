@@ -640,11 +640,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
     // Fichiers BAT uploadés par Fabrice depuis Minio
     const pdfFiles: { url: string; name: string; cleS3: string }[] = labelData.pdfFiles || [];
 
-    // Pré-remplissage calculatrice (SPEC-03b §2) : on privilégie la liste QUID si
-    // elle porte des %, sinon la liste extraite simplifiée (désignations seules).
-    const ingredientsExtraits = /\d\s*%/.test(labelData.ingredientsFr ?? "")
-        ? labelData.ingredientsFr
-        : labelData.ingredientsSuggestion;
+    // Pré-remplissage calculatrice (SPEC-03b §2) : la liste de la BDD étiquettes
+    // d'abord (la liste imprimée, migration 0031), sinon la liste QUID si elle
+    // porte des %, sinon la liste extraite simplifiée (désignations seules).
+    const ingredientsExtraits = labelData.listeIngredientsBddFr?.trim()
+        ? labelData.listeIngredientsBddFr
+        : /\d\s*%/.test(labelData.ingredientsFr ?? "")
+            ? labelData.ingredientsFr
+            : labelData.ingredientsSuggestion;
 
 
     return (
@@ -1293,7 +1296,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         <div className="grid gap-3">
                                             {/* Sous-dénomination FR only — the ingredient list now lives in the two derived cards below. */}
                                             <LanguageRow lang="FR" sousDes={labelData.sousDesignationFr} ingredients="" />
-                                            <RecetteListeCards recette={recette} ingredientsFr={labelData.ingredientsFr} ficheId={labelData.id} />
+                                            <RecetteListeCards recette={recette} ingredientsFr={labelData.ingredientsFr} listeBddFr={labelData.listeIngredientsBddFr} listeBddEn={labelData.ingredientsEn} ficheId={labelData.id} />
                                         </div>
                                     </div>
 

@@ -17,13 +17,13 @@ export const CHAMPS_PRODUIT = [
   "denominationFr", "denominationEn", "sousDesignationFr", "sousDesignationEn", "typeTheFr", "typeTheEn",
   "origine", "producteurJardin", "estAromatise", "codeEan", "poidsNet", "tempsInfusion", "tempInfusion",
   "poidsTasse", "nbTasses", "plusieursInfusions", "mentionEcocert", "labelsClient", "gammeId", "sousGammeId",
-  "conditionnement",
+  "conditionnement", "volumineux",
 ] as const satisfies readonly (keyof ChampsProduitResolus)[];
 
 export const CHAMPS_FICHE = [
-  "denominationLegale", "texteCommercialFr", "texteCommercialCourtFr", "texteCommercialEn", "ingredientsFr",
+  "denominationLegale", "texteCommercialFr", "texteCommercialCourtFr", "texteCommercialEn", "listeIngredientsBddFr",
   "ingredientsEn", "allergenes", "allegationsSanteFr", "allegationsSanteEn", "phraseWftoFr", "statutWfto",
-  "phraseEngagesFr", "sousDesignationDe", "ingredientsDe", "sousDesignationIt", "ingredientsIt",
+  "phraseEngagesFr", "phraseAnemosFr", "mentionNutritionnelleFr", "sousDesignationDe", "ingredientsDe", "sousDesignationIt", "ingredientsIt",
   "sousDesignationNl", "ingredientsNl", "refFacing", "refContre", "codeEtiquette",
 ] as const satisfies readonly (keyof ChampsFiche)[];
 

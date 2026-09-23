@@ -89,3 +89,13 @@ export function listeEtiquette(lignes: LigneRecettePersistee[]): string {
     lignes.map((l) => l.masquerPourcentageEtiquette ?? false)
   );
 }
+
+/**
+ * The label list the controls read: the recette étiquette when there is one,
+ * otherwise the list the catalogue workbook gives (migration 0031). For older
+ * recipes the workbook is the only record; a re-integrated recipe sheet takes
+ * over by itself, since its lines come first (decision 2026-09-23).
+ */
+export function listeEtiquetteOuBdd(lignes: LigneRecettePersistee[], listeBdd: string | null | undefined): string | null {
+  return listeEtiquette(lignes) || listeBdd?.trim() || null;
+}

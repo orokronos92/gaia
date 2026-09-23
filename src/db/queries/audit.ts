@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { listeEtiquette } from "@/lib/recette/liste-ingredients";
+import { listeEtiquetteOuBdd } from "@/lib/recette/liste-ingredients";
 import type { LigneEtiquetteBat } from "@/lib/audit/visual/coherence-etiquette";
 import { gammes, fichesEtiquettes, produits, recettes, ingredientsRecette } from "@/db/schema";
 import type { AuditInput } from "@/lib/audit/types";
@@ -65,7 +65,7 @@ export const getAuditInputForFiche = cache(
 
     return {
       fiche: {
-        listeEtiquette: listeEtiquette(lignes) || null,
+        listeEtiquette: listeEtiquetteOuBdd(lignes, fiche.listeIngredientsBddFr),
         allergenes: fiche.allergenes,
         allegationsSanteFr: fiche.allegationsSanteFr,
         mentionConservation: fiche.mentionConservation,
@@ -180,7 +180,7 @@ export const getBatTextInputForFiche = cache(
         })),
       input: {
         denomination: produit.denominationFr ?? fiche.denominationLegale,
-        ingredients: listeEtiquette(lignes) || null,
+        ingredients: listeEtiquetteOuBdd(lignes, fiche.listeIngredientsBddFr),
         allegation: fiche.allegationsSanteFr ?? fiche.allegationChoisie,
         allergenes: fiche.allergenes,
         poidsNet: produit.poidsNet,

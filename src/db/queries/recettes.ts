@@ -1,9 +1,9 @@
 import { cache } from "react";
 import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { recettes, ingredientsRecette, auditLogs, matieresPremieres } from "@/db/schema";
+import { recettes, ingredientsRecette, auditLogs, matieresPremieres, fichesEtiquettes } from "@/db/schema";
 import { evaluerDemeter, type RecetteCalculee } from "@/lib/business-rules/recette";
-import { listeEtiquette } from "@/lib/recette/liste-ingredients";
+import { listeEtiquetteOuBdd } from "@/lib/recette/liste-ingredients";
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent";
 
 interface SaveRecetteParams {
@@ -372,11 +372,15 @@ export const getListeEtiquetteProduit = cache(
       orderBy: [desc(recettes.creeLe)],
       columns: { id: true },
     });
-    if (!recette) return null;
-
-    const lignes = await db.query.ingredientsRecette.findMany({
-      where: eq(ingredientsRecette.recetteId, recette.id),
+    const lignes = recette
+      ? await db.query.ingredientsRecette.findMany({ where: eq(ingredientsRecette.recetteId, recette.id) })
+      : [];
+    // Without a recipe, the catalogue workbook's list stands in (migration 0031).
+    const fiche = await db.query.fichesEtiquettes.findFirst({
+      where: eq(fichesEtiquettes.produitId, produitId),
+      orderBy: [desc(fichesEtiquettes.creeLe)],
+      columns: { listeIngredientsBddFr: true },
     });
-    return listeEtiquette(lignes) || null;
+    return listeEtiquetteOuBdd(lignes, fiche?.listeIngredientsBddFr);
   }
 );

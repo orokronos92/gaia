@@ -20,7 +20,7 @@ export const COLONNES_JDG = [
   "PRODUCTEUR/ JARDIN", "DENOMINATION EN", "SOUS-DÉS EN", "TYPE DE THE EN",
   "NOUVEAU TEXTE COMMERCIAL EN", "LISTE INGREDIENTS EN", "ALLÉGATIONS SANTÉ EN",
   "SOUS DES DE", "LISTE INGREDIENTS DE", "SOUS DES IT", "LISTE INGREDIENTS IT",
-  "SOUS DES NL", "LISTE D'INGREDIENTS NL", "AROMATISÉ",
+  "SOUS DES NL", "LISTE D'INGREDIENTS NL", "AROMATISÉ", "CONDITIONNEMENT EXPORT",
 ] as const;
 
 export type ColonneJdg = (typeof COLONNES_JDG)[number];
@@ -56,7 +56,7 @@ export const ProduitSchema = z.object({
   codeEan: texteBorne(50), poidsNet: texteBorne(50), tempsInfusion: texteBorne(50), tempInfusion: texteBorne(50),
   poidsTasse: texteBorne(50), nbTasses: texteBorne(50), plusieursInfusions: z.boolean(),
   mentionEcocert: texteBorne(255), labelsClient: z.array(z.string()).nullable(),
-  conditionnement: z.null(),
+  conditionnement: texteBorne(100), volumineux: z.boolean().nullable(),
 });
 export const FicheSchema = z.object({
   denominationLegale: texteBorne(255),
@@ -64,6 +64,7 @@ export const FicheSchema = z.object({
   texteCommercialEn: z.string().nullable(), ingredientsFr: z.string().nullable(), ingredientsEn: z.string().nullable(),
   allergenes: z.string().nullable(), allegationsSanteFr: z.string().nullable(), allegationsSanteEn: z.string().nullable(),
   phraseWftoFr: z.string().nullable(), statutWfto: z.enum(["AUTO", "NON"]), phraseEngagesFr: z.string().nullable(),
+  phraseAnemosFr: z.string().nullable(), mentionNutritionnelleFr: z.string().nullable(), listeIngredientsBddFr: z.string().nullable(),
   sousDesignationDe: texteBorne(255), ingredientsDe: z.string().nullable(),
   sousDesignationIt: texteBorne(255), ingredientsIt: z.string().nullable(),
   sousDesignationNl: texteBorne(255), ingredientsNl: z.string().nullable(),
@@ -81,6 +82,24 @@ export interface LigneJdgLue {
 }
 
 export type ResultatLigne = { ok: true; ligne: LigneJdgLue } | { ok: false; codePf: string; numeroLigne: number; motif: string };
+
+/** Where the nutrition statement starts inside the health-claim cell (PRO-QHS-013 §2.3). */
+const DEBUT_MENTION_NUTRITIONNELLE = /informations nutritionnelles/i;
+/** COND. = "Anemos": the association text of the row is the sailing-transport sentence. */
+const COND_ANEMOS = /anemos/i;
+const VOLUMINEUX = /volumineux/i;
+
+/**
+ * The workbook's health-claim cell carries the claim, the lifestyle sentence,
+ * then the nutrition statement. The statement has its own field (control 2.3):
+ * the cell is cut where it starts, nothing is rewritten.
+ */
+export function separerAllegation(cellule: string | null): { allegationsSanteFr: string | null; mentionNutritionnelleFr: string | null } {
+  if (cellule === null) return { allegationsSanteFr: null, mentionNutritionnelleFr: null };
+  const debut = cellule.search(DEBUT_MENTION_NUTRITIONNELLE);
+  if (debut < 0) return { allegationsSanteFr: cellule, mentionNutritionnelleFr: null };
+  return { allegationsSanteFr: cellule.slice(0, debut).trim() || null, mentionNutritionnelleFr: cellule.slice(debut).trim() };
+}
 
 /** "/" in the WFTO phrase means "not due" — the same reading as migration 0018. */
 export function lirePhraseWfto(cellule: string | null): { phraseWftoFr: string | null; statutWfto: "AUTO" | "NON" } {
@@ -108,7 +127,10 @@ export function lireLigneJdg(ligne: Ligne, index: IndexJdg, numeroLigne: number)
   const ean = t("CODE EAN");
   if (ean === null || ean === MARQUE_EAN_INCONNU) signaler("CODE EAN", ean ?? "(vide)", "code EAN absent");
   const cond = t("COND.");
-  if (cond !== null) signaler("COND.", cond, "colonne COND. non importée (ce n'est pas un conditionnement)");
+  const anemos = cond !== null && COND_ANEMOS.test(cond);
+  if (cond !== null && !anemos) signaler("COND.", cond, "valeur de COND. gardée telle quelle (sens à confirmer)");
+  const texteAssociation = texteOuAbsent(cel("TEXTE ASSOCIATION LES ENGAGES 185 CARACTÈRES ESPACES COMPRIS"));
+  const conditionnement = t("CONDITIONNEMENT EXPORT")?.replace(/\s+/g, " ") ?? null;
 
   const reference = (colonne: ColonneJdg): string | null => {
     const valeur = t(colonne)?.replace(/\s+/g, "").toUpperCase() ?? null;
@@ -130,17 +152,18 @@ export function lireLigneJdg(ligne: Ligne, index: IndexJdg, numeroLigne: number)
     poidsTasse: t("POIDS EN G/TASSE DE 25 CL"), nbTasses: t("NBRE DE TASSES"),
     plusieursInfusions: plusieurs !== null && /plusieurs infusions/i.test(plusieurs),
     mentionEcocert: t("ECOCERT"), labelsClient: labels.length > 0 ? labels : null,
-    conditionnement: null,
+    conditionnement, volumineux: conditionnement !== null && VOLUMINEUX.test(conditionnement) ? true : null,
   });
   const fiche = FicheSchema.safeParse({
     denominationLegale: t("DÉNOMINATION FR"),
     texteCommercialFr: t("NOUVEAU TEXTE COMMERCIAL FR 300 CARACTÈRES ESPACES COMPRIS"),
     texteCommercialCourtFr: texteOuAbsent(cel("NOUVEAU TEXTE COMMERCIAL COURT POUR ETIQUETTES GRANDS CRUS")),
     texteCommercialEn: t("NOUVEAU TEXTE COMMERCIAL EN"),
-    ingredientsFr: t("LISTE D'INGRÉDIENTS FR"), ingredientsEn: t("LISTE INGREDIENTS EN"),
-    allergenes: t("ALLERGENES"), allegationsSanteFr: t("ALLÉGATIONS SANTÉ FR"), allegationsSanteEn: t("ALLÉGATIONS SANTÉ EN"),
+    // The tasting-committee field stays the extractions'; the workbook's list has its own.
+    ingredientsFr: null, listeIngredientsBddFr: t("LISTE D'INGRÉDIENTS FR"), ingredientsEn: t("LISTE INGREDIENTS EN"),
+    allergenes: t("ALLERGENES"), ...separerAllegation(t("ALLÉGATIONS SANTÉ FR")), allegationsSanteEn: t("ALLÉGATIONS SANTÉ EN"),
     ...lirePhraseWfto(t("PHRASE WFTO FR")),
-    phraseEngagesFr: texteOuAbsent(cel("TEXTE ASSOCIATION LES ENGAGES 185 CARACTÈRES ESPACES COMPRIS")),
+    phraseEngagesFr: anemos ? null : texteAssociation, phraseAnemosFr: anemos ? texteAssociation : null,
     sousDesignationDe: t("SOUS DES DE"), ingredientsDe: t("LISTE INGREDIENTS DE"),
     sousDesignationIt: t("SOUS DES IT"), ingredientsIt: t("LISTE INGREDIENTS IT"),
     sousDesignationNl: t("SOUS DES NL"), ingredientsNl: t("LISTE D'INGREDIENTS NL"),

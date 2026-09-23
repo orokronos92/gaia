@@ -5,7 +5,7 @@
  */
 import type { CarteOnglet } from "./onglets-produits";
 
-const INGREDIENTS_INFUSETTES = { ingredientsFr: "LISTE D'INGRÉDIENTS FR" } as const;
+const INGREDIENTS_INFUSETTES = { listeIngredientsBddFr: "LISTE D'INGRÉDIENTS FR" } as const;
 
 export const TERRA_MADRE: CarteOnglet = {
   onglet: "TERRA MADRE",
@@ -20,7 +20,7 @@ export const TERRA_MADRE: CarteOnglet = {
     sousDesignationEn: "2ÈME SOUS-DÉS", origine: "ORIGINES", mentionEcocert: "ECOCERT", poidsNet: "POIDS G OU KG", codeEan: "CODE EAN",
   },
   fiche: {
-    texteCommercialFr: "TEXTE ÉTIQ FR", texteCommercialEn: "TEXTE ÉTIQ EN", ingredientsFr: "LISTE D'INGRÉDIENTS FR",
+    texteCommercialFr: "TEXTE ÉTIQ FR", texteCommercialEn: "TEXTE ÉTIQ EN", listeIngredientsBddFr: "LISTE D'INGRÉDIENTS FR",
     ingredientsEn: "LISTE D'INGRÉDIENTS EN", ingredientsDe: "LISTE D'INGRÉDIENTS DE", ingredientsNl: "LISTE D'INGRÉDIENTS NL",
   },
   labels: ["AB", "WFTO", "D", "IGP"],

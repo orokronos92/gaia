@@ -21,11 +21,10 @@ export interface ChampsProduit {
   plusieursInfusions: boolean;
   mentionEcocert: string | null;
   labelsClient: string[] | null;
-  /**
-   * Not carried by the workbook (its pack lives in `emballage`): always null
-   * from it, so the merge erases the "Vrac" the March seed invented.
-   */
+  /** The workbook's CONDITIONNEMENT EXPORT ("Sachet format GC SA9205"); the March seed's "Vrac" is erased. */
   conditionnement: string | null;
+  /** Ticked only where the workbook says "Sachet format volumineux"; unknown otherwise. */
+  volumineux: boolean | null;
 }
 
 export interface ChampsFiche {
@@ -41,6 +40,10 @@ export interface ChampsFiche {
   phraseWftoFr: string | null;
   statutWfto: "AUTO" | "OUI" | "NON";
   phraseEngagesFr: string | null;
+  phraseAnemosFr: string | null;
+  mentionNutritionnelleFr: string | null;
+  /** The printed list as the workbook gives it (migration 0031), apart from the tasting text. */
+  listeIngredientsBddFr: string | null;
   sousDesignationDe: string | null;
   ingredientsDe: string | null;
   sousDesignationIt: string | null;

@@ -91,7 +91,7 @@ export function lireLigneOnglet(carte: CarteOnglet, ligne: Ligne, index: Record<
   const produit = ProduitSchema.safeParse({
     denominationEn: null, sousDesignationFr: null, sousDesignationEn: null, typeTheEn: null, origine: null,
     producteurJardin: null, codeEan: null, poidsNet: null, tempsInfusion: null, tempInfusion: null, poidsTasse: null,
-    nbTasses: null, mentionEcocert: null, estAromatise: false, plusieursInfusions: false, conditionnement: null,
+    nbTasses: null, mentionEcocert: null, estAromatise: false, plusieursInfusions: false, conditionnement: null, volumineux: null,
     ...champsProduit,
     denominationFr: champsProduit.denominationFr ?? "",
     typeTheFr: (carte.typeThe === "gamme" ? gamme : texte(cel(carte.typeThe.colonne))) ?? "",
@@ -101,7 +101,8 @@ export function lireLigneOnglet(carte: CarteOnglet, ligne: Ligne, index: Record<
     denominationLegale: champsProduit.denominationFr ?? null, texteCommercialFr: null, texteCommercialCourtFr: null,
     texteCommercialEn: null, ingredientsFr: null, ingredientsEn: null, allergenes: null, allegationsSanteFr: null,
     allegationsSanteEn: null, phraseEngagesFr: null, sousDesignationDe: null, ingredientsDe: null, sousDesignationIt: null,
-    ingredientsIt: null, sousDesignationNl: null, ingredientsNl: null,
+    ingredientsIt: null, sousDesignationNl: null, ingredientsNl: null, phraseAnemosFr: null,
+    mentionNutritionnelleFr: null, listeIngredientsBddFr: null,
     ...champsFiche,
     ...lirePhraseWfto(texte(cel(carte.phraseWfto))),
     refFacing, refContre, codeEtiquette: refContre ?? refFacing,
