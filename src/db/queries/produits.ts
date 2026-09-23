@@ -2,6 +2,7 @@ import { cache } from "react";
 import { and, count, desc, eq, isNull, isNotNull, sql } from "drizzle-orm";
 import type { AnyColumn, SQL } from "drizzle-orm";
 import { LETTRES_ACCENTUEES, LETTRES_SIMPLES, motifRecherche } from "@/lib/recherche";
+import type { Catalogue } from "@/lib/catalogues";
 import { db } from "@/db";
 import { estViolationUnicite } from "@/lib/erreurs-postgres";
 import { produits, fichesEtiquettes } from "@/db/schema";
@@ -167,6 +168,16 @@ export const PRODUIT_RETIRE = and(isNull(produits.archiveLe), isNotNull(produits
  */
 export function correspondRecherche(colonne: AnyColumn, saisie: string): SQL {
   return sql`lower(translate(${colonne}, ${LETTRES_ACCENTUEES}, ${LETTRES_SIMPLES})) like ${motifRecherche(saisie)}`;
+}
+
+/** Products in the catalogue (neither withdrawn nor deleted), per catalogue — for the selector. */
+export async function compterProduitsParCatalogue(): Promise<Partial<Record<Catalogue, number>>> {
+  const lignes = await db
+    .select({ catalogue: produits.catalogue, n: count() })
+    .from(produits)
+    .where(and(isNull(produits.archiveLe), isNull(produits.retireLe)))
+    .groupBy(produits.catalogue);
+  return Object.fromEntries(lignes.map((l) => [l.catalogue, l.n]));
 }
 
 /** Tout ce qui n'est pas supprimé, quel que soit l'état catalogue. */

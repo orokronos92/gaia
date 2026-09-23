@@ -1,6 +1,6 @@
 /**
- * The sheets that create products besides JDG: Terra Madre (its own brand) and
- * the two infusette sheets. One reader, one map per sheet; the rows it gives
+ * The sheets that create products besides JDG, each its own catalogue (migration
+ * 0030): Terra Madre and the two infusette sheets. One reader, one map per sheet; the rows it gives
  * go through the same validation and plan as the JDG sheet.
  * Mapping: docs/decisions/2026-09-23-mapping-exhaustif-bdd-v2.md §3–4.
  */
@@ -16,7 +16,7 @@ type Extra = readonly [colonne: string, lecture: Lecture];
 
 export interface CarteOnglet {
   onglet: string;
-  marque: "JDG" | "TERRA_MADRE";
+  catalogue: "TERRA_MADRE" | "INFUSETTES_PAGES" | "INFUSETTES_COUNTRY_FARM";
   formatCode: RegExp;
   gamme: { colonne: string } | { fixe: string };
   sousGamme: string | null;

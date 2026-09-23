@@ -29,6 +29,7 @@ export default async function EtiquetteDetailPage(
             code: fichesEtiquettes.codeEtiquette,
             codeEtiquetteLibere: fichesEtiquettes.codeEtiquetteLibere,
             codePf: produits.codePf,
+            catalogue: produits.catalogue,
             codeEan: produits.codeEan,
             gamme: produits.gamme,
             sousGamme: produits.sousGamme,
@@ -126,7 +127,8 @@ export default async function EtiquetteDetailPage(
     // Recette QUID (SPEC-03) — lue côté serveur, mappée en RecetteAgentOutput.
     const recette = await getRecetteOutputForProduit(data[0].produitId);
     const conditionnementsConnus = await getConditionnementsConnus();
-    const choixGammes = await getChoixGammes();
+    // Only the ranges of the product's own catalogue are offered.
+    const choixGammes = await getChoixGammes(data[0].catalogue ?? undefined);
 
     // Historique des versions (editable-fiche / versioning).
     const versions = await getVersionsFiche(id);

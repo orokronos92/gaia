@@ -1,4 +1,6 @@
 import { sql } from "drizzle-orm";
+// Relative on purpose: drizzle-kit reads this file without the "@/" alias.
+import { CATALOGUES } from "../lib/catalogues";
 import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, jsonb, date, real, pgEnum, vector, index, uniqueIndex, unique } from "drizzle-orm/pg-core";
 
 export const RoleUtilisateur = pgEnum("role_utilisateur", ["ADMIN", "QUALITE", "GRAPHISME", "CONDITIONNEMENT", "ACHATS", "DIRECTION"]);
@@ -26,8 +28,12 @@ export const notifications = pgTable("notifications", {
  * n'est qu'un échantillon de ce que JDG imprime réellement.
  */
 export const StatutMention = pgEnum("statut_mention", ["AUTO", "OUI", "NON"]);
-/** Terra Madre (épices) n'a pas les obligations d'étiquetage de JDG — migration 0026. */
-export const MarqueProduit = pgEnum("marque_produit", ["JDG", "TERRA_MADRE"]);
+/**
+ * Les quatre catalogues de la BDD étiquettes v2, un par onglet (migration 0030) :
+ * JDG, le cœur des contrôles ; Terra Madre, les épices ; et les deux familles
+ * d'infusettes, qui ne sont pas la même chose.
+ */
+export const CatalogueProduit = pgEnum("catalogue_produit", CATALOGUES);
 
 export const StatutEtiquette = pgEnum("statut_etiquette", [
     "DRAFT", "QUALITY_REVIEW", "QUALITY_VALIDATED", "DESIGN_IN_PROGRESS",
@@ -49,7 +55,7 @@ export const utilisateurs = pgTable("utilisateurs", {
 export const produits = pgTable("produits", {
     id: uuid("id").primaryKey().defaultRandom(),
     codePf: varchar("code_pf", { length: 50 }).notNull(), // ex: MT265 — unicité portée par un index PARTIEL (voir plus bas)
-    marque: MarqueProduit("marque").notNull().default("JDG"),
+    catalogue: CatalogueProduit("catalogue").notNull().default("JDG"),
     /**
      * Libellés conservés comme un REFLET du référentiel : beaucoup d'écrans,
      * d'exports et de contrôles les lisent encore. Ce sont `gammeId` et
@@ -705,8 +711,8 @@ export const gammes = pgTable("gammes", {
      */
     exigeMentionAnemos: boolean("exige_mention_anemos").default(false).notNull(),
     exigeMentionEngages: boolean("exige_mention_engages").default(false).notNull(),
-    /** La marque que la gamme sert — Terra Madre a les siennes (migration 0029). */
-    marque: MarqueProduit("marque").notNull().default("JDG"),
+    /** Le catalogue dont la gamme fait partie — Terra Madre a les siennes (migration 0030). */
+    catalogue: CatalogueProduit("catalogue").notNull().default("JDG"),
     /**
      * Une gamme ne se supprime pas : des produits l'ont portée, des paquets sont
      * imprimés. Elle se retire des listes de choix et garde son histoire.

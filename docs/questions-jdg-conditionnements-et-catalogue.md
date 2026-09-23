@@ -208,11 +208,10 @@ vont-elles ?
 
 ## I. Terra Madre et infusettes
 
-**I1.** Les infusettes n'ont pas de colonne « gamme ». Elles ont été rangées dans une gamme
-« INFUSETTES », avec pour sous-gamme le nom de l'onglet (« PAGES », « COUNTRY FARM »). « Pages »
-est-il l'imprimeur (colonne IMPRIMEUR = PAGES) et « Country Farm » le fabricant, ou s'agit-il de
-marques clientes ?
-> Provisoire : gamme « INFUSETTES », marque JDG.
+**I1.** Chaque onglet produit de la base est un catalogue à part dans GaïaLabel : JDG,
+Terra Madre, Infusettes Pages, Infusettes Country Farm. « Pages » est-il l'imprimeur (colonne
+IMPRIMEUR = PAGES) et « Country Farm » le fabricant, ou s'agit-il de marques clientes ? Les
+infusettes n'ont pas de colonne « gamme » : comment les rangez-vous ?
 
 **I2.** Terra Madre : 128 codes ont la forme `AR00xxx` et 44 une variante (`ARD0018`,
 `ARR0021`, `ARS0084`, `ARDR157`…). Que signifient D, R, S et DR ?

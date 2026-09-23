@@ -15,7 +15,7 @@ import type { Valeur } from "@/lib/import-catalogue/types";
 
 /** Every fiche an import creates enters the Quality review, like the March seed's. */
 const STATUT_FICHE_IMPORTEE = "QUALITY_REVIEW";
-type Marque = (typeof produits.$inferInsert)["marque"];
+type Catalogue = (typeof produits.$inferInsert)["catalogue"];
 
 export async function nomBaseCourante(): Promise<string> {
   const resultat = await db.execute<{ nom: string }>(sql`select current_database() as nom`);
@@ -79,12 +79,12 @@ export async function chargerReferencesProduits(): Promise<ProduitReferences[]> 
  * land before the Quality tidies the referential. Ambiguous labels are never
  * created: they need a person. Returns what was created, for the report.
  */
-export async function creerLibellesManquants(inconnus: readonly LibelleInconnu[], marque: Marque = "JDG"): Promise<string[]> {
+export async function creerLibellesManquants(inconnus: readonly LibelleInconnu[], catalogue: Catalogue = "JDG"): Promise<string[]> {
   const aCreer = inconnus.filter((l) => l.motif === "inconnue");
   return db.transaction(async (tx) => {
     const crees: string[] = [];
     for (const l of aCreer.filter((x) => x.type === "gamme")) {
-      await tx.insert(gammes).values({ nom: l.libelle.trim(), marque }).onConflictDoNothing();
+      await tx.insert(gammes).values({ nom: l.libelle.trim(), catalogue }).onConflictDoNothing();
       crees.push(`gamme « ${l.libelle.trim()} »`);
     }
     const toutes = await tx.select({ id: gammes.id, nom: gammes.nom }).from(gammes);
@@ -119,7 +119,7 @@ export interface BilanApplication {
  * value it replaces is kept in the audit log, so an overwrite can be undone. The range labels are
  * kept in step with the ids they reflect.
  */
-export async function appliquerPlan(plan: Plan, source: string, utilisateurId: string, marque: Marque = "JDG"): Promise<BilanApplication> {
+export async function appliquerPlan(plan: Plan, source: string, utilisateurId: string, catalogue: Catalogue = "JDG"): Promise<BilanApplication> {
   return db.transaction(async (tx) => {
     const nomsGammes = new Map((await tx.select({ id: gammes.id, nom: gammes.nom }).from(gammes)).map((g) => [g.id, g.nom]));
     const nomsSousGammes = new Map((await tx.select({ id: sousGammes.id, nom: sousGammes.nom }).from(sousGammes)).map((s) => [s.id, s.nom]));
@@ -135,7 +135,7 @@ export async function appliquerPlan(plan: Plan, source: string, utilisateurId: s
         .values({
           ...creation.produit,
           codePf: creation.codePf,
-          marque,
+          catalogue,
           gamme: nomsGammes.get(creation.produit.gammeId) ?? "",
           sousGamme: creation.produit.sousGammeId === null ? null : (nomsSousGammes.get(creation.produit.sousGammeId) ?? null),
         })

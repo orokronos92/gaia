@@ -9,7 +9,7 @@ const INGREDIENTS_INFUSETTES = { ingredientsFr: "LISTE D'INGRÉDIENTS FR" } as c
 
 export const TERRA_MADRE: CarteOnglet = {
   onglet: "TERRA MADRE",
-  marque: "TERRA_MADRE",
+  catalogue: "TERRA_MADRE",
   // AR00178, and the ARD / ARR / ARS / ARDR variants.
   formatCode: /^AR[A-Z]{0,2}\d{3,5}$/,
   gamme: { colonne: "GAMME" },
@@ -44,7 +44,7 @@ const MENTIONS_INFUSETTES = {
 
 export const INFUSETTES_PAGES: CarteOnglet = {
   onglet: "INFUSETTES PAGES",
-  marque: "JDG",
+  catalogue: "INFUSETTES_PAGES",
   formatCode: /^IF\d{3}$/,
   gamme: { fixe: "INFUSETTES" },
   sousGamme: "PAGES",
@@ -72,7 +72,7 @@ export const INFUSETTES_PAGES: CarteOnglet = {
 
 export const INFUSETTES_COUNTRY_FARM: CarteOnglet = {
   onglet: "INFUSETTES COUNTRY FARM",
-  marque: "JDG",
+  catalogue: "INFUSETTES_COUNTRY_FARM",
   // "IFXXX" rows are placeholders and are set aside.
   formatCode: /^IF\d{3}$/,
   gamme: { fixe: "INFUSETTES" },

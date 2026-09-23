@@ -6,6 +6,10 @@
  * Maps: src/lib/import-catalogue/cartes-onglets.ts.
  *
  *   DATABASE_URL=…/gaialabel_preprod npx tsx scripts/importer-onglets-produits-v2.ts [--appliquer [--creer-gammes]]
+ *   … --appliquer --lignes-source-seulement   # keeps the rows verbatim, creates no product
+ *
+ * Catalogues are built one at a time (Ouro, 2026-09-23): until Terra Madre and
+ * the infusettes get their own fiche, only their rows are kept.
  */
 import { writeFileSync } from "node:fs";
 import path from "node:path";
@@ -41,6 +45,7 @@ async function main(): Promise<void> {
   if (!base.endsWith(SUFFIXE_BASE_AUTORISEE)) throw new Error(`Base « ${base} » refusée : préproduction uniquement.`);
   const appliquer = process.argv.includes("--appliquer");
   const creerGammes = appliquer && process.argv.includes("--creer-gammes");
+  const lignesSeulement = appliquer && process.argv.includes("--lignes-source-seulement");
   const classeur = XLSX.readFile(path.join(RACINE, SOURCE));
   const signataire = appliquer ? await trouverSignataireId(ROLE_SIGNATAIRE) : null;
   if (appliquer && signataire === null) throw new Error(`Aucun compte ${ROLE_SIGNATAIRE} pour signer l'import.`);
@@ -50,6 +55,13 @@ async function main(): Promise<void> {
     const index = indexerOnglet(carte, entetes);
     const remplies = lignes.map((ligne, i) => ({ ligne, numero: i + 2 })).filter(({ ligne }) => ligne.some((c) => texte(c) !== null));
     const lues: Array<LigneOngletLue & { ligne: Ligne; numero: number }> = remplies.map(({ ligne, numero }) => ({ ligne, numero, ...lireLigneOnglet(carte, ligne, index, numero) }));
+    if (lignesSeulement) {
+      const sources: LigneSourceAEcrire[] = remplies.map(({ ligne, numero }) => ({
+        fichier: FICHIER, onglet: carte.onglet, numeroLigne: numero, codePf: texte(ligne[0]), produitId: null, donnees: ligneEnObjet(entetes, ligne),
+      }));
+      process.stdout.write(`« ${carte.onglet} » : ${JSON.stringify(await ecrireOngletComplementaire([], sources))} (lignes brutes seulement)\n`);
+      continue;
+    }
 
     const planifier = async (): Promise<Plan> => {
       const referentiel = await chargerReferentielGammes();
@@ -58,7 +70,7 @@ async function main(): Promise<void> {
     let plan = await planifier();
     const gammesCreees: string[] = [];
     for (let passe = 0; creerGammes && passe < PASSES_CREATION_GAMMES && plan.libellesInconnus.length > 0; passe += 1) {
-      const crees = await creerLibellesManquants(plan.libellesInconnus, carte.marque);
+      const crees = await creerLibellesManquants(plan.libellesInconnus, carte.catalogue);
       if (crees.length === 0) break;
       gammesCreees.push(...crees);
       plan = await planifier();
@@ -67,7 +79,7 @@ async function main(): Promise<void> {
     let bilan = "";
     if (appliquer) {
       if (plan.libellesInconnus.length > 0) throw new Error(`« ${carte.onglet} » bloqué : gammes inconnues. Relancer avec --creer-gammes.`);
-      const ecrit = await appliquerPlan(plan, `${SOURCE} / ${carte.onglet}`, signataire as string, carte.marque);
+      const ecrit = await appliquerPlan(plan, `${SOURCE} / ${carte.onglet}`, signataire as string, carte.catalogue);
       const retenus = new Set([...plan.creations, ...plan.misesAJour].map((x) => x.codePf));
       const cibles = await chargerCibles();
       const items: ValeursAEcrire[] = [];

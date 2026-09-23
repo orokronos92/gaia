@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
+import type { Catalogue } from "@/lib/catalogues";
 import { gammes, produits, sousGammes } from "@/db/schema";
 
 export interface SousGammeReferentiel {
@@ -177,9 +178,14 @@ export interface ChoixGamme {
  * un produit posé sur une gamme retirée doit continuer d'afficher la sienne,
  * sinon la liste lui en attribuerait une autre au premier enregistrement.
  */
-export const getChoixGammes = cache(async (): Promise<ChoixGamme[]> => {
+/** Range choices, limited to one catalogue when given (JDG's ranges offer no pepper). */
+export const getChoixGammes = cache(async (catalogue?: Catalogue): Promise<ChoixGamme[]> => {
   const [g, s] = await Promise.all([
-    db.select({ id: gammes.id, nom: gammes.nom, active: gammes.active }).from(gammes).orderBy(asc(gammes.nom)),
+    db
+      .select({ id: gammes.id, nom: gammes.nom, active: gammes.active })
+      .from(gammes)
+      .where(catalogue ? eq(gammes.catalogue, catalogue) : undefined)
+      .orderBy(asc(gammes.nom)),
     db
       .select({ id: sousGammes.id, gammeId: sousGammes.gammeId, nom: sousGammes.nom, active: sousGammes.active })
       .from(sousGammes)

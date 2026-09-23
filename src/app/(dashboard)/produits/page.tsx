@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils"
 import { db } from "@/db"
 import { produits, fichesEtiquettes } from "@/db/schema"
 import { and, eq, or, type SQL } from "drizzle-orm"
-import { correspondRecherche, filtreCatalogue, type FiltreCatalogue } from "@/db/queries/produits"
+import { compterProduitsParCatalogue, correspondRecherche, filtreCatalogue, type FiltreCatalogue } from "@/db/queries/produits"
+import { lireCatalogue } from "@/lib/catalogues"
+import { SelecteurCatalogue } from "./SelecteurCatalogue"
 import { FiltreCatalogueSelect } from "./FiltreCatalogueSelect"
 import { FiltreGammeSelect } from "./FiltreGammeSelect"
 import { ProductSearch } from "@/components/features/ProductSearch"
@@ -24,7 +26,9 @@ export default async function ProductsPage(
     const filtreBrut = typeof searchParams?.catalogue === 'string' ? searchParams.catalogue : "actifs";
     const filtre: FiltreCatalogue =
         filtreBrut === "retires" || filtreBrut === "tous" ? filtreBrut : "actifs";
-    const choixGammes = await getChoixGammes();
+    // The catalogue comes first: JDG unless another is chosen, and ranges are its own.
+    const catalogue = lireCatalogue(searchParams?.cat);
+    const [choixGammes, effectifsCatalogues] = await Promise.all([getChoixGammes(catalogue), compterProduitsParCatalogue()]);
     const gammeFiltre = typeof searchParams?.gamme === 'string' ? searchParams.gamme : "";
     const sousGammeFiltre = typeof searchParams?.sousGamme === 'string' ? searchParams.sousGamme : "";
 
@@ -48,7 +52,7 @@ export default async function ProductsPage(
     // registre d'archives, pas ici.
     // La recherche libre et les deux filtres se cumulent : chercher « chimpanzé »
     // dans une gamme donnée doit rester possible.
-    const conditions: SQL[] = [filtreCatalogue(filtre)];
+    const conditions: SQL[] = [filtreCatalogue(filtre), eq(produits.catalogue, catalogue)];
     if (q) {
         conditions.push(
             or(
@@ -107,6 +111,7 @@ export default async function ProductsPage(
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
+                    <SelecteurCatalogue valeur={catalogue} effectifs={effectifsCatalogues} />
                     <FiltreGammeSelect choix={choixGammes} gamme={gammeFiltre} sousGamme={sousGammeFiltre} />
                     <FiltreCatalogueSelect valeur={filtre} />
                     <Link href="/etiquettes/nouveau">
