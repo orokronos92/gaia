@@ -205,3 +205,17 @@ les codes export (« réellement créé »). 374 écarts avec l'onglet JDG ont �
 **4 sous-désignations anglaises** font 280 à 531 caractères (TB3716, TN2196, TN2276,
 TN2396) : ce sont des textes, pas des sous-désignations. Non importées : dans quel champ
 vont-elles ?
+
+## I. Terra Madre et infusettes
+
+**I1.** Les infusettes n'ont pas de colonne « gamme ». Elles ont été rangées dans une gamme
+« INFUSETTES », avec pour sous-gamme le nom de l'onglet (« PAGES », « COUNTRY FARM »). « Pages »
+est-il l'imprimeur (colonne IMPRIMEUR = PAGES) et « Country Farm » le fabricant, ou s'agit-il de
+marques clientes ?
+> Provisoire : gamme « INFUSETTES », marque JDG.
+
+**I2.** Terra Madre : 128 codes ont la forme `AR00xxx` et 44 une variante (`ARD0018`,
+`ARR0021`, `ARS0084`, `ARDR157`…). Que signifient D, R, S et DR ?
+
+**I3.** Country Farm : 4 lignes portent le code provisoire `IFXXX`, et 4 lignes (56 à 59)
+n'ont ni code ni dénomination. Non importées.

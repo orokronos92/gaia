@@ -39,7 +39,7 @@ const COLONNES_LABELS: ReadonlyArray<readonly [ColonneJdg, string, string]> = [
 ];
 
 /** A label reference is an ET code; "INTERNE", "tube", "Q de tube"… are not. */
-const REFERENCE_ETIQUETTE = /^ET[A-Z0-9]+$/;
+export const REFERENCE_ETIQUETTE = /^ET[A-Z0-9]+$/;
 /**
  * Family letters then the article number, with or without the packaging digit:
  * TA7091, TUTR2322, COF1201, and MT265 or TH200 (no packaging digit).
@@ -48,7 +48,7 @@ export const FORMAT_CODE_PF = /^[A-Z]{2,4}\d{3,4}$/;
 const MARQUE_EAN_INCONNU = "?";
 
 const texteBorne = (max: number) => z.string().max(max).nullable();
-const ProduitSchema = z.object({
+export const ProduitSchema = z.object({
   denominationFr: z.string().min(1).max(255),
   denominationEn: texteBorne(255), sousDesignationFr: texteBorne(255), sousDesignationEn: texteBorne(255),
   typeTheFr: z.string().min(1).max(255), typeTheEn: texteBorne(255),
@@ -58,7 +58,7 @@ const ProduitSchema = z.object({
   mentionEcocert: texteBorne(255), labelsClient: z.array(z.string()).nullable(),
   conditionnement: z.null(),
 });
-const FicheSchema = z.object({
+export const FicheSchema = z.object({
   denominationLegale: texteBorne(255),
   texteCommercialFr: z.string().nullable(), texteCommercialCourtFr: z.string().nullable(),
   texteCommercialEn: z.string().nullable(), ingredientsFr: z.string().nullable(), ingredientsEn: z.string().nullable(),
@@ -147,12 +147,20 @@ export function lireLigneJdg(ligne: Ligne, index: IndexJdg, numeroLigne: number)
     refFacing, refContre, codeEtiquette: refContre ?? refFacing,
   });
 
+  return valider({ numeroLigne, codePf, gamme: t("GAMME"), sousGamme: t("SOUS GAMME"), anomalies }, produit, fiche);
+}
+
+type Validation<T> = { success: true; data: T } | { success: false; error: z.ZodError };
+
+/** Shared by every sheet that creates products: one failed field sets the row aside. */
+export function valider(
+  entete: Omit<LigneJdgLue, "produit" | "fiche">,
+  produit: Validation<ChampsProduit>,
+  fiche: Validation<ChampsFiche>,
+): ResultatLigne {
   if (!produit.success || !fiche.success) {
-    const erreur = (produit.success ? fiche.error : produit.error)?.issues[0];
-    return { ok: false, codePf, numeroLigne, motif: `champ invalide : ${erreur?.path.join(".")} (${erreur?.message})` };
+    const erreur = (produit.success ? (fiche as { error: z.ZodError }).error : produit.error).issues[0];
+    return { ok: false, codePf: entete.codePf, numeroLigne: entete.numeroLigne, motif: `champ invalide : ${erreur?.path.join(".")} (${erreur?.message})` };
   }
-  return {
-    ok: true,
-    ligne: { numeroLigne, codePf, gamme: t("GAMME"), sousGamme: t("SOUS GAMME"), produit: produit.data, fiche: fiche.data, anomalies },
-  };
+  return { ok: true, ligne: { ...entete, produit: produit.data, fiche: fiche.data } };
 }

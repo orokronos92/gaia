@@ -75,8 +75,8 @@ export async function ecrireComplements(complements: readonly ComplementAEcrire[
 
 export interface ValeursAEcrire {
   cible: CibleProduit;
-  produit: Record<string, string>;
-  fiche: Record<string, string>;
+  produit: Record<string, string | boolean>;
+  fiche: Record<string, string | boolean>;
   suivi: Record<string, string>;
 }
 

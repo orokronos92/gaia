@@ -705,6 +705,8 @@ export const gammes = pgTable("gammes", {
      */
     exigeMentionAnemos: boolean("exige_mention_anemos").default(false).notNull(),
     exigeMentionEngages: boolean("exige_mention_engages").default(false).notNull(),
+    /** La marque que la gamme sert — Terra Madre a les siennes (migration 0029). */
+    marque: MarqueProduit("marque").notNull().default("JDG"),
     /**
      * Une gamme ne se supprime pas : des produits l'ont portée, des paquets sont
      * imprimés. Elle se retire des listes de choix et garde son histoire.

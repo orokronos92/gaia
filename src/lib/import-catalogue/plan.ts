@@ -100,11 +100,11 @@ function champsDivergents(lignes: readonly LigneJdgLue[]): string[] {
   );
 }
 
-function trierLignes(resultats: readonly ResultatLigne[], misDeCote: MisDeCote[]): LigneJdgLue[] {
+function trierLignes(resultats: readonly ResultatLigne[], misDeCote: MisDeCote[], formatCode: RegExp): LigneJdgLue[] {
   const valides: LigneJdgLue[] = [];
   for (const r of resultats) {
     if (!r.ok) misDeCote.push({ codePf: r.codePf, lignes: [r.numeroLigne], motif: r.motif });
-    else if (!FORMAT_CODE_PF.test(r.ligne.codePf)) {
+    else if (!formatCode.test(r.ligne.codePf)) {
       misDeCote.push({ codePf: r.ligne.codePf, lignes: [r.ligne.numeroLigne], motif: "code produit hors format" });
     } else valides.push(r.ligne);
   }
@@ -129,9 +129,11 @@ export function construirePlan(
   ancetres: ReadonlyMap<string, Ancetre>,
   etat: EtatCatalogue,
   resoudre: ResolveurGammes,
+  /** Terra Madre codes (AR00178, ARDR157) do not look like JDG ones. */
+  formatCode: RegExp = FORMAT_CODE_PF,
 ): Plan {
   const plan: Plan = { creations: [], misesAJour: [], misDeCote: [], anomalies: [], libellesInconnus: [], absentsDeLExcel: [] };
-  const lignes = trierLignes(resultats, plan.misDeCote);
+  const lignes = trierLignes(resultats, plan.misDeCote, formatCode);
   const actifs = new Map(etat.produits.filter((p) => !p.archive).map((p) => [p.codePf, p]));
   const archives = new Set(etat.produits.filter((p) => p.archive).map((p) => p.codePf));
   const inconnus = new Map<string, LibelleInconnu>();
