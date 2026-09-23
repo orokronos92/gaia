@@ -54,6 +54,7 @@ import { EmptyState } from "@/components/atoms/empty-state"
 import { BoutonRepli, compterVides, useRepli } from "@/components/etiquettes/carte-repliable"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
 import { ControleEtiquette } from "./_components/controle-etiquette"
+import type { AbsenceBat } from "@/lib/conditionnement/absence-bat"
 import type { AuditDeterministeResult } from "@/app/actions/audit"
 import type { AuditVisuelTexteResult } from "@/app/actions/audit-visuel"
 import { AuditSynthese, type SousResultatAudit } from "./_components/audit-synthese"
@@ -284,7 +285,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [], choixGammes = [] }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[]; choixGammes?: ChoixGamme[] }) {
+export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [], choixGammes = [], absenceBat }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[]; choixGammes?: ChoixGamme[]; absenceBat?: AbsenceBat }) {
     // State
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
@@ -1389,6 +1390,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                       visData={auditVisData}
                       onVisData={setAuditVisData}
                       onVisResult={setSyntheseVis}
+                      absenceBat={absenceBat}
                     />
                   </div>
                 </TabsContent>

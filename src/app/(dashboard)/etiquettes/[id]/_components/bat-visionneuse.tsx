@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ImageOff, Loader2 } from "lucide-react"
+import type { AbsenceBat } from "@/lib/conditionnement/absence-bat"
+import { BatAbsent } from "./bat-absent"
 
 import { cn } from "@/lib/utils"
 import type { RepereBat } from "@/lib/audit/visual/reperes"
@@ -36,6 +38,8 @@ interface BatVisionneuseProps {
      * de « rien n'a bougé », et le volet reste là où elle l'avait laissé.
      */
     demandeCadrage?: number
+    /** Pourquoi le produit n'a pas de BAT, quand il n'en a pas. */
+    absence?: AbsenceBat
 }
 
 const ZOOM_MIN = 1
@@ -54,7 +58,7 @@ const ZOOM_PAS = 0.5
  * navigateur, et surtout une image qui partage **exactement** le repère de nos
  * mesures. C'est ce qui permettra d'y surligner un mot au bon endroit.
  */
-export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reperesFaibles, onZoneClic, demandeCadrage }: BatVisionneuseProps) {
+export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reperesFaibles, onZoneClic, demandeCadrage, absence }: BatVisionneuseProps) {
     const [interne, setInterne] = useState(0)
     const vue = useRef<HTMLDivElement>(null)
     const plan = useRef<HTMLDivElement>(null)
@@ -168,17 +172,7 @@ export function BatVisionneuse({ faces, faceActive, onFaceChange, reperes, reper
             return suivant
         })
 
-    if (faces.length === 0) {
-        return (
-            <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-stone-200 text-center">
-                <ImageOff className="mb-2 h-8 w-8 text-stone-300" />
-                <p className="text-sm font-medium text-stone-500">Aucun BAT associé à ce produit</p>
-                <p className="mt-1 text-xs text-stone-400">
-                    Associez ses fichiers depuis la fiche pour les voir ici.
-                </p>
-            </div>
-        )
-    }
+    if (faces.length === 0) return <BatAbsent absence={absence ?? { type: "inconnu" }} />
 
     return (
         <div className="space-y-3">

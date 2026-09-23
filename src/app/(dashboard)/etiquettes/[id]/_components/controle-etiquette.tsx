@@ -8,6 +8,7 @@ import { auditVisuelTexteAction, type AuditVisuelTexteResult } from "@/app/actio
 import { auditDeterministeAction } from "@/app/actions/audit"
 import type { AuditDeterministeResult } from "@/app/actions/audit"
 import { BatVisionneuse, type FaceBatAffichable } from "./bat-visionneuse"
+import type { AbsenceBat } from "@/lib/conditionnement/absence-bat"
 import { ConstatsHorsChecklist } from "./constats-hors-checklist"
 import { DeterministicAuditPanel } from "./deterministic-audit-panel"
 import type { SousResultatAudit } from "./audit-synthese"
@@ -24,6 +25,8 @@ interface ControleEtiquetteProps {
     visData: AuditVisuelTexteResult | null
     onVisData: (r: AuditVisuelTexteResult | null) => void
     onVisResult?: (r: SousResultatAudit) => void
+    /** Pourquoi le produit n'a pas de BAT, quand il n'en a pas. */
+    absenceBat?: AbsenceBat
 }
 
 /**
@@ -51,6 +54,7 @@ export function ControleEtiquette({
     visData,
     onVisData,
     onVisResult,
+    absenceBat,
 }: ControleEtiquetteProps) {
     const [pending, startTransition] = useTransition()
     const [faceActive, setFaceActive] = useState(0)
@@ -195,6 +199,7 @@ export function ControleEtiquette({
                     <div className="sticky top-[372px] z-10">
                         <BatVisionneuse
                             faces={faces}
+                            absence={absenceBat}
                             faceActive={faceActive}
                             reperesFaibles={zonesOuvertes}
                             onFaceChange={(i) => {

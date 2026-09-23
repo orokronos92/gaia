@@ -10,6 +10,8 @@ import { getRecetteOutputForProduit } from "@/db/queries/recettes"
 import { getConditionnementsConnus } from "@/db/queries/produits"
 import { getChoixGammes } from "@/db/queries/gammes"
 import { getVersionsFiche } from "@/db/queries/fiches"
+import { getContexteAbsenceBat } from "@/db/queries/conditionnements"
+import { motifAbsenceBat } from "@/lib/conditionnement/absence-bat"
 
 export default async function EtiquetteDetailPage(
     props: {
@@ -144,6 +146,10 @@ export default async function EtiquetteDetailPage(
         name: f.nomFichier
     }));
 
+    // Why there is no BAT, when there is none: a bulk bag printed in-house is not a lost file.
+    const contexteAbsence = bats.length === 0 ? await getContexteAbsenceBat(id) : null;
+    const absenceBat = contexteAbsence ? motifAbsenceBat(contexteAbsence) : undefined;
+
     const labelData = {
         ...data[0],
         degustation: degustationData[0] || null, // NOUVEAU: Les notes de dégustation
@@ -175,6 +181,7 @@ export default async function EtiquetteDetailPage(
     return (
         <EtiquetteClient
             labelData={labelData}
+            absenceBat={absenceBat}
             conditionnementsConnus={conditionnementsConnus}
             choixGammes={choixGammes}
             recette={recette}

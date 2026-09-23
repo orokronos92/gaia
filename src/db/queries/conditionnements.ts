@@ -4,7 +4,7 @@
  */
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { fichiersEtiquettes, formatsVente, gabaritsEtiquette, produits } from "@/db/schema";
+import { fichesEtiquettes, fichiersEtiquettes, formatsVente, gabaritsEtiquette, produits } from "@/db/schema";
 
 export async function chargerFormatsVente() {
   return db.select({ id: formatsVente.id, chiffre: formatsVente.chiffre, cle: formatsVente.cle }).from(formatsVente);
@@ -61,4 +61,20 @@ export async function enregistrerQualification(produitsAQualifier: readonly Qual
     }
     return { produits: produitsAQualifier.length, fichiers: mesures.length };
   });
+}
+
+/** What a fiche needs to explain a missing BAT: its label references and its sales format. */
+export async function getContexteAbsenceBat(ficheId: string) {
+  const [ligne] = await db
+    .select({
+      refFacing: fichesEtiquettes.refFacing,
+      refContre: fichesEtiquettes.refContre,
+      format: formatsVente.libelle,
+      etiquetteGraphiste: formatsVente.etiquetteGraphiste,
+    })
+    .from(fichesEtiquettes)
+    .innerJoin(produits, eq(produits.id, fichesEtiquettes.produitId))
+    .leftJoin(formatsVente, eq(formatsVente.id, produits.formatVenteId))
+    .where(eq(fichesEtiquettes.id, ficheId));
+  return ligne ?? null;
 }
