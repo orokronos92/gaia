@@ -143,3 +143,35 @@ valeur de l'application a été **gardée**. Certaines viennent d'une extraction
 et sont probablement fausses : TA6122 « La balade du hérisson » a le type « Mélange de
 plantes » dans l'application, « Mélange de thés aromatisé » dans la base.
 Liste complète à relire : `docs/sources/import-v2-decisions.csv`.
+
+## F. Contrôles calculés sur la base (sans avis extérieur)
+
+**F1. Codes EAN partagés par deux codes produit** (20 cas). Certains ressemblent à un
+renommage saisonnier du même thé (TA7481 Thé de Noël / TA7221 Thé d'hiver), d'autres à une
+erreur. Deux produits différents, ou deux formats du même thé, ne peuvent pas porter le
+même code-barres :
+
+- **produits différents** : `3582810650219` TM0201 Avec les Anges / TA5021 Le secret des
+  muses ; `3582810233979` TN3257 Gaïa Bari Potong / TN3397 Neiges de l'Himalaya ;
+- **formats différents du même thé** : `3582810650714` TA5071 (1,5 kg) / TA5075 (500 g) ;
+- **même thé, deux codes** : TR2212 / TR2492 Au coin du feu, TF1332 / TF1402 Féérie,
+  TR2092 / TR2482 Lumière d'étoiles, TM1652 / TM1692 Masala pour Tchaï, TA5056 / TA5096
+  Neige au soleil, TM1612 / TM1592 Épices vin chaud, TV1346 / TV134 Jade Dew,
+  TB7156 / TB715 Silver Needle ;
+- **tube et version Noël** : TU2092 / TSTR2092V5, TSTA5056 / TU5056 ;
+- **renommages saisonniers probables** : TH5296 / TH5226 et TH5291 / TH5221 (tisane de Noël /
+  d'hiver), TA6092 / TA6012 (Pomme de Noël / étoilée), TA6131 / TA6051 et TA6132 / TA6052
+  (Surprise), TA7481 / TA7221 et TA7482 / TA7222 (Thé de Noël / d'hiver).
+
+Quel code est actif pour chacun ?
+
+**F2. Code EAN invalide** : `TJ508` Chocolat blanc au matcha porte `6676787690076`, dont la
+clé de contrôle est fausse (et qui n'a pas le préfixe JDG 3582810).
+
+**F3. Nombre de tasses incohérent** avec le poids et les grammes par tasse (519 produits
+sur 522 sont cohérents) :
+- TN4062 : 100 g à 2 g par tasse, 500 tasses indiquées (le calcul donne 50) ;
+- TN4066 : 50 g à 2 g par tasse, 500 tasses (le calcul donne 25) ;
+- TH1486 Feuilles de chanvre : 50 g à 2 g par tasse, 150 tasses (le calcul donne 25).
+
+Plusieurs infusions par dose, ou erreur de saisie ?
