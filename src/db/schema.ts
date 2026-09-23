@@ -26,6 +26,8 @@ export const notifications = pgTable("notifications", {
  * n'est qu'un échantillon de ce que JDG imprime réellement.
  */
 export const StatutMention = pgEnum("statut_mention", ["AUTO", "OUI", "NON"]);
+/** Terra Madre (épices) n'a pas les obligations d'étiquetage de JDG — migration 0026. */
+export const MarqueProduit = pgEnum("marque_produit", ["JDG", "TERRA_MADRE"]);
 
 export const StatutEtiquette = pgEnum("statut_etiquette", [
     "DRAFT", "QUALITY_REVIEW", "QUALITY_VALIDATED", "DESIGN_IN_PROGRESS",
@@ -47,6 +49,7 @@ export const utilisateurs = pgTable("utilisateurs", {
 export const produits = pgTable("produits", {
     id: uuid("id").primaryKey().defaultRandom(),
     codePf: varchar("code_pf", { length: 50 }).notNull(), // ex: MT265 — unicité portée par un index PARTIEL (voir plus bas)
+    marque: MarqueProduit("marque").notNull().default("JDG"),
     /**
      * Libellés conservés comme un REFLET du référentiel : beaucoup d'écrans,
      * d'exports et de contrôles les lisent encore. Ce sont `gammeId` et
@@ -260,6 +263,13 @@ export const fichesEtiquettes = pgTable("fiches_etiquettes", {
      * l'unicité PARTIELLE déjà en place sur `produits.code_pf`.
      */
     codeEtiquetteLibere: varchar("code_etiquette_libere", { length: 100 }),
+    /**
+     * Les deux références que l'Excel de la Qualité porte (REF FACING 2025,
+     * RÉF CONTRE 2025), gardées telles quelles. `codeEtiquette` reste celle
+     * attendue sur le BAT — la contre dans la plupart des cas. Migration 0026.
+     */
+    refFacing: varchar("ref_facing", { length: 100 }),
+    refContre: varchar("ref_contre", { length: 100 }),
     denominationLegale: varchar("denomination_legale", { length: 255 }),
     texteCommercialFr: text("texte_commercial_fr"),
     texteCommercialEn: text("texte_commercial_en"),
