@@ -199,3 +199,13 @@ attendent un, 436 en ont un (92 %) en comptant les BAT de mars.
 Les liens sont ajoutés en `origine = AUTO` à côté de ceux de mars. Relancer l'ancien
 `scripts/associer-fichiers-etiquettes.ts` les remplacerait par l'heuristique de dossier :
 ne pas le relancer sur la préprod.
+
+**Lot 4 appliqué** (2026-09-23, après sauvegarde `backups/preprod-avant-rattachement-2026-09-23.dump`)
+à partir du manifeste de l'archive (1 100 PDF, empreintes vérifiées une à une) : 838 PDF
+envoyés dans `label-assets-preprod/ÉTIQUETTES 2026-09/`, 849 liens ajoutés, 437 produits
+avec au moins un BAT actif (liens de mars compris). Les 262 PDF non rattachés sont à 227
+des infusettes, dont les onglets ne sont pas encore importés (lot 3).
+
+**Point ouvert** : les Grands Crus millésimés portent l'année dans le nom, pas dans le code
+(`TN5502` : BAT 2026 et deux BAT 2025, tous actifs). La règle « ancienne version
+désactivée » ne voit pas l'année ; à traiter avant de lancer l'audit sur ces produits.

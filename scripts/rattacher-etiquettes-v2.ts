@@ -1,5 +1,5 @@
 /**
- * Links the sorted label PDFs (docs/sources/selection.csv, retenu = 1, pdf) to
+ * Links the sorted label PDFs (the archive's manifest: one row per PDF) to
  * the PREPROD products, then — with --appliquer — uploads them to the preprod
  * bucket and writes the links. Spec: docs/decisions/2026-09-23-import-bdd-v2-preprod.md, lot 4.
  *
@@ -20,7 +20,8 @@ import type { FichierTrie, Lien } from "@/lib/import-catalogue/rattachement";
 import { BUCKET_NAME, uploadFileToS3 } from "@/lib/utils/s3-client";
 
 const RACINE = path.resolve(__dirname, "..");
-const SELECTION = "docs/sources/selection.csv";
+/** Written by the file sort alongside the archive; lists exactly its 1 100 PDFs. */
+const MANIFESTE = "/docker/gaialabel/imports/etiquettes-pdf.manifeste.csv";
 const SORTIE = "docs/sources";
 const DOSSIER_FICHIERS = "/docker/gaialabel/imports/etiquettes-pdf";
 /** Where the sort lands in the bucket, beside the March "RÉFÉRENCES ÉTIQUETTES/". */
@@ -39,10 +40,10 @@ const LIBELLE_METHODE: Record<Lien["methode"], string> = {
   dossier: "dossier produit",
 };
 
-function lireSelection(): FichierTrie[] {
-  return lireCsv(readFileSync(path.join(RACINE, SELECTION), "utf8"))
-    .filter((l) => l.retenu === "1" && l.ext.toLowerCase() === "pdf")
-    .map((l) => ({ chemin: l.chemin, codeEtiquette: l.code_etiquette, version: l.version, role: l.role, codePf: l.code_pf }));
+function lireManifeste(): FichierTrie[] {
+  return lireCsv(readFileSync(MANIFESTE, "utf8")).map((l) => ({
+    chemin: l.chemin_dans_archive, codeEtiquette: l.code_etiquette, version: l.version, role: l.role, codePf: l.code_pf,
+  }));
 }
 
 const csvCellule = (v: string | number | boolean | null) => {
@@ -57,7 +58,7 @@ async function main(): Promise<void> {
   if (!base.endsWith(SUFFIXE_BASE_AUTORISEE)) throw new Error(`Base « ${base} » refusée : préproduction uniquement.`);
   const appliquer = process.argv.includes(DRAPEAU_APPLIQUER);
 
-  const fichiers = lireSelection();
+  const fichiers = lireManifeste();
   const produits = await chargerReferencesProduits();
   const { liens, nonRattaches } = rattacher(fichiers, produits, PREFIXE_S3);
 
@@ -87,7 +88,7 @@ async function main(): Promise<void> {
     liens.map((l) => [l.codePf, l.nomFichier, l.dossier, l.role, l.version, LIBELLE_METHODE[l.methode], l.actif]),
   ));
   writeFileSync(path.join(RACINE, SORTIE, "rattachement-v2-non-rattaches.csv"), csv(
-    ["chemin", "code_etiquette", "code_pf", "role"], nonRattaches.map((f) => [f.chemin, f.codeEtiquette, f.codePf, f.role]),
+    ["chemin", "code_etiquette", "code_pf_decode", "role"], nonRattaches.map((f) => [f.chemin, f.codeEtiquette, f.codePf, f.role]),
   ));
   writeFileSync(path.join(RACINE, SORTIE, "rattachement-v2-produits-sans-bat.csv"), csv(
     ["code_pf", "ref_facing", "ref_contre"], sansBat.map((p) => [p.codePf, p.refFacing, p.refContre]).sort(),
@@ -97,7 +98,7 @@ async function main(): Promise<void> {
     .join("\n");
   process.stdout.write(
     `${appliquer ? "Appliqué" : "Simulation"} sur ${base}\n` +
-      `PDF retenus : ${fichiers.length} · rattachés : ${fichiers.length - nonRattaches.length} · non rattachés : ${nonRattaches.length}\n${parMethode}\n` +
+      `PDF du manifeste : ${fichiers.length} · rattachés : ${fichiers.length - nonRattaches.length} · non rattachés : ${nonRattaches.length}\n${parMethode}\n` +
       `Liens : ${liens.length} (dont ${liens.filter((l) => !l.actif).length} anciennes versions désactivées)\n` +
       `Produits actifs : ${sansBat.length + produitsAvecBat.size} · avec au moins un BAT : ${produitsAvecBat.size} · sans : ${sansBat.length}\n`,
   );
