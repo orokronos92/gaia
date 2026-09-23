@@ -175,3 +175,17 @@ sur 522 sont cohérents) :
 - TH1486 Feuilles de chanvre : 50 g à 2 g par tasse, 150 tasses (le calcul donne 25).
 
 Plusieurs infusions par dose, ou erreur de saisie ?
+
+## G. Textes envoyés à PMI
+
+Pour PMI, chaque texte long est découpé en morceaux de 250 caractères (colonnes « 1-4 »,
+« 2-4 »…). Recollés, ils doivent redonner le texte de l'étiquette. C'est vrai partout, sauf
+sur **28 textes** :
+- **26 textes commerciaux anglais** sont **vides** dans la colonne de l'étiquette mais
+  **remplis** dans les morceaux PMI (TN2072, TN2235, TN2236, TN2366, TV1055…). Quel texte
+  anglais est le bon ?
+- **TN2256** : la colonne « liste d'ingrédients EN » contient le texte commercial, et le texte
+  commercial est découpé ailleurs. Colonnes décalées ?
+- **TN1062** : la liste d'ingrédients anglaise diffère entre l'étiquette et PMI.
+
+Liste complète : `docs/sources/complements-v2-ecarts-pmi.csv`.
