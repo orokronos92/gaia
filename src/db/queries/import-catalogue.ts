@@ -8,7 +8,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { auditLogs, fichesEtiquettes, gammes, produits, sousGammes, utilisateurs } from "@/db/schema";
 import type { GammeRef, SousGammeRef } from "@/lib/import-catalogue/gammes";
-import type { EtatCatalogue, FicheExistante, Plan, ProduitExistant } from "@/lib/import-catalogue/plan";
+import type { EtatCatalogue, FicheExistante, LibelleInconnu, Plan, ProduitExistant } from "@/lib/import-catalogue/plan";
 import type { Valeur } from "@/lib/import-catalogue/types";
 
 /** Every fiche an import creates enters the Quality review, like the March seed's. */
@@ -60,9 +60,37 @@ export async function chargerEtatCatalogue(): Promise<EtatCatalogue> {
   return { produits: produitsExistants, fiches: fichesExistantes };
 }
 
-export async function trouverAdministrateurId(): Promise<string | null> {
-  const admin = await db.query.utilisateurs.findFirst({ where: eq(utilisateurs.role, "ADMIN") });
-  return admin?.id ?? null;
+/**
+ * Creates the ranges and sub-ranges the workbook names and the referential
+ * lacks — preprod only, on Ouro's decision of 2026-09-23, so the catalogue can
+ * land before the Quality tidies the referential. Ambiguous labels are never
+ * created: they need a person. Returns what was created, for the report.
+ */
+export async function creerLibellesManquants(inconnus: readonly LibelleInconnu[]): Promise<string[]> {
+  const aCreer = inconnus.filter((l) => l.motif === "inconnue");
+  return db.transaction(async (tx) => {
+    const crees: string[] = [];
+    for (const l of aCreer.filter((x) => x.type === "gamme")) {
+      await tx.insert(gammes).values({ nom: l.libelle.trim() }).onConflictDoNothing();
+      crees.push(`gamme « ${l.libelle.trim()} »`);
+    }
+    const toutes = await tx.select({ id: gammes.id, nom: gammes.nom }).from(gammes);
+    for (const l of aCreer.filter((x) => x.type === "sous-gamme")) {
+      const parente = toutes.find((g) => g.nom === l.gamme);
+      if (!parente) continue;
+      await tx.insert(sousGammes).values({ gammeId: parente.id, nom: l.libelle.trim() }).onConflictDoNothing();
+      crees.push(`sous-gamme « ${l.libelle.trim()} » dans « ${parente.nom} »`);
+    }
+    return crees;
+  });
+}
+
+type RoleUtilisateur = (typeof utilisateurs.$inferSelect)["role"];
+
+/** The account that signs the import in audit_logs (Direction, decision of 2026-09-23). */
+export async function trouverSignataireId(role: RoleUtilisateur): Promise<string | null> {
+  const compte = await db.query.utilisateurs.findFirst({ where: eq(utilisateurs.role, role) });
+  return compte?.id ?? null;
 }
 
 export interface BilanApplication {
@@ -125,7 +153,8 @@ export async function appliquerPlan(plan: Plan, source: string, utilisateurId: s
       entiteId: source.slice(0, 255),
       action: "IMPORT_BDD_V2",
       utilisateurId,
-      changements: { ...bilan, misDeCote: plan.misDeCote.length },
+      // The signing account authorised it; the script did it. Both are recorded.
+      changements: { ...bilan, misDeCote: plan.misDeCote.length, executePar: "scripts/importer-bdd-v2.ts" },
     });
     return bilan;
   });

@@ -29,14 +29,19 @@ export function creerResolveurGammes(gammes: readonly GammeRef[], sousGammes: re
 
   return function resoudre(gamme: string | null, sousGamme: string | null): Resolution {
     if (gamme === null) return { ok: false, type: "gamme", libelle: "", gamme: null, motif: "vide" };
-    const candidats = parNom.get(normaliserLibelle(gamme)) ?? [];
+    // The exact label wins: the referential holds "LES ENGAGÉS" and "Les Engagés",
+    // and the workbook writes the first.
+    const exacte = gammes.filter((g) => g.nom.trim() === gamme.trim());
+    const candidats = exacte.length === 1 ? exacte : (parNom.get(normaliserLibelle(gamme)) ?? []);
     if (candidats.length !== 1) {
       return { ok: false, type: "gamme", libelle: gamme, gamme: null, motif: candidats.length === 0 ? "inconnue" : "ambiguë" };
     }
     const [trouvee] = candidats;
     if (sousGamme === null) return { ok: true, gammeId: trouvee.id, gammeNom: trouvee.nom, sousGammeId: null };
     const cle = normaliserLibelle(sousGamme);
-    const sous = sousGammes.filter((s) => s.gammeId === trouvee.id && normaliserLibelle(s.nom) === cle);
+    const dansGamme = sousGammes.filter((s) => s.gammeId === trouvee.id);
+    const exactes = dansGamme.filter((s) => s.nom.trim() === sousGamme.trim());
+    const sous = exactes.length === 1 ? exactes : dansGamme.filter((s) => normaliserLibelle(s.nom) === cle);
     if (sous.length !== 1) {
       return { ok: false, type: "sous-gamme", libelle: sousGamme, gamme: trouvee.nom, motif: sous.length === 0 ? "inconnue" : "ambiguë" };
     }

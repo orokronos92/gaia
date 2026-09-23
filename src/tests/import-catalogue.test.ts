@@ -75,6 +75,14 @@ describe("ancetreDepuisSeed", () => {
   });
 });
 
+describe("creerResolveurGammes", () => {
+  it("prefers the exact label when two differ only by case", () => {
+    const resoudre = creerResolveurGammes([{ id: "a", nom: "LES ENGAGÉS" }, { id: "b", nom: "Les Engagés" }], []);
+    expect(resoudre("LES ENGAGÉS", null)).toMatchObject({ ok: true, gammeId: "a" });
+    expect(resoudre("les engages", null)).toMatchObject({ ok: false, motif: "ambiguë" });
+  });
+});
+
 describe("construirePlan", () => {
   const resoudre = creerResolveurGammes(
     [{ id: "g1", nom: "LES GRANDS CLASSIQUES" }, { id: "g2", nom: "LES ENGAGÉS" }, { id: "g3", nom: "Les Engagés" }],
@@ -90,17 +98,19 @@ describe("construirePlan", () => {
 
   it("creates, compares, and sets aside duplicates, archived codes and ambiguous ranges", () => {
     const existant = produitBase("TA7092");
-    const fiche: FicheExistante = { ...(lire({}, 0) as { ok: true; ligne: { fiche: FicheExistante } }).ligne.fiche, id: "f1", produitId: existant.id, codeEtiquette: null };
+    const lu = lire({}, 0);
+    if (!lu.ok) throw new Error("fixture");
+    const fiche: FicheExistante = { ...lu.ligne.fiche, id: "f1", produitId: existant.id, codeEtiquette: null };
     const etat: EtatCatalogue = { produits: [existant, produitBase("TA7093", true)], fiches: [fiche] };
     const plan = construirePlan(
       [lire({}, 2), lire({ "CODE PF": "TA7092", "RÉF CONTRE 2025": "ETCVA7092V6" }, 3), lire({ "CODE PF": "TA7093" }, 4),
-        lire({ "CODE PF": "TA7094" }, 5), lire({ "CODE PF": "TA7094", "DÉNOMINATION FR": "Autre" }, 6), lire({ "CODE PF": "TA7095", GAMME: "Les Engagés" }, 7)],
+        lire({ "CODE PF": "TA7094" }, 5), lire({ "CODE PF": "TA7094", "DÉNOMINATION FR": "Autre" }, 6), lire({ "CODE PF": "TA7095", GAMME: "les engages" }, 7)],
       new Map(), etat, resoudre,
     );
     expect(plan.creations.map((c) => c.codePf)).toEqual(["TA7091"]);
     expect(plan.misesAJour.map((m) => m.codePf)).toEqual(["TA7092"]);
     expect(plan.misDeCote.map((m) => m.codePf).sort()).toEqual(["TA7093", "TA7094"]);
-    expect(plan.libellesInconnus).toEqual([expect.objectContaining({ libelle: "Les Engagés", motif: "ambiguë", lignes: 1 })]);
+    expect(plan.libellesInconnus).toEqual([expect.objectContaining({ libelle: "les engages", motif: "ambiguë", lignes: 1 })]);
   });
 
   it("does not write a label code two products would share", () => {

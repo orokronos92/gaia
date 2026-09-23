@@ -4,6 +4,7 @@
  *
  *   DATABASE_URL=…/gaialabel_preprod npx tsx scripts/importer-bdd-v2.ts              # simulation
  *   DATABASE_URL=…/gaialabel_preprod npx tsx scripts/importer-bdd-v2.ts --appliquer  # writes
+ *   … --appliquer --creer-gammes   # first creates the ranges the referential lacks
  *
  * Simulation is the default: it only writes the report next to the workbook
  * (docs/sources/, not versioned — client data). The script refuses any database
@@ -13,7 +14,8 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import XLSX from "xlsx";
 import {
-  appliquerPlan, chargerEtatCatalogue, chargerReferentielGammes, nomBaseCourante, trouverAdministrateurId,
+  appliquerPlan, chargerEtatCatalogue, chargerReferentielGammes, creerLibellesManquants, nomBaseCourante,
+  trouverSignataireId,
 } from "@/db/queries/import-catalogue";
 import { ancetreDepuisSeed } from "@/lib/import-catalogue/ancetre-seed";
 import type { Ancetre, LigneObjet } from "@/lib/import-catalogue/ancetre-seed";
@@ -21,6 +23,7 @@ import type { Ligne } from "@/lib/import-catalogue/cellules";
 import { creerResolveurGammes } from "@/lib/import-catalogue/gammes";
 import { indexerJdg, lireLigneJdg } from "@/lib/import-catalogue/ligne-jdg";
 import { construirePlan } from "@/lib/import-catalogue/plan";
+import type { Plan } from "@/lib/import-catalogue/plan";
 import { csvAnomalies, csvDecisions, csvMisDeCote, rapportMarkdown } from "@/lib/import-catalogue/rapport";
 
 const RACINE = path.resolve(__dirname, "..");
@@ -30,6 +33,11 @@ const ONGLET_JDG = "JDG";
 const SORTIE = "docs/sources";
 const SUFFIXE_BASE_AUTORISEE = "_preprod";
 const DRAPEAU_APPLIQUER = "--appliquer";
+const DRAPEAU_CREER_GAMMES = "--creer-gammes";
+/** Who signs the import in audit_logs — Ouro's decision of 2026-09-23. */
+const ROLE_SIGNATAIRE = "DIRECTION";
+/** A new range can reveal an unknown sub-range under it: one more pass is enough. */
+const PASSES_CREATION_GAMMES = 3;
 
 function lireOnglet(fichier: string, onglet: string): Ligne[] {
   const feuille = XLSX.readFile(path.join(RACINE, fichier)).Sheets[onglet];
@@ -68,23 +76,35 @@ async function main(): Promise<void> {
     .filter(({ ligne }) => ligne.some((c) => String(c ?? "").trim() !== ""));
   const resultats = remplies.map(({ ligne, numero }) => lireLigneJdg(ligne, index, numero));
 
-  const referentiel = await chargerReferentielGammes();
-  const plan = construirePlan(
-    resultats, lireAncetres(), await chargerEtatCatalogue(), creerResolveurGammes(referentiel.gammes, referentiel.sousGammes),
-  );
+  const ancetres = lireAncetres();
+  const planifier = async (): Promise<Plan> => {
+    const referentiel = await chargerReferentielGammes();
+    return construirePlan(resultats, ancetres, await chargerEtatCatalogue(), creerResolveurGammes(referentiel.gammes, referentiel.sousGammes));
+  };
+  let plan = await planifier();
+  const gammesCreees: string[] = [];
+  if (appliquer && process.argv.includes(DRAPEAU_CREER_GAMMES)) {
+    for (let passe = 0; passe < PASSES_CREATION_GAMMES && plan.libellesInconnus.length > 0; passe += 1) {
+      const crees = await creerLibellesManquants(plan.libellesInconnus);
+      if (crees.length === 0) break;
+      gammesCreees.push(...crees);
+      plan = await planifier();
+    }
+    process.stdout.write(`Créés dans le référentiel : ${gammesCreees.length}\n${gammesCreees.map((g) => `  ${g}\n`).join("")}`);
+  }
 
   let applique = false;
   if (appliquer) {
     if (plan.libellesInconnus.length > 0) throw new Error("Import bloqué : gammes inconnues, voir le rapport. Rien n'a été écrit.");
-    const admin = await trouverAdministrateurId();
-    if (admin === null) throw new Error("Aucun compte ADMIN pour signer l'import dans audit_logs.");
-    const bilan = await appliquerPlan(plan, SOURCE, admin);
+    const signataire = await trouverSignataireId(ROLE_SIGNATAIRE);
+    if (signataire === null) throw new Error(`Aucun compte ${ROLE_SIGNATAIRE} pour signer l'import dans audit_logs.`);
+    const bilan = await appliquerPlan(plan, SOURCE, signataire);
     process.stdout.write(`Appliqué : ${JSON.stringify(bilan)}\n`);
     applique = true;
   }
 
   const date = new Date().toISOString().slice(0, 10);
-  ecrire("import-v2-rapport.md", rapportMarkdown(plan, { source: SOURCE, base, date, applique, lignesLues: remplies.length }));
+  ecrire("import-v2-rapport.md", rapportMarkdown(plan, { source: SOURCE, base, date, applique, lignesLues: remplies.length, gammesCreees }));
   ecrire("import-v2-decisions.csv", csvDecisions(plan));
   ecrire("import-v2-mis-de-cote.csv", csvMisDeCote(plan));
   ecrire("import-v2-anomalies.csv", csvAnomalies(plan));

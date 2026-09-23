@@ -11,6 +11,8 @@ export interface ContexteRapport {
   date: string;
   applique: boolean;
   lignesLues: number;
+  /** Ranges created by `--creer-gammes`, to be tidied by the Quality. */
+  gammesCreees: readonly string[];
 }
 
 const LIBELLE_DECISION: Record<Exclude<Decision, "identique">, string> = {
@@ -97,6 +99,9 @@ export function rapportMarkdown(plan: Plan, ctx: ContexteRapport): string {
     ...(bloque
       ? ["## ⛔ Gammes et sous-gammes à créer ou corriger", "", "| Type | Libellé Excel | Dans la gamme | Problème | Lignes |", "|---|---|---|---|---:|",
           ...plan.libellesInconnus.map((l) => `| ${l.type} | ${l.libelle} | ${l.gamme ?? "—"} | ${l.motif} | ${l.lignes} |`), ""]
+      : []),
+    ...(ctx.gammesCreees.length > 0
+      ? ["## Créé dans le référentiel par l'import (à ranger par Marie)", "", ...ctx.gammesCreees.map((g) => `- ${g}`), ""]
       : []),
     "## Produits existants : champ par champ",
     "",
