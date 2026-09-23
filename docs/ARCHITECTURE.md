@@ -3,9 +3,9 @@
 > **Fichier généré par `npm run arch:build` — ne pas modifier à la main.**
 > Toute modification manuelle est écrasée à la prochaine génération et fait échouer `npm run arch:check`.
 > La prose (rôle des modules, intentions) vit dans `docs/INTENTION.md`.
-> Base : commit `b463b19` · généré le 2026-09-23
+> Base : commit `c5eca98` · généré le 2026-09-23
 
-**233 fichiers · 30956 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
+**233 fichiers · 30966 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
 
 ## Dépendances entre dossiers
 
@@ -182,7 +182,7 @@ graph LR
 | `src/components/providers` | 1 | 137 | — | `src/app/(dashboard)`, `src/components/layout` |
 | `src/components/recette` | 12 | 1593 | `src/agents/recette`, `src/app/actions`, `src/components/atoms`, `src/components/etiquettes`, `src/components/provenance`, `src/components/ui`, `src/hooks`, `src/lib`, `src/lib/business-rules`, `src/lib/recette` | `src/app/(dashboard)` |
 | `src/components/ui` | 15 | 1269 | `src/lib` | `src/app/(dashboard)`, `src/app/login`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/produits`, `src/components/provenance`, `src/components/recette` |
-| `src/db` | 5 | 893 | — | `scripts`, `src`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api`, `src/db/queries` |
+| `src/db` | 5 | 903 | — | `scripts`, `src`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api`, `src/db/queries` |
 | `src/db/queries` | 14 | 2460 | `src/agents/recette`, `src/db`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/hooks` | 2 | 511 | `src/agents/recette`, `src/app/actions`, `src/lib/business-rules`, `src/lib/recette` | `src/components/recette` |
 | `src/lib` | 3 | 64 | — | `src/app/(dashboard)`, `src/app/actions`, `src/app/login`, `src/components/atoms`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/provenance`, `src/components/recette`, `src/components/ui`, `src/db/queries` |
@@ -202,7 +202,7 @@ Fichiers de plus de 300 lignes. « Importé par » = nombre de fichiers qui l'im
 | `src/app/(dashboard)/etiquettes/[id]/EtiquetteClient.tsx` | 1447 | 1 |
 | `src/agents/imports/importWorker.ts` | 802 | 2 |
 | `src/db/queries/fiches.ts` | 707 | 9 |
-| `src/db/schema.ts` | 651 | 34 |
+| `src/db/schema.ts` | 661 | 34 |
 | `src/lib/audit/visual/text-robot.ts` | 571 | 18 |
 | `src/hooks/useCalculatrice.ts` | 394 | 2 |
 | `src/db/queries/recettes.ts` | 382 | 6 |
