@@ -7,8 +7,8 @@ import Link from "next/link"
 
 import { db } from "@/db"
 import { fichesEtiquettes, produits } from "@/db/schema"
-import { and, eq, ilike, or } from "drizzle-orm"
-import { PRODUIT_ACTIF } from "@/db/queries/produits"
+import { and, eq, or } from "drizzle-orm"
+import { correspondRecherche, PRODUIT_ACTIF } from "@/db/queries/produits"
 import { ProductSearch } from "@/components/features/ProductSearch"
 
 const columns = [
@@ -83,9 +83,9 @@ export default async function KanbanPage(
             ? and(
                   PRODUIT_ACTIF,
                   or(
-                      ilike(produits.codePf, `%${q}%`),
-                      ilike(produits.denominationFr, `%${q}%`),
-                      ilike(produits.gamme, `%${q}%`)
+                      correspondRecherche(produits.codePf, q),
+                      correspondRecherche(produits.denominationFr, q),
+                      correspondRecherche(produits.gamme, q)
                   )
               )
             : PRODUIT_ACTIF

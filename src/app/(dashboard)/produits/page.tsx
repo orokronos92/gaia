@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils"
 
 import { db } from "@/db"
 import { produits, fichesEtiquettes } from "@/db/schema"
-import { and, eq, ilike, or, type SQL } from "drizzle-orm"
-import { filtreCatalogue, type FiltreCatalogue } from "@/db/queries/produits"
+import { and, eq, or, type SQL } from "drizzle-orm"
+import { correspondRecherche, filtreCatalogue, type FiltreCatalogue } from "@/db/queries/produits"
 import { FiltreCatalogueSelect } from "./FiltreCatalogueSelect"
 import { FiltreGammeSelect } from "./FiltreGammeSelect"
 import { ProductSearch } from "@/components/features/ProductSearch"
@@ -52,10 +52,10 @@ export default async function ProductsPage(
     if (q) {
         conditions.push(
             or(
-                ilike(produits.codePf, `%${q}%`),
-                ilike(produits.denominationFr, `%${q}%`),
-                ilike(produits.gamme, `%${q}%`),
-                ilike(produits.sousGamme, `%${q}%`)
+                correspondRecherche(produits.codePf, q),
+                correspondRecherche(produits.denominationFr, q),
+                correspondRecherche(produits.gamme, q),
+                correspondRecherche(produits.sousGamme, q)
             )!
         );
     }
@@ -63,7 +63,9 @@ export default async function ProductsPage(
     if (sousGammeFiltre) conditions.push(eq(produits.sousGamme, sousGammeFiltre));
     query = query.where(and(...conditions)) as any;
 
-    const rawData = await query.orderBy(produits.creeLe);
+    // By product code: a catalogue of a thousand rows is read by code, and the
+    // creation order only reflected the order of the import.
+    const rawData = await query.orderBy(produits.codePf);
 
     // Deduplicate in JS to prevent React Key collisions and duplicate visual rows
     const uniqueProductsMap = new Map();

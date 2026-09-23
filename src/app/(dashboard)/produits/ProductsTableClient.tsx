@@ -127,10 +127,12 @@ export function ProductsTableClient({ data }: { data: ProductRow[] }) {
                                 />
                             </TableCell>
                             <TableCell className="font-medium text-emerald-900 dark:text-emerald-400">{product.code}</TableCell>
-                            <TableCell className="font-semibold text-stone-800 group-hover:text-emerald-700 transition-colors">{product.name}</TableCell>
-                            <TableCell className="text-stone-500 hidden md:table-cell">{product.type}</TableCell>
-                            <TableCell className="text-stone-600 dark:text-stone-300">{product.gamme}</TableCell>
-                            <TableCell className="hidden lg:table-cell text-stone-500">
+                            {/* Long names wrap: one 44-character name widened the table
+                                until sub-range and status slid under the sticky actions. */}
+                            <TableCell className="min-w-40 whitespace-normal font-semibold text-stone-800 group-hover:text-emerald-700 transition-colors">{product.name}</TableCell>
+                            <TableCell className="min-w-36 whitespace-normal text-stone-500 hidden md:table-cell">{product.type}</TableCell>
+                            <TableCell className="min-w-32 whitespace-normal text-stone-600 dark:text-stone-300">{product.gamme}</TableCell>
+                            <TableCell className="min-w-28 whitespace-normal hidden lg:table-cell text-stone-500">
                                 {product.sousGamme?.trim() ? product.sousGamme : <span className="text-stone-300">—</span>}
                             </TableCell>
                             <TableCell>

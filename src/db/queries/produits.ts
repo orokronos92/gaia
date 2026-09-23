@@ -1,5 +1,7 @@
 import { cache } from "react";
 import { and, count, desc, eq, isNull, isNotNull, sql } from "drizzle-orm";
+import type { AnyColumn, SQL } from "drizzle-orm";
+import { LETTRES_ACCENTUEES, LETTRES_SIMPLES, motifRecherche } from "@/lib/recherche";
 import { db } from "@/db";
 import { estViolationUnicite } from "@/lib/erreurs-postgres";
 import { produits, fichesEtiquettes } from "@/db/schema";
@@ -157,6 +159,15 @@ export const PRODUIT_ACTIF = and(isNull(produits.archiveLe), isNull(produits.ret
 
 /** Retiré du catalogue mais toujours dans l'application — réversible. */
 export const PRODUIT_RETIRE = and(isNull(produits.archiveLe), isNotNull(produits.retireLe))!;
+
+/**
+ * A column matches a free-text search, accents and case ignored ("che chun"
+ * finds "Ché Chun"). Accents are folded before lowering, so the result does
+ * not depend on the database collation.
+ */
+export function correspondRecherche(colonne: AnyColumn, saisie: string): SQL {
+  return sql`lower(translate(${colonne}, ${LETTRES_ACCENTUEES}, ${LETTRES_SIMPLES})) like ${motifRecherche(saisie)}`;
+}
 
 /** Tout ce qui n'est pas supprimé, quel que soit l'état catalogue. */
 export const PRODUIT_NON_SUPPRIME = isNull(produits.archiveLe);
