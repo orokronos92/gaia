@@ -5,7 +5,7 @@ import { ecartsDecoupagePmi, ligneEnObjet } from "@/lib/import-catalogue/ligne-s
 describe("dateExcel", () => {
   it("turns an Excel day number into a date", () => {
     expect(dateExcel(45383)).toBe("2024-04-01");
-    expect(dateExcel("45758")).toBe("2025-04-10");
+    expect(dateExcel("45758")).toBe("2025-04-11");
   });
   it("ignores cells that are not dates", () => {
     expect([dateExcel(""), dateExcel("ok"), dateExcel(null)]).toEqual([null, null, null]);
