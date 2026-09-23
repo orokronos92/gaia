@@ -7,6 +7,8 @@
  *   DATABASE_URL=…/gaialabel_preprod npx tsx scripts/rattacher-etiquettes-v2.ts --appliquer  # upload + links
  *
  * The PDFs are read from DOSSIER_FICHIERS (the extracted archive), never from git.
+ * --appliquer also needs MINIO_BUCKET_NAME=label-assets-preprod: .env names the
+ * production bucket, and the script refuses anything but a *-preprod one.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -15,7 +17,7 @@ import { chargerReferencesProduits, nomBaseCourante } from "@/db/queries/import-
 import { lireCsv } from "@/lib/import-catalogue/csv";
 import { rattacher } from "@/lib/import-catalogue/rattachement";
 import type { FichierTrie, Lien } from "@/lib/import-catalogue/rattachement";
-import { uploadFileToS3 } from "@/lib/utils/s3-client";
+import { BUCKET_NAME, uploadFileToS3 } from "@/lib/utils/s3-client";
 
 const RACINE = path.resolve(__dirname, "..");
 const SELECTION = "docs/sources/selection.csv";
@@ -24,6 +26,8 @@ const DOSSIER_FICHIERS = "/docker/gaialabel/imports/etiquettes-pdf";
 /** Where the sort lands in the bucket, beside the March "RÉFÉRENCES ÉTIQUETTES/". */
 const PREFIXE_S3 = "ÉTIQUETTES 2026-09";
 const SUFFIXE_BASE_AUTORISEE = "_preprod";
+/** The bucket comes from MINIO_BUCKET_NAME, which .env points at production. */
+const SUFFIXE_BUCKET_AUTORISE = "-preprod";
 const DRAPEAU_APPLIQUER = "--appliquer";
 const TYPE_PDF = "application/pdf";
 const BOM = "﻿";
@@ -58,6 +62,9 @@ async function main(): Promise<void> {
   const { liens, nonRattaches } = rattacher(fichiers, produits, PREFIXE_S3);
 
   if (appliquer) {
+    if (!BUCKET_NAME.endsWith(SUFFIXE_BUCKET_AUTORISE)) {
+      throw new Error(`Bucket « ${BUCKET_NAME} » refusé : MINIO_BUCKET_NAME doit viser la préproduction (*${SUFFIXE_BUCKET_AUTORISE}).`);
+    }
     if (!existsSync(DOSSIER_FICHIERS)) throw new Error(`Archive non extraite : ${DOSSIER_FICHIERS} introuvable.`);
     const manquants = fichiers.filter((f) => !existsSync(path.join(DOSSIER_FICHIERS, f.chemin.replace(/\\/g, "/").normalize("NFC"))));
     if (manquants.length > 0) throw new Error(`${manquants.length} PDF absents de l'archive, ex. ${manquants[0].chemin}. Rien n'a été envoyé.`);

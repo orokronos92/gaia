@@ -3,9 +3,9 @@
 > **Fichier généré par `npm run arch:build` — ne pas modifier à la main.**
 > Toute modification manuelle est écrasée à la prochaine génération et fait échouer `npm run arch:check`.
 > La prose (rôle des modules, intentions) vit dans `docs/INTENTION.md`.
-> Base : commit `1017d59` · généré le 2026-09-23
+> Base : commit `1130ca9` · généré le 2026-09-23
 
-**246 fichiers · 32400 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
+**246 fichiers · 32407 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
 
 ## Dépendances entre dossiers
 
@@ -162,7 +162,7 @@ graph LR
 
 | Module | Fichiers | Lignes | Dépend de | Utilisé par |
 |---|---:|---:|---|---|
-| `scripts` | 6 | 579 | `scripts/architecture`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib/audit`, `src/lib/import-catalogue`, `src/lib/utils` | — |
+| `scripts` | 6 | 586 | `scripts/architecture`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib/audit`, `src/lib/import-catalogue`, `src/lib/utils` | — |
 | `scripts/architecture` | 4 | 403 | — | `scripts` |
 | `src` | 3 | 96 | `src/db` | `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/agents` | 7 | 811 | `src/agents/knowledge`, `src/agents/recette`, `src/db/queries` | `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/agents/recette`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
