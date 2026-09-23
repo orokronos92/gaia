@@ -1,0 +1,5 @@
+#!/bin/sh
+# Keeps docs/ARCHITECTURE.md in step with the code. arch:build leaves the file
+# untouched when the structure has not moved, so the add below is then a no-op.
+npm run --silent arch:build || exit 1
+git add docs/ARCHITECTURE.md

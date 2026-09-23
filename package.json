@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "arch:build": "tsx scripts/generate-architecture.ts",
-    "arch:check": "tsx scripts/generate-architecture.ts --check"
+    "arch:check": "tsx scripts/generate-architecture.ts --check",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1002.0",
