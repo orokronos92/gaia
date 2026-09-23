@@ -10,6 +10,7 @@ import { auditLogs, fichesEtiquettes, gammes, produits, sousGammes, utilisateurs
 import type { GammeRef, SousGammeRef } from "@/lib/import-catalogue/gammes";
 import type { ProduitReferences } from "@/lib/import-catalogue/rattachement";
 import type { EtatCatalogue, FicheExistante, LibelleInconnu, Plan, ProduitExistant } from "@/lib/import-catalogue/plan";
+import { ecrit, valeursAPrendre } from "@/lib/import-catalogue/fusion";
 import type { Valeur } from "@/lib/import-catalogue/types";
 
 /** Every fiche an import creates enters the Quality review, like the March seed's. */
@@ -43,6 +44,7 @@ export async function chargerEtatCatalogue(): Promise<EtatCatalogue> {
     estAromatise: p.estAromatise, codeEan: p.codeEan, poidsNet: p.poidsNet, tempsInfusion: p.tempsInfusion,
     tempInfusion: p.tempInfusion, poidsTasse: p.poidsTasse, nbTasses: p.nbTasses,
     plusieursInfusions: p.plusieursInfusions, mentionEcocert: p.mentionEcocert, labelsClient: p.labelsClient,
+    conditionnement: p.conditionnement,
     // A product without a range id predates migration 0022; an empty id compares as "no value".
     gammeId: p.gammeId ?? "", sousGammeId: p.sousGammeId,
   }));
@@ -113,7 +115,8 @@ export interface BilanApplication {
 
 /**
  * Executes an approved plan in one transaction: either the whole sheet lands,
- * or nothing does. Only `prendre` decisions are written; the range labels are
+ * or nothing does. The workbook value is written where the merge took it; the
+ * value it replaces is kept in the audit log, so an overwrite can be undone. The range labels are
  * kept in step with the ids they reflect.
  */
 export async function appliquerPlan(plan: Plan, source: string, utilisateurId: string): Promise<BilanApplication> {
@@ -165,12 +168,19 @@ export async function appliquerPlan(plan: Plan, source: string, utilisateurId: s
       action: "IMPORT_BDD_V2",
       utilisateurId,
       // The signing account authorised it; the script did it. Both are recorded.
-      changements: { ...bilan, misDeCote: plan.misDeCote.length, executePar: "scripts/importer-bdd-v2.ts" },
+      changements: { ...bilan, misDeCote: plan.misDeCote.length, executePar: "scripts/importer-bdd-v2.ts", valeursRemplacees: valeursRemplacees(plan) },
     });
     return bilan;
   });
 }
 
 function aEcrire(decisions: Plan["misesAJour"][number]["decisionsProduit"]): Record<string, Valeur> {
-  return Object.fromEntries(decisions.filter((d) => d.decision === "prendre").map((d) => [d.champ, d.excel]));
+  return valeursAPrendre(decisions);
+}
+
+/** Every value the import replaced, with what it held before — to undo an overwrite. */
+function valeursRemplacees(plan: Plan): Array<{ codePf: string; champ: string; avant: Valeur; apres: Valeur }> {
+  return plan.misesAJour.flatMap((m) =>
+    [...m.decisionsProduit, ...m.decisionsFiche].filter(ecrit).map((d) => ({ codePf: m.codePf, champ: d.champ, avant: d.base, apres: d.excel })),
+  );
 }

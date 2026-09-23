@@ -1,11 +1,12 @@
 /**
- * Three-way merge of one existing record: what the March seed wrote (ancestor),
- * what the app holds now (base), what the v2 workbook says (excel).
+ * Merge of one existing record against the v2 workbook, which is the
+ * reference (Ouro's decision of 2026-09-23): what the March seed wrote
+ * (ancestor), what the app holds now (base), what the workbook says (excel).
  *
- * The ancestor tells who changed a field. Without it — products created in the
- * app — an empty base takes the workbook value and any other difference is a
- * conflict. The workbook never erases: an empty cell over an app value is kept
- * and listed.
+ * The workbook wins wherever it carries a value, app edits included — those
+ * are flagged `ecraser` so the report and the audit log keep the value lost.
+ * An empty cell erases only what the March seed wrote (its "Vrac" default);
+ * a value typed in the app since is kept and listed.
  */
 import type { Decision, DecisionChamp, Valeur } from "./types";
 
@@ -23,11 +24,9 @@ export function deciderChamp(ancetre: Valeur | undefined, base: Valeur, excel: V
   const b = cleComparaison(base);
   const e = cleComparaison(excel);
   if (b === e) return "identique";
-  if (e === null) return "vide_excel";
-  if (ancetre === undefined) return b === null ? "prendre" : "conflit";
-  if (b === a) return "prendre";
-  if (e === a) return "garder";
-  return "conflit";
+  if (e === null) return ancetre !== undefined && b === a ? "prendre" : "vide_excel";
+  if (b === null || (ancetre !== undefined && b === a)) return "prendre";
+  return "ecraser";
 }
 
 export function fusionner<K extends string>(
@@ -48,7 +47,10 @@ export function fusionner<K extends string>(
   });
 }
 
-/** The fields to write: only what the merge decided to take from the workbook. */
+/** Decisions that write the workbook value. */
+export const ecrit = (d: DecisionChamp): boolean => d.decision === "prendre" || d.decision === "ecraser";
+
+/** The fields to write: the workbook value wherever the merge took it. */
 export function valeursAPrendre(decisions: readonly DecisionChamp[]): Record<string, Valeur> {
-  return Object.fromEntries(decisions.filter((d) => d.decision === "prendre").map((d) => [d.champ, d.excel]));
+  return Object.fromEntries(decisions.filter(ecrit).map((d) => [d.champ, d.excel]));
 }

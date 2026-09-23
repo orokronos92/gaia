@@ -8,22 +8,23 @@ import type { Cellule } from "@/lib/import-catalogue/cellules";
 import { construirePlan, DATE_SEED } from "@/lib/import-catalogue/plan";
 import type { EtatCatalogue, FicheExistante, ProduitExistant } from "@/lib/import-catalogue/plan";
 
-describe("deciderChamp — three-way merge", () => {
-  it("takes the workbook when only the workbook changed", () => {
+describe("deciderChamp — the workbook is the reference", () => {
+  it("takes the workbook when the base still holds what March wrote", () => {
     expect(deciderChamp("thé noir", "thé noir", "thé noir*")).toBe("prendre");
   });
-  it("keeps Marie's edit when the workbook did not change", () => {
-    expect(deciderChamp("thé noir", "thé noir bio", "thé noir")).toBe("garder");
+  it("overwrites an app edit, flagged so the old value is logged", () => {
+    expect(deciderChamp("thé noir", "thé noir bio", "thé noir")).toBe("ecraser");
+    expect(deciderChamp(undefined, "y", "x")).toBe("ecraser");
   });
-  it("flags a conflict when both changed differently", () => {
-    expect(deciderChamp("a", "b", "c")).toBe("conflit");
+  it("erases what the March seed invented when the workbook is empty", () => {
+    expect(deciderChamp("Vrac", "Vrac", null)).toBe("prendre");
   });
-  it("never erases an app value with an empty cell", () => {
-    expect(deciderChamp("a", "a", null)).toBe("vide_excel");
+  it("keeps an app value the workbook leaves empty", () => {
+    expect(deciderChamp("a", "b", null)).toBe("vide_excel");
+    expect(deciderChamp(undefined, "b", null)).toBe("vide_excel");
   });
-  it("without ancestor, fills an empty base and flags any other difference", () => {
+  it("fills an empty base", () => {
     expect(deciderChamp(undefined, null, "x")).toBe("prendre");
-    expect(deciderChamp(undefined, "y", "x")).toBe("conflit");
   });
   it("compares content, not spelling: CRLF, spaces, array order", () => {
     expect(deciderChamp("a", "a\r\nb ", "a\nb")).toBe("identique");

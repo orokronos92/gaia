@@ -56,6 +56,7 @@ const ProduitSchema = z.object({
   codeEan: texteBorne(50), poidsNet: texteBorne(50), tempsInfusion: texteBorne(50), tempInfusion: texteBorne(50),
   poidsTasse: texteBorne(50), nbTasses: texteBorne(50), plusieursInfusions: z.boolean(),
   mentionEcocert: texteBorne(255), labelsClient: z.array(z.string()).nullable(),
+  conditionnement: z.null(),
 });
 const FicheSchema = z.object({
   denominationLegale: texteBorne(255),
@@ -129,6 +130,7 @@ export function lireLigneJdg(ligne: Ligne, index: IndexJdg, numeroLigne: number)
     poidsTasse: t("POIDS EN G/TASSE DE 25 CL"), nbTasses: t("NBRE DE TASSES"),
     plusieursInfusions: plusieurs !== null && /plusieurs infusions/i.test(plusieurs),
     mentionEcocert: t("ECOCERT"), labelsClient: labels.length > 0 ? labels : null,
+    conditionnement: null,
   });
   const fiche = FicheSchema.safeParse({
     denominationLegale: t("DÉNOMINATION FR"),

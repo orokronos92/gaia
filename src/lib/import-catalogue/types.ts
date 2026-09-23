@@ -21,6 +21,11 @@ export interface ChampsProduit {
   plusieursInfusions: boolean;
   mentionEcocert: string | null;
   labelsClient: string[] | null;
+  /**
+   * Not carried by the workbook (its pack lives in `emballage`): always null
+   * from it, so the merge erases the "Vrac" the March seed invented.
+   */
+  conditionnement: string | null;
 }
 
 export interface ChampsFiche {
@@ -58,14 +63,15 @@ export interface Anomalie {
 }
 
 /**
- * What the merge decided for one field of an existing product:
+ * What the merge decided for one field of an existing product (the workbook is
+ * the reference):
  * - `identique` : nothing to do;
- * - `prendre` : the workbook changed, the app did not → write the workbook value;
- * - `garder` : the app changed (Marie), the workbook did not → keep the app value;
- * - `conflit` : both changed differently → keep the app value, list it for Marie;
- * - `vide_excel` : the workbook is empty where the app has a value → keep, list.
+ * - `prendre` : the base held nothing, or only what the March seed wrote → write the workbook value (null included);
+ * - `ecraser` : the base held a value typed in the app → the workbook value replaces it, the old one is logged;
+ * - `vide_excel` : the workbook is empty where the app has its own value → keep, list;
+ * - `conflit` : a value the catalogue cannot take (a label code already held elsewhere) → keep, list.
  */
-export type Decision = "identique" | "prendre" | "garder" | "conflit" | "vide_excel";
+export type Decision = "identique" | "prendre" | "ecraser" | "vide_excel" | "conflit";
 
 export interface DecisionChamp {
   champ: string;

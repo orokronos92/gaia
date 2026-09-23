@@ -3,7 +3,7 @@
  * the same inputs give the same plan, which the report shows and — only after
  * review — the apply step executes.
  */
-import { cleComparaison, fusionner } from "./fusion";
+import { cleComparaison, ecrit, fusionner } from "./fusion";
 import type { Ancetre } from "./ancetre-seed";
 import type { ResolveurGammes } from "./gammes";
 import { FORMAT_CODE_PF } from "./ligne-jdg";
@@ -17,6 +17,7 @@ export const CHAMPS_PRODUIT = [
   "denominationFr", "denominationEn", "sousDesignationFr", "sousDesignationEn", "typeTheFr", "typeTheEn",
   "origine", "producteurJardin", "estAromatise", "codeEan", "poidsNet", "tempsInfusion", "tempInfusion",
   "poidsTasse", "nbTasses", "plusieursInfusions", "mentionEcocert", "labelsClient", "gammeId", "sousGammeId",
+  "conditionnement",
 ] as const satisfies readonly (keyof ChampsProduitResolus)[];
 
 export const CHAMPS_FICHE = [
@@ -204,7 +205,7 @@ function neutraliserCodesEtiquettePartages(plan: Plan, etat: EtatCatalogue): voi
   const proposes = new Map<string, number>();
   const compter = (code: string | null) => code && proposes.set(code, (proposes.get(code) ?? 0) + 1);
   plan.creations.forEach((c) => compter(c.fiche.codeEtiquette));
-  const aPrendre = (m: MiseAJour) => m.decisionsFiche.find((d) => d.champ === "codeEtiquette" && d.decision === "prendre");
+  const aPrendre = (m: MiseAJour) => m.decisionsFiche.find((d) => d.champ === "codeEtiquette" && ecrit(d) && d.excel !== null);
   plan.misesAJour.forEach((m) => compter((aPrendre(m)?.excel as string | null) ?? null));
   const detenus = new Map(etat.fiches.filter((f) => f.codeEtiquette).map((f) => [f.codeEtiquette as string, f.id]));
   const bloque = (code: string | null, ficheId: string | null) =>

@@ -54,6 +54,8 @@ export function ancetreDepuisSeed(ligne: LigneObjet): { codePf: string; ancetre:
     plusieursInfusions: Boolean(trouver(ligne, "PLUSIEURS INFUSIONS")),
     mentionEcocert: t("CERTIF ECOCERT"),
     labelsClient: null,
+    // The seed's default: "Vrac" for every product whose column was empty.
+    conditionnement: t("CONDITIONNEMENT") ?? "Vrac",
   };
   const fiche: Partial<ChampsFiche> = {
     denominationLegale: String(denomination),

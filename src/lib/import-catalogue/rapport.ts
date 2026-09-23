@@ -2,6 +2,7 @@
  * The import report: a summary Marie can read, and CSV files (Excel-friendly:
  * BOM, semicolons) with every line behind the numbers.
  */
+import { ecrit } from "./fusion";
 import type { Plan } from "./plan";
 import type { Decision, Valeur } from "./types";
 
@@ -17,9 +18,9 @@ export interface ContexteRapport {
 
 const LIBELLE_DECISION: Record<Exclude<Decision, "identique">, string> = {
   prendre: "pris de l'Excel",
-  garder: "modifié dans l'app, gardé",
-  conflit: "conflit, app gardée",
-  vide_excel: "vide dans l'Excel, app gardée",
+  ecraser: "valeur de l'app écrasée par l'Excel",
+  vide_excel: "vide dans l'Excel, valeur de l'app gardée",
+  conflit: "impossible à écrire, app gardée",
 };
 
 const BOM = "﻿";
@@ -61,15 +62,15 @@ function tableauChamps(plan: Plan): string[] {
   const champs = [...new Set(decisions.filter((d) => d.decision !== "identique").map((d) => d.champ))].sort();
   const n = (champ: string, decision: Decision) => decisions.filter((d) => d.champ === champ && d.decision === decision).length;
   return [
-    "| Champ | Pris de l'Excel | Gardé (Marie) | Conflit | Vide dans l'Excel |",
+    "| Champ | Pris de l'Excel | App écrasée par l'Excel | Vide dans l'Excel, app gardée | Impossible à écrire |",
     "|---|---:|---:|---:|---:|",
-    ...champs.map((c) => `| \`${c}\` | ${n(c, "prendre")} | ${n(c, "garder")} | ${n(c, "conflit")} | ${n(c, "vide_excel")} |`),
+    ...champs.map((c) => `| \`${c}\` | ${n(c, "prendre")} | ${n(c, "ecraser")} | ${n(c, "vide_excel")} | ${n(c, "conflit")} |`),
   ];
 }
 
 export function rapportMarkdown(plan: Plan, ctx: ContexteRapport): string {
-  const produitsTouches = plan.misesAJour.filter((m) => m.decisionsProduit.some((d) => d.decision === "prendre")).length;
-  const fichesTouchees = plan.misesAJour.filter((m) => m.decisionsFiche.some((d) => d.decision === "prendre")).length;
+  const produitsTouches = plan.misesAJour.filter((m) => m.decisionsProduit.some(ecrit)).length;
+  const fichesTouchees = plan.misesAJour.filter((m) => m.decisionsFiche.some(ecrit)).length;
   const fichesIgnorees = plan.misesAJour.filter((m) => m.ficheIgnoree !== null);
   const bloque = plan.libellesInconnus.length > 0;
   return [
