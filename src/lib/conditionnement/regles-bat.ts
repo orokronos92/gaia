@@ -117,12 +117,13 @@ export function versionsDepassees(liens: readonly LienBat[]): Map<string, string
   for (const groupe of groupes.values()) {
     const trie = [...groupe].sort((a, b) => rang(b) - rang(a) || septembre(b) - septembre(a));
     const [courant, ...autres] = trie;
+    // Same rank: only a copy of a file already kept is redundant; two names may be two faces.
+    const gardes = new Set([courant.nomFichier]);
     for (const autre of autres) {
       if (rang(autre) < rang(courant)) depasses.set(autre.id, `version dépassée par ${courant.nomFichier}`);
-      // Same rank: only a copy of the same file is redundant; two names may be two faces.
-      else if (autre.nomFichier === courant.nomFichier || lireCodeFichier(autre.nomFichier) !== null) {
+      else if (gardes.has(autre.nomFichier) || lireCodeFichier(autre.nomFichier) !== null) {
         depasses.set(autre.id, `doublon de ${septembre(courant) ? "l'envoi de septembre" : courant.nomFichier}`);
-      }
+      } else gardes.add(autre.nomFichier);
     }
   }
   return depasses;

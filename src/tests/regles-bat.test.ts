@@ -34,6 +34,12 @@ describe("versionsDepassees", () => {
     const d = versionsDepassees([lien("a", "ETNN550V5 BLACK EVIDENCE 2026.pdf"), lien("b", "TN5502 Black Evidence 2025.pdf"), lien("c", "TN5502_Black Evidence 2025.pdf")]);
     expect([...d.keys()].sort()).toEqual(["b", "c"]);
   });
+  it("drops every extra copy of each name in one pass, whichever file is kept", () => {
+    const d = versionsDepassees([lien("a1", "IF111 JASMIN.pdf"), lien("b1", "IF111 - JASMIN.pdf"), lien("a2", "IF111 JASMIN.pdf", "ÉTIQUETTES 2026-09/archive/"), lien("b2", "IF111 - JASMIN.pdf", "ÉTIQUETTES 2026-09/archive/")]);
+    expect(d.size).toBe(2);
+    expect(versionsDepassees([lien("a1", "IF111 JASMIN.pdf"), lien("b1", "IF111 - JASMIN.pdf")].filter((l) => !d.has(l.id))).size).toBe(0);
+  });
+
   it("keeps the highest version and the September copy of the same file", () => {
     const d = versionsDepassees([lien("v5", "ETCBA5016V5-x.pdf"), lien("v6", "ETCBA5016V6-x.pdf"), lien("mars", "ETCBA5016V6-x.pdf", "RÉFÉRENCES ÉTIQUETTES/x/")]);
     expect([...d.keys()].sort()).toEqual(["mars", "v5"]);

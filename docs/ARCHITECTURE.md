@@ -3,9 +3,9 @@
 > **Fichier généré par `npm run arch:build` — ne pas modifier à la main.**
 > Toute modification manuelle est écrasée à la prochaine génération et fait échouer `npm run arch:check`.
 > La prose (rôle des modules, intentions) vit dans `docs/INTENTION.md`.
-> Base : commit `99b3e4d` · généré le 2026-09-23
+> Base : commit `f5b63ea` · généré le 2026-09-23
 
-**265 fichiers · 34116 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
+**265 fichiers · 34117 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
 
 ## Dépendances entre dossiers
 
@@ -195,7 +195,7 @@ graph LR
 | `src/lib` | 3 | 64 | — | `src/app/(dashboard)`, `src/app/actions`, `src/app/login`, `src/components/atoms`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/provenance`, `src/components/recette`, `src/components/ui`, `src/db/queries` |
 | `src/lib/audit` | 29 | 5333 | `src/lib/business-rules`, `src/lib/utils` | `scripts`, `src/agents/audit`, `src/app/(dashboard)`, `src/app/actions`, `src/db/queries` |
 | `src/lib/business-rules` | 6 | 535 | — | `src/agents/imports`, `src/agents/recette`, `src/app/actions`, `src/components/recette`, `src/db/queries`, `src/hooks`, `src/lib/audit`, `src/lib/recette`, `src/lib/utils` |
-| `src/lib/conditionnement` | 5 | 231 | — | `scripts`, `src/app/(dashboard)`, `src/lib/import-catalogue` |
+| `src/lib/conditionnement` | 5 | 232 | — | `scripts`, `src/app/(dashboard)`, `src/lib/import-catalogue` |
 | `src/lib/etiquettes` | 1 | 36 | — | `src/app/(dashboard)` |
 | `src/lib/import-catalogue` | 15 | 1526 | `src/lib/conditionnement` | `scripts`, `src/db/queries` |
 | `src/lib/recette` | 9 | 1237 | `src/lib/business-rules` | `src/agents/imports`, `src/app/(dashboard)`, `src/components/recette`, `src/db/queries`, `src/hooks` |
