@@ -3,9 +3,9 @@
 > **Fichier généré par `npm run arch:build` — ne pas modifier à la main.**
 > Toute modification manuelle est écrasée à la prochaine génération et fait échouer `npm run arch:check`.
 > La prose (rôle des modules, intentions) vit dans `docs/INTENTION.md`.
-> Base : commit `c5eca98` · généré le 2026-09-23
+> Base : commit `b9037be` · généré le 2026-09-23
 
-**233 fichiers · 30966 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
+**243 fichiers · 32036 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
 
 ## Dépendances entre dossiers
 
@@ -43,15 +43,17 @@ graph LR
   m27["src/lib/audit"]
   m28["src/lib/business-rules"]
   m29["src/lib/etiquettes"]
-  m30["src/lib/recette"]
-  m31["src/lib/referentiels"]
-  m32["src/lib/utils"]
+  m30["src/lib/import-catalogue"]
+  m31["src/lib/recette"]
+  m32["src/lib/referentiels"]
+  m33["src/lib/utils"]
   m0 -->|2| m1
   m0 -->|1| m5
   m0 -->|4| m23
-  m0 -->|2| m24
+  m0 -->|3| m24
   m0 -->|3| m27
-  m0 -->|2| m32
+  m0 -->|7| m30
+  m0 -->|2| m33
   m2 -->|2| m23
   m3 -->|1| m6
   m3 -->|1| m7
@@ -66,8 +68,8 @@ graph LR
   m5 -->|2| m23
   m5 -->|3| m24
   m5 -->|1| m28
-  m5 -->|1| m30
-  m5 -->|1| m32
+  m5 -->|1| m31
+  m5 -->|1| m33
   m6 -->|1| m3
   m6 -->|2| m23
   m6 -->|1| m24
@@ -91,9 +93,9 @@ graph LR
   m9 -->|18| m26
   m9 -->|18| m27
   m9 -->|2| m29
-  m9 -->|2| m30
-  m9 -->|1| m31
+  m9 -->|2| m31
   m9 -->|1| m32
+  m9 -->|1| m33
   m10 -->|14| m2
   m10 -->|1| m3
   m10 -->|3| m4
@@ -103,7 +105,7 @@ graph LR
   m10 -->|3| m26
   m10 -->|22| m27
   m10 -->|1| m28
-  m10 -->|7| m32
+  m10 -->|7| m33
   m11 -->|9| m2
   m11 -->|1| m3
   m11 -->|1| m4
@@ -111,7 +113,7 @@ graph LR
   m11 -->|1| m6
   m11 -->|8| m23
   m11 -->|4| m24
-  m11 -->|3| m32
+  m11 -->|3| m33
   m12 -->|4| m22
   m12 -->|1| m26
   m14 -->|1| m26
@@ -136,30 +138,31 @@ graph LR
   m21 -->|3| m25
   m21 -->|10| m26
   m21 -->|4| m28
-  m21 -->|7| m30
+  m21 -->|7| m31
   m22 -->|14| m26
   m24 -->|1| m7
-  m24 -->|28| m23
+  m24 -->|30| m23
   m24 -->|1| m26
   m24 -->|5| m27
   m24 -->|1| m28
-  m24 -->|2| m30
-  m24 -->|1| m32
+  m24 -->|3| m30
+  m24 -->|2| m31
+  m24 -->|1| m33
   m25 -->|1| m7
   m25 -->|1| m10
   m25 -->|1| m28
-  m25 -->|5| m30
+  m25 -->|5| m31
   m27 -->|1| m28
-  m27 -->|11| m32
-  m30 -->|1| m28
-  m32 -->|1| m28
+  m27 -->|11| m33
+  m31 -->|1| m28
+  m33 -->|1| m28
 ```
 
 ## Modules
 
 | Module | Fichiers | Lignes | Dépend de | Utilisé par |
 |---|---:|---:|---|---|
-| `scripts` | 4 | 353 | `scripts/architecture`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib/audit`, `src/lib/utils` | — |
+| `scripts` | 5 | 455 | `scripts/architecture`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib/audit`, `src/lib/import-catalogue`, `src/lib/utils` | — |
 | `scripts/architecture` | 4 | 403 | — | `scripts` |
 | `src` | 3 | 96 | `src/db` | `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/agents` | 7 | 811 | `src/agents/knowledge`, `src/agents/recette`, `src/db/queries` | `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/agents/recette`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
@@ -183,12 +186,13 @@ graph LR
 | `src/components/recette` | 12 | 1593 | `src/agents/recette`, `src/app/actions`, `src/components/atoms`, `src/components/etiquettes`, `src/components/provenance`, `src/components/ui`, `src/hooks`, `src/lib`, `src/lib/business-rules`, `src/lib/recette` | `src/app/(dashboard)` |
 | `src/components/ui` | 15 | 1269 | `src/lib` | `src/app/(dashboard)`, `src/app/login`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/produits`, `src/components/provenance`, `src/components/recette` |
 | `src/db` | 5 | 903 | — | `scripts`, `src`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api`, `src/db/queries` |
-| `src/db/queries` | 14 | 2460 | `src/agents/recette`, `src/db`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
+| `src/db/queries` | 15 | 2596 | `src/agents/recette`, `src/db`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/import-catalogue`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/hooks` | 2 | 511 | `src/agents/recette`, `src/app/actions`, `src/lib/business-rules`, `src/lib/recette` | `src/components/recette` |
 | `src/lib` | 3 | 64 | — | `src/app/(dashboard)`, `src/app/actions`, `src/app/login`, `src/components/atoms`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/provenance`, `src/components/recette`, `src/components/ui`, `src/db/queries` |
 | `src/lib/audit` | 29 | 5333 | `src/lib/business-rules`, `src/lib/utils` | `scripts`, `src/agents/audit`, `src/app/(dashboard)`, `src/app/actions`, `src/db/queries` |
 | `src/lib/business-rules` | 6 | 535 | — | `src/agents/imports`, `src/agents/recette`, `src/app/actions`, `src/components/recette`, `src/db/queries`, `src/hooks`, `src/lib/audit`, `src/lib/recette`, `src/lib/utils` |
 | `src/lib/etiquettes` | 1 | 36 | — | `src/app/(dashboard)` |
+| `src/lib/import-catalogue` | 8 | 832 | — | `scripts`, `src/db/queries` |
 | `src/lib/recette` | 9 | 1237 | `src/lib/business-rules` | `src/agents/imports`, `src/app/(dashboard)`, `src/components/recette`, `src/db/queries`, `src/hooks` |
 | `src/lib/referentiels` | 1 | 57 | — | `src/app/(dashboard)` |
 | `src/lib/utils` | 9 | 1303 | `src/lib/business-rules` | `scripts`, `src/agents/imports`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api`, `src/db/queries`, `src/lib/audit` |
@@ -202,7 +206,7 @@ Fichiers de plus de 300 lignes. « Importé par » = nombre de fichiers qui l'im
 | `src/app/(dashboard)/etiquettes/[id]/EtiquetteClient.tsx` | 1447 | 1 |
 | `src/agents/imports/importWorker.ts` | 802 | 2 |
 | `src/db/queries/fiches.ts` | 707 | 9 |
-| `src/db/schema.ts` | 661 | 34 |
+| `src/db/schema.ts` | 661 | 35 |
 | `src/lib/audit/visual/text-robot.ts` | 571 | 18 |
 | `src/hooks/useCalculatrice.ts` | 394 | 2 |
 | `src/db/queries/recettes.ts` | 382 | 6 |

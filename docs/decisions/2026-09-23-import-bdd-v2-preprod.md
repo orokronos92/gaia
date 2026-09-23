@@ -68,7 +68,7 @@ modifiés par l'import.
 
 **Produit** : CODE PF → `codePf` · GAMME → `gammeId` (voir §7) · SOUS GAMME → `sousGammeId` ·
 DÉNOMINATION FR → `denominationFr` · SOUS-DÉS FR → `sousDesignationFr` · TYPE DE THÉ FR →
-`typeTheFr` · ORIGINE DU THÉ → `origine` · COND. → `conditionnement` · POIDS G OU KG →
+`typeTheFr` · ORIGINE DU THÉ → `origine` · POIDS G OU KG →
 `poidsNet` · TPS MIN D'INFUSION → `tempsInfusion` · T° C INFUSION → `tempInfusion` ·
 POIDS EN G/TASSE DE 25 CL → `poidsTasse` · NBRE DE TASSES → `nbTasses` · CODE EAN →
 `codeEan` (« ? » et vide → null, listés) · PLUSIEURS INFUSIONS → `plusieursInfusions` ·
@@ -86,6 +86,18 @@ champs `…En` · SOUS DES / LISTE INGREDIENTS DE, IT, NL → champs `…De/It/N
 AB = « sans résidus de pesticide » (20 produits) n'est **pas** AB : listé pour Marie.
 
 **Références d'étiquette** : REF FACING 2025 et RÉF CONTRE 2025, voir §8.
+
+**Écarts constatés à la première simulation** (2026-09-23) :
+
+- COND. ne contient pas un conditionnement (« Anemos », « TRIMAN », « TS0200 ») : non
+  importée, valeurs listées dans les anomalies. `conditionnement` n'est pas touché.
+- IGP contient aussi des médailles et « SA » : seul « IGP » devient un label.
+- Les codes à 3 chiffres (`MT265`, `TH200`) sont des produits réels sans chiffre de
+  conditionnement : acceptés.
+- L'ancien seed cochait « plusieurs infusions » pour « / » : la fusion corrige 96 produits.
+- « Modifié dans l'app » ne veut pas toujours dire « modifié par Marie » : l'extraction IA
+  des fiches descriptives a réécrit certains champs (`TA6122` : « Mélange de plantes » pour
+  un thé). La fusion garde l'app ; ces cas sont listés pour relecture.
 
 Colonnes de suivi de production (ACTION, PRÊT POUR AURELIEN, ETIQ FINALISEE, IMPRIMEUR…) :
 non importées, ce n'est pas l'objet de la fiche.
@@ -134,7 +146,7 @@ ont « INTERNE » en facing : étiquette imprimée en interne, sans fichier grap
 
 - **les 23 codes JDG et 3 codes Country Farm en double** avec des contenus différents :
   rapport avec les colonnes qui divergent, pour que Marie tranche ;
-- les codes hors format (`TN305`, `TH505`, `IF305`… et la ligne « pétales de fleurs ») ;
+- les codes hors format (`TJ076A`, `TSTR2092V5`… et la ligne « pétales de fleurs ») ;
 - `TM1627`, présent dans JDG et dans Terra Madre.
 
 ## 10. Lots
