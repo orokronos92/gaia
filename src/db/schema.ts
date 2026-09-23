@@ -98,6 +98,15 @@ export const produits = pgTable("produits", {
     allergenesMp: varchar("allergenes_mp", { length: 50 }),             // "oui" / "non" / null
     allegationsMp: varchar("allegations_mp", { length: 50 }),           // "oui" / "non" / null (sur le mélange final ?)
     contientReglisse: boolean("contient_reglisse").default(false).notNull(),
+    /**
+     * Le format de vente, lu dans le 4ᵉ chiffre du code (migration 0027). Le
+     * poids n'en dit rien : 70 g existe en « détail grand » comme en « détail
+     * petit ». Quand une personne le choisit, le calcul ne l'écrase plus.
+     */
+    formatVenteId: uuid("format_vente_id").references(() => formatsVente.id),
+    formatVenteManuel: boolean("format_vente_manuel").default(false).notNull(),
+    /** L'emballage tel que JDG le nomme (« Sachet format GC SA9205 », « TU0001 »). */
+    emballage: varchar("emballage", { length: 120 }),
     /** La gamme du référentiel — ce que le produit désigne vraiment. */
     gammeId: uuid("gamme_id").references(() => gammes.id),
     sousGammeId: uuid("sous_gamme_id").references(() => sousGammes.id), // Audit 5.3 — déclenche la mention hypertension JDG. Repli : scan des désignations.
@@ -484,6 +493,16 @@ export const fichiersEtiquettes = pgTable("fichiers_etiquettes", {
     type: TypeFichierEtiquette("type").notNull(),
     /** Version marker read from the file name ("V5"), null when it carries none. */
     version: varchar("version", { length: 20 }),
+    /**
+     * The label's real size, read from the PDF (migration 0027). TRIM is the
+     * trim box — the printed label; MEDIA is the whole page, margins included,
+     * for files that carry no trim box. The 100 g and 50 g labels of one tea
+     * share a template, so presets follow this, not the packaging digit.
+     */
+    largeurMm: integer("largeur_mm"),
+    hauteurMm: integer("hauteur_mm"),
+    mesureSource: varchar("mesure_source", { length: 10 }),
+    gabaritId: uuid("gabarit_id").references(() => gabaritsEtiquette.id),
     /** False keeps the file listed but out of audits — an obsolete BAT. */
     actif: boolean("actif").default(true).notNull(),
     origine: OrigineAssociation("origine").default('AUTO').notNull(),
@@ -597,6 +616,39 @@ export const gammes = pgTable("gammes", {
     creeLe: timestamp("cree_le").defaultNow().notNull(),
     misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
 });
+
+/**
+ * Les formats de vente, désignés par le 4ᵉ chiffre du code produit (migration
+ * 0027, constat du 2026-09-23). `etiquetteGraphiste` est faux pour le vrac :
+ * son étiquette est imprimée en interne, aucun fichier du Graphisme n'est attendu.
+ */
+export const formatsVente = pgTable("formats_vente", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    cle: varchar("cle", { length: 30 }).notNull().unique(),
+    libelle: varchar("libelle", { length: 120 }).notNull(),
+    chiffre: varchar("chiffre", { length: 1 }).unique(),
+    etiquetteGraphiste: boolean("etiquette_graphiste").default(true).notNull(),
+    actif: boolean("actif").default(true).notNull(),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+    misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
+});
+
+/**
+ * Les gabarits d'étiquette : la taille réelle, mesurée dans les PDF (migration
+ * 0027). Petit côté puis grand côté, l'orientation du fichier ne compte pas.
+ * C'est sur eux que les presets de contrôle s'appuieront.
+ */
+export const gabaritsEtiquette = pgTable("gabarits_etiquette", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    cle: varchar("cle", { length: 40 }).notNull().unique(),
+    libelle: varchar("libelle", { length: 120 }).notNull(),
+    petitCoteMm: integer("petit_cote_mm").notNull(),
+    grandCoteMm: integer("grand_cote_mm").notNull(),
+    face: varchar("face", { length: 20 }).notNull(),
+    actif: boolean("actif").default(true).notNull(),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+    misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
+}, (t) => [unique("gabarits_etiquette_dimensions_unique").on(t.petitCoteMm, t.grandCoteMm)]);
 
 export const sousGammes = pgTable("sous_gammes", {
     id: uuid("id").primaryKey().defaultRandom(),
