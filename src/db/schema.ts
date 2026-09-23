@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, real, pgEnum, vector, index, uniqueIndex, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, uuid, varchar, integer, json, jsonb, date, real, pgEnum, vector, index, uniqueIndex, unique } from "drizzle-orm/pg-core";
 
 export const RoleUtilisateur = pgEnum("role_utilisateur", ["ADMIN", "QUALITE", "GRAPHISME", "CONDITIONNEMENT", "ACHATS", "DIRECTION"]);
 
@@ -107,6 +107,25 @@ export const produits = pgTable("produits", {
     formatVenteManuel: boolean("format_vente_manuel").default(false).notNull(),
     /** L'emballage tel que JDG le nomme (« Sachet format GC SA9205 », « TU0001 »). */
     emballage: varchar("emballage", { length: 120 }),
+    // ─── BDD étiquettes v2 (migration 0028) ─────────────────────────────────
+    // Colonnes reprises telles quelles, même quand l'application ne les lit pas
+    // encore : la BDD v2 est la référence et rien de ce qu'elle porte ne se perd.
+    origineEn: varchar("origine_en", { length: 255 }),
+    mentionEcocertEn: varchar("mention_ecocert_en", { length: 255 }),
+    poidsNetOz: varchar("poids_net_oz", { length: 20 }),
+    exportAnglais: boolean("export_anglais").default(false).notNull(),
+    codePfExport: varchar("code_pf_export", { length: 50 }),
+    libellePmi: varchar("libelle_pmi", { length: 255 }),
+    /** Colonne « COND. » : Anemos, TRIMAN, TS0200… Sens à confirmer par JDG. */
+    cond: varchar("cond", { length: 60 }),
+    priorite: varchar("priorite", { length: 10 }),
+    denominationEnPrecedente: varchar("denomination_en_precedente", { length: 255 }),
+    quantiteParBoite: varchar("quantite_par_boite", { length: 20 }),   // infusettes
+    poidsUnitaire: varchar("poids_unitaire", { length: 20 }),          // infusettes
+    dureeConservation: varchar("duree_conservation", { length: 30 }),  // infusettes (DLUO)
+    codeMp: varchar("code_mp", { length: 50 }),                        // infusettes : thé vrac d'origine
+    designationMp: varchar("designation_mp", { length: 255 }),
+    distinctions: varchar("distinctions", { length: 255 }),            // Terra Madre
     /** La gamme du référentiel — ce que le produit désigne vraiment. */
     gammeId: uuid("gamme_id").references(() => gammes.id),
     sousGammeId: uuid("sous_gamme_id").references(() => sousGammes.id), // Audit 5.3 — déclenche la mention hypertension JDG. Repli : scan des désignations.
@@ -279,6 +298,32 @@ export const fichesEtiquettes = pgTable("fiches_etiquettes", {
      */
     refFacing: varchar("ref_facing", { length: 100 }),
     refContre: varchar("ref_contre", { length: 100 }),
+    // ─── BDD étiquettes v2 (migration 0028) ─────────────────────────────────
+    ancienTexteCommercialFr: text("ancien_texte_commercial_fr"),
+    refFacingPrecedente: varchar("ref_facing_precedente", { length: 100 }),
+    refFacingExport: varchar("ref_facing_export", { length: 100 }),
+    refContreExport: varchar("ref_contre_export", { length: 100 }),
+    texteCommercialCourtEn: text("texte_commercial_court_en"),
+    phraseEngagesEn: text("phrase_engages_en"),
+    phraseWftoEn: text("phrase_wfto_en"),
+    textePresentationEn: text("texte_presentation_en"),
+    texteTubeEn: text("texte_tube_en"),
+    texteSiteFr: text("texte_site_fr"),
+    ingredientsEs: text("ingredients_es"),
+    ingredientsSv: text("ingredients_sv"),
+    texteTheNatureFr: text("texte_the_nature_fr"),          // infusettes
+    texteEcoEmballageFr: text("texte_eco_emballage_fr"),    // infusettes
+    texteManifesteFr: text("texte_manifeste_fr"),           // infusettes
+    paveInfoTri: boolean("pave_info_tri"),                  // infusettes
+    labelFsc: boolean("label_fsc"),                         // infusettes
+    siteInternet: varchar("site_internet", { length: 120 }),
+    mentionOuverture: varchar("mention_ouverture", { length: 60 }),
+    mentionDdm: varchar("mention_ddm", { length: 120 }),
+    mentionConditionnement: varchar("mention_conditionnement", { length: 120 }),
+    tableauNutritionnel: text("tableau_nutritionnel"),      // Terra Madre
+    bandeauFacingHaut: varchar("bandeau_facing_haut", { length: 120 }),
+    bandeauFacingBas: varchar("bandeau_facing_bas", { length: 120 }),
+    paveCertification: text("pave_certification"),
     denominationLegale: varchar("denomination_legale", { length: 255 }),
     texteCommercialFr: text("texte_commercial_fr"),
     texteCommercialEn: text("texte_commercial_en"),
@@ -336,6 +381,58 @@ export const fichesEtiquettes = pgTable("fiches_etiquettes", {
     statut: StatutEtiquette("statut").default('DRAFT').notNull(),
     versionCouranteId: uuid("version_courante_id"), // manual reference to versionsEtiquettes
     creePar: uuid("cree_par").references(() => utilisateurs.id),
+    creeLe: timestamp("cree_le").defaultNow().notNull(),
+    misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
+});
+
+/**
+ * Chaque ligne de chaque onglet de la BDD étiquettes, telle qu'elle a été lue
+ * (migration 0028). Ce qui n'a pas de champ typé y reste lisible, et un
+ * prochain import de JDG aura un état de référence auquel se comparer. Jamais
+ * lue comme valeur courante : GaïaLabel fait foi une fois l'import passé.
+ */
+export const lignesSource = pgTable("lignes_source", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    fichier: varchar("fichier", { length: 255 }).notNull(),
+    onglet: varchar("onglet", { length: 100 }).notNull(),
+    numeroLigne: integer("numero_ligne").notNull(),
+    codePf: varchar("code_pf", { length: 50 }),
+    produitId: uuid("produit_id").references(() => produits.id, { onDelete: "set null" }),
+    donnees: jsonb("donnees").$type<Record<string, string>>().notNull(),
+    importeLe: timestamp("importe_le").defaultNow().notNull(),
+}, (t) => [
+    unique("lignes_source_fichier_onglet_numero_ligne_key").on(t.fichier, t.onglet, t.numeroLigne),
+    index("lignes_source_code_pf_idx").on(t.codePf),
+    index("lignes_source_produit_idx").on(t.produitId),
+]);
+
+/**
+ * L'avancement de l'étiquette chez JDG, tel que la BDD le suit : finalisée,
+ * imprimeur, PMI, commentaires (migration 0028). À part de la fiche : il change
+ * souvent et ne décrit pas l'étiquette.
+ */
+export const suiviFabrication = pgTable("suivi_fabrication", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ficheEtiquetteId: uuid("fiche_etiquette_id").references(() => fichesEtiquettes.id, { onDelete: "cascade" }).notNull().unique(),
+    pretPourInterne: varchar("pret_pour_interne", { length: 120 }),
+    etiquetteFinalisee: boolean("etiquette_finalisee"),
+    contreFinalisee: boolean("contre_finalisee"),
+    imprimeur: varchar("imprimeur", { length: 60 }),
+    dateEnvoiImprimeur: date("date_envoi_imprimeur"),
+    pmiOkProjetPlantes: varchar("pmi_ok_projet_plantes", { length: 30 }),
+    pmiF9TexteCommercial: varchar("pmi_f9_texte_commercial", { length: 30 }),
+    dateModificationPmiF9: date("date_modification_pmi_f9"),
+    sonnentor: varchar("sonnentor", { length: 60 }),
+    premierLotV5: varchar("premier_lot_v5", { length: 30 }),
+    biocoop: varchar("biocoop", { length: 30 }),
+    action: varchar("action", { length: 120 }),
+    note: varchar("note", { length: 120 }),
+    commentaires: text("commentaires"),
+    historique: text("historique"),
+    gammeExport: varchar("gamme_export", { length: 30 }),
+    prioriteExport: varchar("priorite_export", { length: 10 }),
+    switchPmi: varchar("switch_pmi", { length: 10 }),
+    majLanguesPmi: varchar("maj_langues_pmi", { length: 10 }),
     creeLe: timestamp("cree_le").defaultNow().notNull(),
     misAJourLe: timestamp("mis_a_jour_le").defaultNow().notNull(),
 });
