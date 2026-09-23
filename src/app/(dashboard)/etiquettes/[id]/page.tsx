@@ -132,7 +132,9 @@ export default async function EtiquetteDetailPage(
     // Label files come from the stored product ↔ file links, not from matching
     // names against the bucket: a name match once put a neighbouring product's
     // BAT on this page. Sources (.ai) are listed only when there is no BAT.
-    const fichiers = await getFichiersProduit(data[0].produitId);
+    // A deactivated file (another format's label, an older version) stays in
+    // the table for history but is not shown as the product's label.
+    const fichiers = (await getFichiersProduit(data[0].produitId)).filter(f => f.actif);
     const bats = fichiers.filter(f => f.type === "BAT");
     const pdfFiles = (bats.length > 0 ? bats : fichiers).map(f => ({
         url: getPublicUrl(f.cleS3),

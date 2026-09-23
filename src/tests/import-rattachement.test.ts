@@ -19,7 +19,7 @@ describe("normaliserReference", () => {
 describe("rattacher", () => {
   const produits: ProduitReferences[] = [
     { id: "p1", codePf: "TA5011", refFacing: "ETBA501V6", refContre: "ETCBA5011V6" },
-    { id: "p2", codePf: "TN2255", refFacing: null, refContre: null },
+    { id: "p2", codePf: "TN5502", refFacing: null, refContre: null },
     { id: "p3", codePf: "TA7372", refFacing: null, refContre: null },
     { id: "p4", codePf: "TA7376", refFacing: null, refContre: null },
   ];
@@ -29,14 +29,14 @@ describe("rattacher", () => {
     const { liens, nonRattaches } = rattacher([
       fichier("01\\TA501 REVE\\ETBA501V6-Reve.pdf", "ETBA501V6-", "facing"),
       fichier("01\\TA501 REVE\\ETBA501V5-Reve.pdf", "ETBA501V5-", "facing"),
-      fichier("21\\PRIMEURS\\TN2255 Full Moon.pdf", "", "non precise", "TN2255"),
+      fichier("21\\PRIMEURS\\TN5502 Black Evidence 2026.pdf", "", "non precise", "TN5502"),
       fichier("05\\TA737 CHAI\\chai.pdf", "", "non precise"),
       fichier("99\\DIVERS\\inconnu.pdf", "ETZZ999V1", "facing"),
     ], produits, "P");
     expect(liens.map((l) => [l.codePf, l.methode, l.actif])).toEqual([
       ["TA5011", "reference_exacte", true],
-      ["TA5011", "reference_autre_version", false],
-      ["TN2255", "code_produit", true],
+      ["TA5011", "reference_autre_version", true],
+      ["TN5502", "code_produit", true],
       ["TA7372", "dossier", true],
       ["TA7376", "dossier", true],
     ]);

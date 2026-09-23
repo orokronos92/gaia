@@ -7,8 +7,13 @@
  * 3. the product code the sort decoded from the file name (Grands Crus carry no ET code);
  * 4. the product folder, as the old association did (one folder may serve
  *    several packagings of one tea: TA737 → TA7372, TA7376).
- * A file matched by an earlier rule is not offered to a later one.
+ * A file matched by an earlier rule is not offered to a later one, and a
+ * product only takes a file the packaging rules allow (regles-bat.ts): no BAT
+ * on a bulk bag printed in-house, the workbook's reference per face, the
+ * packaging digit otherwise. Which version is current is decided afterwards,
+ * over all links, by the clean-up.
  */
+import { regleDure, verifierCompatibilite } from "@/lib/conditionnement/regles-bat";
 
 export type Methode = "reference_exacte" | "reference_autre_version" | "code_produit" | "dossier";
 
@@ -37,7 +42,6 @@ export interface Lien {
   version: string | null;
   role: string;
   methode: Methode;
-  /** False for an older version when the product has the exact one for the same role. */
   actif: boolean;
 }
 
@@ -93,10 +97,15 @@ export function rattacher(fichiers: readonly FichierTrie[], produits: readonly P
     const essais: Array<[Methode, ProduitReferences[] | undefined]> = [
       ["reference_exacte", reference ? parReference.get(reference) : undefined],
       ["reference_autre_version", reference ? parBase.get(sansVersion(reference)) : undefined],
-      ["code_produit", fichier.codePf ? parCode.get(fichier.codePf.toUpperCase()) : undefined],
+      // The sort's decoded code is trusted only when it is spelt out in the name:
+      // its packaging digit is wrong in about a third of the cases.
+      ["code_produit", fichier.codePf && nomFichier.toUpperCase().includes(fichier.codePf.toUpperCase()) ? parCode.get(fichier.codePf.toUpperCase()) : undefined],
       ["dossier", codeDossier ? parDossier.get(codeDeBase(codeDossier) ?? "") : undefined],
     ];
-    const trouve = essais.find(([, candidats]) => candidats && candidats.length > 0);
+    // Hard rules only: a file that merely disagrees with the workbook's reference is
+    // linked, and the clean-up sets it aside if the referenced file is there.
+    const compatibles = (candidats?: ProduitReferences[]) => candidats?.filter((p) => !regleDure(verifierCompatibilite(p, nomFichier)));
+    const trouve = essais.map(([m, c]) => [m, compatibles(c)] as const).find(([, candidats]) => candidats && candidats.length > 0);
     if (!trouve) {
       nonRattaches.push(fichier);
       continue;
@@ -112,10 +121,5 @@ export function rattacher(fichiers: readonly FichierTrie[], produits: readonly P
     }
   }
 
-  // An older version stays listed but out of audits when the exact one is there.
-  const exacts = new Set(liens.filter((l) => l.methode === "reference_exacte").map((l) => `${l.produitId}|${l.role}`));
-  for (const lien of liens) {
-    if (lien.methode === "reference_autre_version" && exacts.has(`${lien.produitId}|${lien.role}`)) lien.actif = false;
-  }
   return { liens, nonRattaches };
 }
