@@ -98,3 +98,30 @@ export async function fichierEtiquetteExiste(cleS3: string): Promise<boolean> {
         .limit(1);
     return ligne !== undefined;
 }
+
+export interface LienAjoute {
+    produitId: string;
+    cleS3: string;
+    dossier: string;
+    nomFichier: string;
+    type: "BAT" | "SOURCE";
+    version: string | null;
+    actif: boolean;
+}
+
+/**
+ * Adds links without touching the existing ones — the label files of the v2
+ * sort (2026-09-23) come on top of the March association, which stays as it
+ * is. A pair already linked is skipped, so a re-run adds nothing.
+ */
+export async function ajouterLiensAuto(liens: readonly LienAjoute[]): Promise<number> {
+    if (liens.length === 0) return 0;
+    return db.transaction(async (tx) => {
+        const inseres = await tx
+            .insert(fichiersEtiquettes)
+            .values(liens.map((l) => ({ ...l, origine: "AUTO" as const })))
+            .onConflictDoNothing({ target: [fichiersEtiquettes.produitId, fichiersEtiquettes.cleS3] })
+            .returning({ id: fichiersEtiquettes.id });
+        return inseres.length;
+    });
+}

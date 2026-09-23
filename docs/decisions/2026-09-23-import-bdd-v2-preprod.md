@@ -172,3 +172,30 @@ ont « INTERNE » en facing : étiquette imprimée en interne, sans fichier grap
    (2,19 Go), pas 2 109 / 1 100 / 2,56 Go comme annoncé.
 4. **Les 18 produits archivés** en base : si un code archivé revient dans l'Excel, on crée
    un nouveau produit actif (l'index partiel le permet) ou on le laisse archivé ?
+
+## 12. Résultats (2026-09-23)
+
+**Lot 2 appliqué sur la préprod** (`scripts/importer-bdd-v2.ts --appliquer --creer-gammes`,
+signé Direction dans `audit_logs`) : 681 produits et fiches créés, 141 produits existants
+mis à jour, 832 produits actifs (151 avant), 412 fiches avec un code étiquette (0 avant).
+Recettes et validations intactes. 4 gammes et 10 sous-gammes créées, à ranger par Marie.
+Relancé à vide : aucune écriture. Sauvegarde préalable :
+`backups/preprod-avant-import-v2-2026-09-23.dump`.
+
+**Lot 4 simulé** (`scripts/rattacher-etiquettes-v2.ts`) sur les 940 PDF retenus :
+
+| Méthode | PDF |
+|---|---:|
+| référence exacte de l'Excel | 536 |
+| référence de l'Excel, autre version | 130 |
+| code produit dans le nom (Grands Crus) | 166 |
+| dossier produit | 5 |
+| non rattachés (68 infusettes du lot 3, produits mis de côté) | 103 |
+
+431 produits sur 832 ont au moins un BAT. Des 401 autres, 357 n'ont aucune référence ET dans
+l'Excel (« INTERNE », « / ») : pas de fichier graphiste attendu. Sur les 475 produits qui en
+attendent un, 436 en ont un (92 %) en comptant les BAT de mars.
+
+Les liens sont ajoutés en `origine = AUTO` à côté de ceux de mars. Relancer l'ancien
+`scripts/associer-fichiers-etiquettes.ts` les remplacerait par l'heuristique de dossier :
+ne pas le relancer sur la préprod.

@@ -4,10 +4,11 @@
  * built by pure code in src/lib/import-catalogue/; this file only loads the
  * current state and executes an approved plan.
  */
-import { eq, sql } from "drizzle-orm";
+import { eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { auditLogs, fichesEtiquettes, gammes, produits, sousGammes, utilisateurs } from "@/db/schema";
 import type { GammeRef, SousGammeRef } from "@/lib/import-catalogue/gammes";
+import type { ProduitReferences } from "@/lib/import-catalogue/rattachement";
 import type { EtatCatalogue, FicheExistante, LibelleInconnu, Plan, ProduitExistant } from "@/lib/import-catalogue/plan";
 import type { Valeur } from "@/lib/import-catalogue/types";
 
@@ -58,6 +59,16 @@ export async function chargerEtatCatalogue(): Promise<EtatCatalogue> {
     refFacing: f.refFacing, refContre: f.refContre, codeEtiquette: f.codeEtiquette,
   }));
   return { produits: produitsExistants, fiches: fichesExistantes };
+}
+
+/** Active products with the label references of their fiche — what the PDFs are matched on. */
+export async function chargerReferencesProduits(): Promise<ProduitReferences[]> {
+  const lignes = await db
+    .select({ id: produits.id, codePf: produits.codePf, refFacing: fichesEtiquettes.refFacing, refContre: fichesEtiquettes.refContre })
+    .from(produits)
+    .leftJoin(fichesEtiquettes, eq(fichesEtiquettes.produitId, produits.id))
+    .where(isNull(produits.archiveLe));
+  return lignes;
 }
 
 /**

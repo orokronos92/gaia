@@ -3,9 +3,9 @@
 > **Fichier généré par `npm run arch:build` — ne pas modifier à la main.**
 > Toute modification manuelle est écrasée à la prochaine génération et fait échouer `npm run arch:check`.
 > La prose (rôle des modules, intentions) vit dans `docs/INTENTION.md`.
-> Base : commit `0a2db6b` · généré le 2026-09-23
+> Base : commit `1017d59` · généré le 2026-09-23
 
-**243 fichiers · 32095 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
+**246 fichiers · 32400 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
 
 ## Dépendances entre dossiers
 
@@ -50,10 +50,10 @@ graph LR
   m0 -->|2| m1
   m0 -->|1| m5
   m0 -->|4| m23
-  m0 -->|3| m24
+  m0 -->|5| m24
   m0 -->|3| m27
-  m0 -->|8| m30
-  m0 -->|2| m33
+  m0 -->|11| m30
+  m0 -->|3| m33
   m2 -->|2| m23
   m3 -->|1| m6
   m3 -->|1| m7
@@ -145,7 +145,7 @@ graph LR
   m24 -->|1| m26
   m24 -->|5| m27
   m24 -->|1| m28
-  m24 -->|3| m30
+  m24 -->|4| m30
   m24 -->|2| m31
   m24 -->|1| m33
   m25 -->|1| m7
@@ -162,7 +162,7 @@ graph LR
 
 | Module | Fichiers | Lignes | Dépend de | Utilisé par |
 |---|---:|---:|---|---|
-| `scripts` | 5 | 475 | `scripts/architecture`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib/audit`, `src/lib/import-catalogue`, `src/lib/utils` | — |
+| `scripts` | 6 | 579 | `scripts/architecture`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib/audit`, `src/lib/import-catalogue`, `src/lib/utils` | — |
 | `scripts/architecture` | 4 | 403 | — | `scripts` |
 | `src` | 3 | 96 | `src/db` | `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/agents` | 7 | 811 | `src/agents/knowledge`, `src/agents/recette`, `src/db/queries` | `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/agents/recette`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
@@ -186,13 +186,13 @@ graph LR
 | `src/components/recette` | 12 | 1593 | `src/agents/recette`, `src/app/actions`, `src/components/atoms`, `src/components/etiquettes`, `src/components/provenance`, `src/components/ui`, `src/hooks`, `src/lib`, `src/lib/business-rules`, `src/lib/recette` | `src/app/(dashboard)` |
 | `src/components/ui` | 15 | 1269 | `src/lib` | `src/app/(dashboard)`, `src/app/login`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/produits`, `src/components/provenance`, `src/components/recette` |
 | `src/db` | 5 | 903 | — | `scripts`, `src`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api`, `src/db/queries` |
-| `src/db/queries` | 15 | 2625 | `src/agents/recette`, `src/db`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/import-catalogue`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
+| `src/db/queries` | 15 | 2663 | `src/agents/recette`, `src/db`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/import-catalogue`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/hooks` | 2 | 511 | `src/agents/recette`, `src/app/actions`, `src/lib/business-rules`, `src/lib/recette` | `src/components/recette` |
 | `src/lib` | 3 | 64 | — | `src/app/(dashboard)`, `src/app/actions`, `src/app/login`, `src/components/atoms`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/provenance`, `src/components/recette`, `src/components/ui`, `src/db/queries` |
 | `src/lib/audit` | 29 | 5333 | `src/lib/business-rules`, `src/lib/utils` | `scripts`, `src/agents/audit`, `src/app/(dashboard)`, `src/app/actions`, `src/db/queries` |
 | `src/lib/business-rules` | 6 | 535 | — | `src/agents/imports`, `src/agents/recette`, `src/app/actions`, `src/components/recette`, `src/db/queries`, `src/hooks`, `src/lib/audit`, `src/lib/recette`, `src/lib/utils` |
 | `src/lib/etiquettes` | 1 | 36 | — | `src/app/(dashboard)` |
-| `src/lib/import-catalogue` | 8 | 842 | — | `scripts`, `src/db/queries` |
+| `src/lib/import-catalogue` | 10 | 1005 | — | `scripts`, `src/db/queries` |
 | `src/lib/recette` | 9 | 1237 | `src/lib/business-rules` | `src/agents/imports`, `src/app/(dashboard)`, `src/components/recette`, `src/db/queries`, `src/hooks` |
 | `src/lib/referentiels` | 1 | 57 | — | `src/app/(dashboard)` |
 | `src/lib/utils` | 9 | 1303 | `src/lib/business-rules` | `scripts`, `src/agents/imports`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api`, `src/db/queries`, `src/lib/audit` |
