@@ -219,3 +219,24 @@ marques clientes ?
 
 **I3.** Country Farm : 4 lignes portent le code provisoire `IFXXX`, et 4 lignes (56 à 59)
 n'ont ni code ni dénomination. Non importées.
+
+## J. Références d'étiquette qui ne correspondent pas au fichier
+
+Sur ces produits, la référence de la base et le nom du fichier du Graphisme diffèrent, et
+aucun fichier ne porte la référence de la base. Le fichier est **gardé** en attendant :
+laquelle des deux est juste ?
+
+| Produit | Référence dans la base | Fichier reçu |
+|---|---|---|
+| TH214 Souci | `ETHN2146V7` (contre sans « C » ?) | `ETCHN2146V7` |
+| TH440 Légèreté | `ETHN4406V7` | `ETCHN4402V7` |
+| TH519 Vitalité | `ETCHN5196V7` | `ETCHN5192V7` |
+| TH974 La salsa du printemps | `ETCHN9746V7` | `ETCHN9742V7` |
+| TA5106 Papillons blancs | `ETCBA5106V5` | `ETCTA5106V5` |
+| TA6092 Pomme de Noël | `ETCVA609V7` | `ETCVA6092V7` |
+| TA7022 Earl Grey | `ETCNA7022V5` | `ETCNA702V5` |
+| TH0612 Bonne mine | `ETHN0612V7` | `ETHN061V7` |
+| TM0182 Parenthèse gourmande | `ETHM0182V5` | `ETHM018V5` |
+| TM0316 | `ETBA0316V6` | `ETBA031V6` |
+
+Liste complète des fichiers désactivés et de leurs motifs : `docs/sources/nettoyage-bat.csv`.
