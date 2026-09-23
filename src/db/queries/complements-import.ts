@@ -72,3 +72,48 @@ export async function ecrireComplements(complements: readonly ComplementAEcrire[
     return { produits: complements.length, suivis, lignesSource: lignes.length };
   });
 }
+
+export interface ValeursAEcrire {
+  cible: CibleProduit;
+  produit: Record<string, string>;
+  fiche: Record<string, string>;
+  suivi: Record<string, string>;
+}
+
+/**
+ * Writes what a complementary sheet (FR et EN, CODE ARTI EXPORT) gives: only
+ * the fields it fills, so an empty cell never erases the JDG sheet's value.
+ */
+export async function ecrireOngletComplementaire(items: readonly ValeursAEcrire[], lignes: readonly LigneSourceAEcrire[]) {
+  return db.transaction(async (tx) => {
+    let produitsMaj = 0;
+    let fichesMaj = 0;
+    for (const { cible, produit, fiche, suivi } of items) {
+      if (Object.keys(produit).length > 0) {
+        await tx.update(produits).set({ ...produit, misAJourLe: new Date() }).where(eq(produits.id, cible.produitId));
+        produitsMaj += 1;
+      }
+      if (cible.ficheId === null) continue;
+      if (Object.keys(fiche).length > 0) {
+        await tx.update(fichesEtiquettes).set({ ...fiche, misAJourLe: new Date() }).where(eq(fichesEtiquettes.id, cible.ficheId));
+        fichesMaj += 1;
+      }
+      if (Object.keys(suivi).length > 0) {
+        await tx
+          .insert(suiviFabrication)
+          .values({ ficheEtiquetteId: cible.ficheId, ...suivi })
+          .onConflictDoUpdate({ target: suiviFabrication.ficheEtiquetteId, set: { ...suivi, misAJourLe: new Date() } });
+      }
+    }
+    for (const ligne of lignes) {
+      await tx
+        .insert(lignesSource)
+        .values(ligne)
+        .onConflictDoUpdate({
+          target: [lignesSource.fichier, lignesSource.onglet, lignesSource.numeroLigne],
+          set: { codePf: ligne.codePf, produitId: ligne.produitId, donnees: ligne.donnees, importeLe: sql`now()` },
+        });
+    }
+    return { produits: produitsMaj, fiches: fichesMaj, lignesSource: lignes.length };
+  });
+}

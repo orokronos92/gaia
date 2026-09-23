@@ -189,3 +189,19 @@ sur **28 textes** :
 - **TN1062** : la liste d'ingrédients anglaise diffère entre l'étiquette et PMI.
 
 Liste complète : `docs/sources/complements-v2-ecarts-pmi.csv`.
+
+## H. Traductions et codes export
+
+Règle appliquée : l'onglet « FR et EN » fait foi pour l'anglais, « CODE ARTI EXPORT » pour
+les codes export (« réellement créé »). 374 écarts avec l'onglet JDG ont été tranchés ainsi
+(liste : `docs/sources/complementaires-v2-ecarts-jdg.csv`). La plupart sont de forme
+(« wu long » / « wulong »). Quelques-uns sont de fond, à confirmer :
+- **MT1002** Maté vert : « Stimulating & Diuretic » devient « Stimulating & Cleansing ».
+  « Diuretic » est une allégation santé : la nouvelle formulation est-elle la version
+  validée ?
+- **HB1742** : nom anglais « Starry night » ou « Like a gentle caress » ?
+- **7 codes d'étiquette export** diffèrent entre l'onglet JDG et « CODE ARTI EXPORT ».
+
+**4 sous-désignations anglaises** font 280 à 531 caractères (TB3716, TN2196, TN2276,
+TN2396) : ce sont des textes, pas des sous-désignations. Non importées : dans quel champ
+vont-elles ?
