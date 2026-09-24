@@ -17,7 +17,7 @@ type Attendu = "REQUIS" | "INTERDIT" | "OPTIONNEL";
 
 export interface PictoDef {
   cle: string;
-  /** Point de la checklist auquel ce logo répond (PRO-QHS-013). */
+  /** Point de la checklist auquel ce logo répond (PRO-QHS-313). */
   checklistId: string;
   /** Visual description handed to the model so it knows what to look for. */
   desc: string;

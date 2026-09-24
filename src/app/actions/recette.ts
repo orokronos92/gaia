@@ -99,7 +99,7 @@ export async function validerRecetteAction(input: unknown) {
         changements: {
           champ: "phraseDemeterFr",
           apres: DEMETER_PHRASE_TYPE,
-          source: "PRO-QHS-013 §11.1",
+          source: "PRO-QHS-313 §11.1",
           declencheur: `${matieresDemeter.length} matière(s) Demeter à la validation de la recette`,
           matieres: matieresDemeter.map((i) => i.designation),
           pourcentageDemeter: calc.demeter.pourcentageDemeter,

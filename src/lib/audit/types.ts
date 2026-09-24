@@ -1,7 +1,7 @@
 /**
  * Audit type system — shared across the three execution lanes
  * (deterministic / llm / manual). Source of truth for the audit domain:
- * PRO-QHS-013 (Procédure de vérification d'étiquetage, v.1, 30/03/2023).
+ * PRO-QHS-313 (Procédure de vérification d'étiquetage, v.1, 30/03/2023).
  *
  * Static control metadata (libellé, référence, section, ordre) lives in the
  * registry (`control-checklist.ts`). A `ControlResult` carries only the dynamic
@@ -52,7 +52,7 @@ export const CONTROL_ACTIONS = ["RIEN", "COMPLETER", "VERIFIER", "CORRIGER"] as 
 export const ControlActionSchema = z.enum(CONTROL_ACTIONS);
 export type ControlAction = z.infer<typeof ControlActionSchema>;
 
-/** Sections of PRO-QHS-013, in document order. */
+/** Sections of PRO-QHS-313, in document order. */
 export const CONTROL_SECTIONS = [
   "DENOMINATION",
   "INGREDIENTS",
@@ -69,7 +69,7 @@ export const CONTROL_SECTIONS = [
   "LABELS",
   "TYPOGRAPHIE",
   "CODE_ETIQUETTE",
-  // Hors PRO-QHS-013 : structure du code article et du GENCODE, définie par
+  // Hors PRO-QHS-313 : structure du code article et du GENCODE, définie par
   // MOP-PRO-029. Ce sont des contrôles sur la FICHE, pas sur l'étiquette.
   "CODE_ARTICLE",
 ] as const;
@@ -135,7 +135,7 @@ export type ControlType = z.infer<typeof ControlTypeSchema>;
 /**
  * Minimal context passed to applicability predicates. A point whose
  * `applicableSi` returns false is auto-`NA` — never audited. Mirrors the fields
- * the regulation keys applicability on (PRO-QHS-013).
+ * the regulation keys applicability on (PRO-QHS-313).
  */
 export interface AuditContext {
   typeTheFr?: string | null;

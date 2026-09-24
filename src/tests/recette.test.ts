@@ -75,7 +75,7 @@ describe("Largest-remainder method (Hamilton)", () => {
   });
 });
 
-// Regression guard for PRO-QHS-013 §2.2 (see recette.ts). The official sheet is
+// Regression guard for PRO-QHS-313 §2.2 (see recette.ts). The official sheet is
 // reproduced by distributing the leftover to the largest fractional remainders,
 // NOT by dumping the whole gap on the biggest-kg ingredient. A future refactor
 // that reintroduces "dump on biggest kg" must fail here, not silently ship.

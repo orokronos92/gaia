@@ -1,6 +1,6 @@
 /**
  * Deterministic mention / code controls — canonical JDG string matches and
- * field-presence checks (PRO-QHS-013 §4, §5, §7, §13). Absent or unconfirmable
+ * field-presence checks (PRO-QHS-313 §4, §5, §7, §13). Absent or unconfirmable
  * data → WARNING; structurally wrong data → FAIL. Gencode (10.1) and code OC
  * (13.2) are NOT here: they're BAT/vision controls, absent from the fiche.
  */

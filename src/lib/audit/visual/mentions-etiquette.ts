@@ -1,5 +1,5 @@
 /**
- * Ce que l'étiquette dit d'elle-même — PRO-QHS-013 §2.1, §9, §11.1, §5, §6.
+ * Ce que l'étiquette dit d'elle-même — PRO-QHS-313 §2.1, §9, §11.1, §5, §6.
  *
  * Six points étaient déclarés « contrôle visuel » ou « à évaluer » alors que
  * leur réponse est écrite en toutes lettres sur le BAT. Le registre les avait

@@ -102,7 +102,7 @@ const TRANCHES_DEMETER: { min: number; tranche: string; consequence: string }[] 
 /**
  * QUID rounding — reproduces the official JDG sheet exactly.
  *
- * Business rule PRO-QHS-013 §2.2 "Déclaration quantitative QUID": the displayed
+ * Business rule PRO-QHS-313 §2.2 "Déclaration quantitative QUID": the displayed
  * percentages must sum to exactly 100 and match the "% pour liste d'ingrédient"
  * column R&D fills in. Golden reference MT165_MATE_SPORTIF.xlsx →
  * 62 / 15,5 / 6 / 6 / 4 / 4 / 2 / 0,5.

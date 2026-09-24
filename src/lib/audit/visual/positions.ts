@@ -1,5 +1,5 @@
 /**
- * Contrôles de position relative — PRO-QHS-013 §1, §4 et §6.
+ * Contrôles de position relative — PRO-QHS-313 §1, §4 et §6.
  *
  * Trois exigences ne portent ni sur le texte ni sur sa taille, mais sur l'endroit
  * où il est posé :

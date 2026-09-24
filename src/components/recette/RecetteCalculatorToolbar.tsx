@@ -108,7 +108,7 @@ export function RecetteCalculatorToolbar({
       <div className="ml-auto flex items-end gap-4">
         <div
           className="space-y-1.5"
-          title="Précision d'arrondi de la liste d'ingrédients (PRO-QHS-013)"
+          title="Précision d'arrondi de la liste d'ingrédients (PRO-QHS-313)"
         >
           <span className="block text-[10px] font-bold uppercase tracking-widest text-stone-400">
             Pas d&apos;arrondi

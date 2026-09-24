@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
  * Row marker for Demeter / fair trade.
  *
  * The glyph is the label's own convention, not decoration: one star means
- * organic, TWO mean Demeter (PRO-QHS-013 §11.1). Both toggles used to render a
+ * organic, TWO mean Demeter (PRO-QHS-313 §11.1). Both toggles used to render a
  * single star, so the screen taught Marie the opposite of the rule — a Demeter
  * ingredient showed the organic mark.
  *

@@ -97,7 +97,7 @@ export function DeterministicAuditPanel({ ficheId, actions, batChecks, horsCheck
                         Contrôle de la fiche
                     </CardTitle>
                     <CardDescription className="ml-10 max-w-prose leading-relaxed">
-                        Les {CONTROL_CHECKLIST.length} points de PRO-QHS-013 et MOP-PRO-029.{" "}
+                        Les {CONTROL_CHECKLIST.length} points de PRO-QHS-313 et MOP-PRO-029.{" "}
                         <strong>Contrôler l&apos;étiquette</strong> mesure tout ce qui se mesure, sur
                         la fiche comme sur le BAT. <strong>Analyse IA</strong> ajoute la
                         reconnaissance des logos et le jugement de l&apos;allégation.

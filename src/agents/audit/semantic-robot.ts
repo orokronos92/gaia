@@ -98,7 +98,7 @@ Réponds STRICTEMENT en JSON : {"resultats":[{"cle":"...","statut":"CONFORME|DOU
       const e = byCle.get(r.cle)!;
       return {
         id: e.cle,
-        // L'allégation est le point 5.2 de PRO-QHS-013 (§3.2).
+        // L'allégation est le point 5.2 de PRO-QHS-313 (§3.2).
         checklistId: "5.2",
         origine: "semantique",
         rubrique: e.rubrique,

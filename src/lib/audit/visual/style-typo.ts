@@ -1,5 +1,5 @@
 /**
- * Contrôles de graisse et de style — PRO-QHS-013 §3.1 et §11.1.
+ * Contrôles de graisse et de style — PRO-QHS-313 §3.1 et §11.1.
  *
  * Deux exigences portent sur la façon dont un mot est imprimé, pas sur sa
  * présence : un allergène doit se distinguer du reste de la liste, et le mot

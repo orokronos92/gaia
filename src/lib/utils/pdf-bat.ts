@@ -4,7 +4,7 @@
  * Les BAT des Jardins de Gaïa sont des PDF d'impression Illustrator. Ils
  * portent bien plus que du texte : la zone de coupe, le corps exact de chaque
  * mot, le nom réel des polices embarquées et leurs métriques. La conformité
- * typographique de PRO-QHS-013 §12 et §4 s'en déduit par le calcul, là où elle
+ * typographique de PRO-QHS-313 §12 et §4 s'en déduit par le calcul, là où elle
  * était jusqu'ici « à vérifier à l'œil ».
  *
  * Deux sources, chacune pour ce qu'elle fait le mieux :

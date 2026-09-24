@@ -1,5 +1,5 @@
 /**
- * Contrôles typographiques mesurés sur le BAT — PRO-QHS-013 §12 et §4.
+ * Contrôles typographiques mesurés sur le BAT — PRO-QHS-313 §12 et §4.
  *
  * Ces deux points étaient déclarés `manual` : « à vérifier à l'œil ». Or un œil
  * ne tranche pas 1,07 mm contre un seuil de 0,9 mm, et la donnée est dans le
@@ -257,7 +257,7 @@ function controlerExemptionNutritionnelle(surfaceCm2: number, tranche: TrancheSu
     rubrique: "Déclaration nutritionnelle",
     libelle: "Exemption d'étiquetage nutritionnel ?",
     statut: "PASS",
-    justification: `Face la plus grande ${surfaceCm2} cm², sous le seuil de 25 cm² : l'étiquetage nutritionnel ne s'applique pas (PRO-QHS-013 §2.3).`,
+    justification: `Face la plus grande ${surfaceCm2} cm², sous le seuil de 25 cm² : l'étiquetage nutritionnel ne s'applique pas (PRO-QHS-313 §2.3).`,
     checklistId: "4.1",
   };
 }

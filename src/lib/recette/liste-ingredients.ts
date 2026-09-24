@@ -18,7 +18,7 @@ export interface IngredientListe {
 /**
  * Ordered by `ordreTri`, each line "designation* P %", joined ", " + ".".
  *
- * Marker convention — PRO-QHS-013 §11.1, control point 2.4:
+ * Marker convention — PRO-QHS-313 §11.1, control point 2.4:
  *   `*`  issu de l'agriculture biologique
  *   `**` Demeter (and the ingredient set in bold italic on the artwork, which
  *        only the printed label can carry — not this text)

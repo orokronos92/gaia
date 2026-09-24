@@ -19,7 +19,7 @@ describe("genererListeIngredients — liste déclarée déterministe", () => {
     expect(texte).toBe("Maté vert* 62 %, Gingembre* 15.5 %.");
   });
 
-  // PRO-QHS-013 §11.1 (point de contrôle 2.4) : « * bio / ** demeter ».
+  // PRO-QHS-313 §11.1 (point de contrôle 2.4) : « * bio / ** demeter ».
   it("bio par défaut → une étoile", () => {
     expect(genererListeIngredients([ing("Maté vert", 62, 1)])).toBe("Maté vert* 62 %.");
   });

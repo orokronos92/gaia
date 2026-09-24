@@ -5,7 +5,7 @@
  * « donnée absente », et Marie doit aller la retaper. L'application peut faire
  * mieux — mais **pas la recopier toute seule**.
  *
- * PRO-QHS-013 repose sur un sens de lecture unique : la fiche est la référence,
+ * PRO-QHS-313 repose sur un sens de lecture unique : la fiche est la référence,
  * le BAT doit s'y conformer. Si l'application remplit la fiche depuis
  * l'étiquette puis compare les deux, le contrôle devient circulaire — il passera
  * toujours, puisque la valeur vient de ce qu'il est censé vérifier.
@@ -14,7 +14,7 @@
  * reste le sien, daté et signé ; on lui épargne seulement la saisie.
  *
  * Une proposition peut aussi venir d'ailleurs que du BAT. La mention Demeter est
- * de celles-là : son texte est fixé par PRO-QHS-013 §11.1, pas par l'étiquette.
+ * de celles-là : son texte est fixé par PRO-QHS-313 §11.1, pas par l'étiquette.
  * La proposer depuis la procédure vaut mieux que de la recopier du BAT — c'est
  * précisément le raisonnement circulaire décrit plus haut que ça évite.
  */

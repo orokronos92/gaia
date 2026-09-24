@@ -4,7 +4,7 @@
 **généré**, il ne le paraphrase pas. Toute divergence est un bug du document.
 **Dernière génération** : 24 septembre 2026.
 
-L'audit transpose **PRO-QHS-013** (procédure JDG de vérification d'étiquetage,
+L'audit transpose **PRO-QHS-313** (procédure JDG de vérification d'étiquetage,
 v.1 du 30/03/2023), complété par **MOP-PRO-029** pour le code article et le
 Gencode. **45 points de contrôle**, tous exécutés à chaque lancement — un
 contrôle absent est un oubli, un contrôle muet est un mensonge par omission.
@@ -75,117 +75,117 @@ fermer l'aurait empêché d'y arriver.
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **1.0** | La dénomination légale décrit-elle objectivement le produit (état physique / traitement subi) ? | Modèle | — | PRO-QHS-013 §1 ; INCO art. 9 et 13 |
-| **1.1** † | Si dénomination « thé » : le produit contient-il ≥ 51 % de Camellia sinensis ? | Code · fiche | — | PRO-QHS-013 §1.1 |
-| **1.2** † | Arôme présent : la mention « aromatisé / goût / saveur » figure-t-elle en dénomination, conforme au tableau §1.2 ? | Modèle | — | PRO-QHS-013 §1.2 ; STEPI ; règl. 1334/2008 |
-| **1.3** † | La mention « parfumé » est-elle utilisée UNIQUEMENT pour une aromatisation par enfleurage ? | Modèle | — | PRO-QHS-013 §1.2 |
-| **1.4** | La dénomination figure-t-elle dans le même champ visuel que le poids net, en caractères droits et lisibles ? | Code · BAT | zone | PRO-QHS-013 §1 ; INCO art. 9/13 |
-| **1.5** | La dénomination portée par la fiche figure-t-elle à l'identique sur le BAT ? | Code · BAT | zone | PRO-QHS-013 §1 ; INCO art. 9 et 13 |
-| **1.6** † | Infusion : la dénomination légale est-elle l'un des noms usuels autorisés (tisane, infusion, mélange de plantes à infusion…) ? | Code · fiche | — | PRO-QHS-013 §1.3 ; STEPI |
+| **1.0** | La dénomination légale décrit-elle objectivement le produit (état physique / traitement subi) ? | Modèle | — | PRO-QHS-313 §1 ; INCO art. 9 et 13 |
+| **1.1** † | Si dénomination « thé » : le produit contient-il ≥ 51 % de Camellia sinensis ? | Code · fiche | — | PRO-QHS-313 §1.1 |
+| **1.2** † | Arôme présent : la mention « aromatisé / goût / saveur » figure-t-elle en dénomination, conforme au tableau §1.2 ? | Modèle | — | PRO-QHS-313 §1.2 ; STEPI ; règl. 1334/2008 |
+| **1.3** † | La mention « parfumé » est-elle utilisée UNIQUEMENT pour une aromatisation par enfleurage ? | Modèle | — | PRO-QHS-313 §1.2 |
+| **1.4** | La dénomination figure-t-elle dans le même champ visuel que le poids net, en caractères droits et lisibles ? | Code · BAT | zone | PRO-QHS-313 §1 ; INCO art. 9/13 |
+| **1.5** | La dénomination portée par la fiche figure-t-elle à l'identique sur le BAT ? | Code · BAT | zone | PRO-QHS-313 §1 ; INCO art. 9 et 13 |
+| **1.6** † | Infusion : la dénomination légale est-elle l'un des noms usuels autorisés (tisane, infusion, mélange de plantes à infusion…) ? | Code · fiche | — | PRO-QHS-313 §1.3 ; STEPI |
 
 ### Liste des ingrédients
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **2.1** | Le mot « ingrédients » précède-t-il la liste ? | Code · BAT | zone | PRO-QHS-013 §2.1 |
-| **2.2** | Les ingrédients sont-ils listés par ordre d'importance pondérale décroissante ? | Code · fiche | — | PRO-QHS-013 §2.1 |
-| **2.3** | Mono-ingrédient : la liste est-elle correctement omise (dénomination = nom de l'ingrédient) ? | Code · fiche | — | PRO-QHS-013 §2.1 |
-| **2.4** | Étoiles présentes (* bio / ** demeter) avec la mention de certification associée, demeter en gras italique ? | Code · BAT | — | PRO-QHS-013 §11.1 |
-| **2.5** | La liste d'ingrédients de la fiche (recette étiquette, sinon base Excel) correspond-elle à celle imprimée sur le BAT ? | Code · BAT | — | PRO-QHS-013 §2.1 |
+| **2.1** | Le mot « ingrédients » précède-t-il la liste ? | Code · BAT | zone | PRO-QHS-313 §2.1 |
+| **2.2** | Les ingrédients sont-ils listés par ordre d'importance pondérale décroissante ? | Code · fiche | — | PRO-QHS-313 §2.1 |
+| **2.3** | Mono-ingrédient : la liste est-elle correctement omise (dénomination = nom de l'ingrédient) ? | Code · fiche | — | PRO-QHS-313 §2.1 |
+| **2.4** | Étoiles présentes (* bio / ** demeter) avec la mention de certification associée, demeter en gras italique ? | Code · BAT | — | PRO-QHS-313 §2.1 et §11.1 ; cahier des charges Demeter France §4.3.1 |
+| **2.5** | La liste d'ingrédients de la fiche (recette étiquette, sinon base Excel) correspond-elle à celle imprimée sur le BAT ? | Code · BAT | — | PRO-QHS-313 §2.1 |
 
 ### QUID (pourcentages)
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **3.1** | Un % est-il déclaré pour chaque ingrédient figurant en dénomination, mis en avant graphiquement, ou source de confusion ? | Code · fiche | — | PRO-QHS-013 §2.2 |
+| **3.1** | Un % est-il déclaré pour chaque ingrédient figurant en dénomination, mis en avant graphiquement, ou source de confusion ? | Code · fiche | — | PRO-QHS-313 §2.2 |
 | **3.2** | Règle d'arrondi respectée : % entiers (1ʳᵉ décimale 0-4 → inférieur, 5-9 → supérieur), pas de 0,5 si choisi (arôme < 1 % en sous-désignation) ? | Code · fiche | — | PRO-QHS-313 §2.2 |
-| **3.3** | Si total > 100 % du fait des arrondis, l'ajustement porte-t-il sur l'ingrédient le plus important ? | Code · fiche | — | PRO-QHS-013 §2.2 |
+| **3.3** | Si total > 100 % du fait des arrondis, l'ajustement porte-t-il sur l'ingrédient le plus important ? | Code · fiche | — | PRO-QHS-313 §2.2 |
 
 ### Déclaration nutritionnelle
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **4.1** | Le produit relève-t-il d'une catégorie exemptée (infusions, thés, mélanges sans modification de la valeur nutritionnelle) ? | Code · fiche | — | PRO-QHS-013 §2.3 ; annexe 1 |
-| **4.2** | Si l'aromatisation modifie la valeur nutritionnelle (ex. caramel) : la mention « Informations nutritionnelles moyennes pour 100 ml… » figure-t-elle ? | Code · fiche | — | PRO-QHS-013 §2.3 |
+| **4.1** | Le produit relève-t-il d'une catégorie exemptée (infusions, thés, mélanges sans modification de la valeur nutritionnelle) ? | Code · fiche | — | PRO-QHS-313 §2.3 |
+| **4.2** | Si l'aromatisation modifie la valeur nutritionnelle (ex. caramel) : la mention « Informations nutritionnelles moyennes pour 100 ml… » figure-t-elle ? | Code · fiche | — | PRO-QHS-313 §2.3 |
 
 ### Particularités
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **5.1** † | Allergènes présents : mis en évidence (gras / souligné) et conformes à LIS-QHS-008 ? | Code · fiche | — | PRO-QHS-013 §3.1 ; annexe 2 |
-| **5.2** † | Allégation présente : valeurs nutritionnelles + mention « mode de vie sain… » + « consommation journalière conseillée : x tasses de 25 cl » (+ grammage sur logo tasse si ≠ 2 g) ? | Modèle | — | PRO-QHS-013 §3.2 |
-| **5.3** † | Réglisse présente : mention JDG « Contient de la réglisse – Les personnes souffrant d'hypertension doivent éviter toute consommation excessive » ? | Code · fiche | — | PRO-QHS-013 §3.3 ; annexe 3 |
+| **5.1** † | Allergènes présents : mis en évidence (gras / souligné) et conformes à LIS-QHS-308 ? | Code · fiche | — | PRO-QHS-313 §3.1 ; LIS-QHS-308 |
+| **5.2** † | Allégation présente : valeurs nutritionnelles + mention « mode de vie sain… » + « consommation journalière conseillée : x tasses de 25 cl » (+ grammage sur logo tasse si ≠ 2 g) ? | Modèle | — | PRO-QHS-313 §3.2 |
+| **5.3** † | Réglisse présente : mention JDG « Contient de la réglisse – Les personnes souffrant d'hypertension doivent éviter toute consommation excessive » ? | Code · fiche | — | PRO-QHS-313 §3.3 |
 
 ### Quantité nette
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **6.1** | Quantité nette exprimée en unité de masse (g ou kg) ? | Code · fiche | zone + **propose** | PRO-QHS-013 §4 |
-| **6.2** | Hauteur des chiffres conforme (2 mm si ≤ 50 g ; 3 mm si 50-200 g ; 4 mm si 200-1000 g ; 6 mm si > 1000 g), dans le même champ visuel que la dénomination ? | Code · BAT | zone | PRO-QHS-013 §4 |
-| **6.3** | Le nombre de tasses annoncé correspond-il au poids net divisé par 2 g ? | Code · fiche | — | PRO-QHS-013 §3.2 ; §15 |
+| **6.1** | Quantité nette exprimée en unité de masse (g ou kg) ? | Code · fiche | zone + **propose** | PRO-QHS-313 §4 |
+| **6.2** | Hauteur des chiffres conforme (2 mm si ≤ 50 g ; 3 mm si 50-200 g ; 4 mm si 200-1000 g ; 6 mm si > 1000 g), dans le même champ visuel que la dénomination ? | Code · BAT | zone | PRO-QHS-313 §4 |
+| **6.3** | Le nombre de tasses annoncé correspond-il au poids net divisé par 2 g ? | Code · fiche | — | PRO-QHS-313 §3.2 ; §15 |
 
 ### Conservation et mode d'emploi
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **7.1** | Mode d'emploi présent si nécessaire (nb sachets/cuillères, température, durée), sans recours exclusif à des symboles ? | Code · BAT | zone | PRO-QHS-013 §5 |
-| **7.2** | Mention JDG « À conserver à l'abri de l'humidité, de la lumière et de la chaleur » présente ? | Code · fiche | — | PRO-QHS-013 §5 |
+| **7.1** | Mode d'emploi présent si nécessaire (nb sachets/cuillères, température, durée), sans recours exclusif à des symboles ? | Code · BAT | zone | PRO-QHS-313 §5 |
+| **7.2** | Mention JDG « À conserver à l'abri de l'humidité, de la lumière et de la chaleur » présente ? | Code · fiche | — | PRO-QHS-313 §5 |
 
 ### Origine géographique
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **8.1** | Indication de l'origine des matières premières placée sous le code de l'organisme de contrôle, sous l'Eurofeuille ? | Code · BAT | zone | PRO-QHS-013 §6 et §11.1 |
-| **8.2** | Mention « Agriculture UE / non UE / pays » cohérente avec ≥ 98 % des matières premières de cette origine ? | Modèle | zone | PRO-QHS-013 §6 et §11.1 |
-| **8.3** † | Mention volontaire d'origine réservée à un produit contenant > 50 % de cette origine ? | Modèle | — | PRO-QHS-013 §6 |
+| **8.1** | Indication de l'origine des matières premières placée sous le code de l'organisme de contrôle, sous l'Eurofeuille ? | Code · BAT | zone | PRO-QHS-313 §6 et §11.1 |
+| **8.2** | Mention « Agriculture UE / non UE / pays » cohérente avec ≥ 98 % des matières premières de cette origine ? | Modèle | zone | PRO-QHS-313 §6 et §11.1 |
+| **8.3** † | Mention volontaire d'origine réservée à un produit contenant > 50 % de cette origine ? | Modèle | — | PRO-QHS-313 §6 |
 
 ### Fabricant
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **9.1** | Adresse JDG complète présente (LES JARDINS DE GAÏA – Z.A. – 6 rue de l'Écluse – FR-67820 Wittisheim + site web), sans code emballeur ? | Code · fiche | — | PRO-QHS-013 §7 |
+| **9.1** | Adresse JDG complète (LES JARDINS DE GAÏA – Z.A. – 6 rue de l'Écluse – FR-67820 Wittisheim + site web), sans code emballeur, sur l'étiquette ou le sachet non encollé ? | Code · fiche | — | PRO-QHS-313 §7 |
 
 ### Gencode
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **10.1** | Code-barres IMPRIMÉ sur le BAT identique au Gencode déclaré en fiche ? | Œil | **12.1** Triman | PRO-QHS-013 §8 ; annexe 4 ; MOP-PRO-029 §3 |
+| **10.1** | Code-barres IMPRIMÉ sur le BAT identique au Gencode déclaré en fiche ? | Œil | **12.1** Triman | PRO-QHS-313 §8 ; MOP-PRO-029 §3 |
 
 ### Métrologie
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **11.1** | Le « e » métrologique est-il bien ABSENT (politique JDG) ? | Code · BAT | — | PRO-QHS-013 §9 |
+| **11.1** | Le « e » métrologique est-il bien ABSENT (politique JDG) ? | Code · BAT | — | PRO-QHS-313 §9 |
 
 ### Pictogrammes
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **12.1** | Triman présent, ≥ 1×1 cm (ou ≥ 0,6×0,6 cm si contrainte technique) ? | Œil | — | PRO-QHS-013 §10.1 ; décret 2022-975 |
-| **12.2** | Cartouche Info-Tri complet (Triman + « le tri + facile » + éléments séparés par + + destination), règles de dématérialisation selon surface respectées ? | Œil | **13.4** Point Vert absent | PRO-QHS-013 §10.2 ; annexe 5 ; loi AGEC art. 17 |
+| **12.1** | Triman présent, ≥ 1×1 cm (ou ≥ 0,6×0,6 cm si contrainte technique) ? | Œil | — | PRO-QHS-313 §10.1 ; décret 2022-975 |
+| **12.2** | Cartouche Info-Tri complet (Triman + « le tri + facile » + éléments séparés par + + destination), règles de dématérialisation selon surface respectées ? | Œil | **13.4** Point Vert absent | PRO-QHS-313 §10.2 ; loi AGEC art. 17 |
 
 ### Labels
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **13.1** | Eurofeuille présente, dimensions ≥ L 13,5 × H 9 mm (proportions 1/1,15), dans le même champ visuel que le code OC et l'origine ? | Code · BAT | zone | PRO-QHS-013 §11.1 ; annexe 6 |
-| **13.2** | Code de l'organisme de contrôle du dernier opérateur présent (FR-BIO-01) ? | Code · BAT | zone | PRO-QHS-013 §11.1 |
-| **13.3** | Labels non officiels (WFTO, Fairtrade, Elephant Friendly, FFL, Demeter…) justifiés par la matière première et correctement apposés ? | Modèle | — | PRO-QHS-013 §11.2 ; annexe 7 |
-| **13.4** | Logo Point Vert bien ABSENT (interdit depuis le 01/01/2021, loi AGEC) ? | Œil | — | PRO-QHS-013 §11.2 ; loi 2020-105 |
-| **13.5** † | Thé transporté à la voile : bandeau de gamme ET phrase du transporteur imprimés ensemble ? | Code · BAT | zone | PRO-QHS-013 §11.2 |
-| **13.6** † | Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ? | Code · BAT | zone | PRO-QHS-013 §11.2 |
+| **13.1** | Eurofeuille présente, dimensions ≥ L 13,5 × H 9 mm (proportions 1/1,15), dans le même champ visuel que le code OC et l'origine ? | Code · BAT | zone | PRO-QHS-313 §11.1 ; charte Eurofeuille (règl. UE 2018/848) |
+| **13.2** | Code de l'organisme de contrôle du dernier opérateur présent (FR-BIO-01) ? | Code · BAT | zone | PRO-QHS-313 §11.1 |
+| **13.3** | Autres labels (Savourez l'Alsace, Meilleur produit Bio, Fairtrade Max Havelaar, WFTO, Elephant Friendly, Fair for Life, Thés à la voile) justifiés par la matière première et correctement apposés ? | Modèle | — | PRO-QHS-313 §11.2 |
+| **13.4** | Logo Point Vert bien ABSENT (interdit depuis le 01/01/2021, loi AGEC) ? | Œil | — | PRO-QHS-313 §11.2 ; loi 2020-105 |
+| **13.5** † | Thé transporté à la voile : bandeau de gamme ET phrase du transporteur imprimés ensemble ? | Code · BAT | zone | PRO-QHS-313 §11.2 |
+| **13.6** † | Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ? | Code · BAT | zone | PRO-QHS-313 §11.2 |
 
 ### Typographie
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **14.1** | Hauteur de x des mentions obligatoires conforme à la face la plus grande (0,9 mm si < 80 cm² ; ≥ 1,2 mm si > 80 cm²) ? | Code · BAT | zone | PRO-QHS-013 §12 ; INCO art. 13.2/13.3/16.2 |
+| **14.1** | Hauteur de x des mentions obligatoires conforme à la face la plus grande (0,9 mm si < 80 cm² ; ≥ 1,2 mm si > 80 cm²) ? | Code · BAT | zone | PRO-QHS-313 §12 ; INCO art. 13.2/13.3/16.2 |
 
 ### Code étiquette
 
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
-| **15.1** | Code étiquette présent sur la contre-étiquette ? | Code · fiche | zone + **propose** | PRO-QHS-013 §13 |
+| **15.1** | Code étiquette présent sur la contre-étiquette ? | Code · fiche | zone + **propose** | PRO-QHS-313 §13 |
 
 ### Code article et Gencode
 
@@ -221,6 +221,6 @@ Camellia sinensis (1.1), présence de réglisse (5.3), pourcentage par origine
   `docs/decisions/2026-09-08-ecran-controle-et-mesures-bat.md`
 - La définition détaillée de chaque point, référence par référence :
   `docs/controles-definitions.md` — c'est ce document-là qui se met en regard de
-  PRO-QHS-013 paragraphe par paragraphe, et il porte la liste de ce qui a changé
+  PRO-QHS-313 paragraphe par paragraphe, et il porte la liste de ce qui a changé
   depuis le 9 septembre.
 - Les procédures JDG elles-mêmes : `docs/referentiels/`

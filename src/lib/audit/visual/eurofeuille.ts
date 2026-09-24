@@ -1,5 +1,5 @@
 /**
- * Reconnaissance de l'Eurofeuille par son tracé — PRO-QHS-013 §11.1.
+ * Reconnaissance de l'Eurofeuille par son tracé — PRO-QHS-313 §11.1.
  *
  * Jusqu'ici, la présence de l'Eurofeuille était un avis de modèle de vision :
  * « présent / absent / incertain », sur un logo qu'il avait déjà halluciné une

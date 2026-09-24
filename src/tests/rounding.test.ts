@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { calculateRoundings } from '../lib/business-rules/rounding';
 
-describe('Business Rules - Rounding (PRO-QHS-013)', () => {
+describe('Business Rules - Rounding (PRO-QHS-313)', () => {
 
     it('devrait arrondir correctement et ajuster pour atteindre exactement 100.0%', () => {
         const ingredients = [

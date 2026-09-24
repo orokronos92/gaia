@@ -265,7 +265,7 @@ export const ingredientsRecette = pgTable("ingredients_recette", {
     designationEtiquette: varchar("designation_etiquette", { length: 255 }),
     /**
      * Marqueur « * issu de l'agriculture biologique » de l'étiquette
-     * (PRO-QHS-013 §11.1). Vrai par défaut : chez JDG tout est bio, et la fiche
+     * (PRO-QHS-313 §11.1). Vrai par défaut : chez JDG tout est bio, et la fiche
      * recette ne porte aucune colonne BIO — c'est implicite. Marie corrige au cas
      * par cas (l'arôme figue du BAT TA7372 n'a pas d'étoile, le miel oui).
      */
@@ -809,7 +809,7 @@ export const DecisionControle = pgEnum("decision_controle", ["VERIFIE", "DEROGAT
 export const validationsControle = pgTable("validations_controle", {
     id: uuid("id").primaryKey().defaultRandom(),
     ficheEtiquetteId: uuid("fiche_etiquette_id").references(() => fichesEtiquettes.id, { onDelete: 'cascade' }).notNull(),
-    /** Numéro du point dans PRO-QHS-013 / MOP-PRO-029, ex. « 14.1 ». */
+    /** Numéro du point dans PRO-QHS-313 / MOP-PRO-029, ex. « 14.1 ». */
     pointId: varchar("point_id", { length: 64 }).notNull(),
     decision: DecisionControle("decision").notNull(),
     /** Obligatoire pour une dérogation ; libre sinon. */

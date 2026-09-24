@@ -83,7 +83,7 @@ export interface LigneJdgLue {
 
 export type ResultatLigne = { ok: true; ligne: LigneJdgLue } | { ok: false; codePf: string; numeroLigne: number; motif: string };
 
-/** Where the nutrition statement starts inside the health-claim cell (PRO-QHS-013 §2.3). */
+/** Where the nutrition statement starts inside the health-claim cell (PRO-QHS-313 §2.3). */
 const DEBUT_MENTION_NUTRITIONNELLE = /informations nutritionnelles/i;
 /** COND. = "Anemos": the association text of the row is the sailing-transport sentence. */
 const COND_ANEMOS = /anemos/i;

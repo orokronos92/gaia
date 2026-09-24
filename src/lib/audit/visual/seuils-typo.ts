@@ -1,5 +1,5 @@
 /**
- * Les seuils chiffrés de PRO-QHS-013, isolés de toute lecture de fichier.
+ * Les seuils chiffrés de PRO-QHS-313, isolés de toute lecture de fichier.
  *
  * Des règles pures, testables sans PDF : la surface de la face la plus grande
  * décide de la taille des caractères et de ce qui est exigible ; le grammage

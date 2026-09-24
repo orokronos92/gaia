@@ -1,7 +1,7 @@
 /**
  * Deterministic QUID / Camellia controls — adossés au moteur `computeRecette`
  * (golden MT265). The LLM never produces these figures; the engine is the
- * single source of truth (PRO-QHS-013 §2.2).
+ * single source of truth (PRO-QHS-313 §2.2).
  */
 
 import {

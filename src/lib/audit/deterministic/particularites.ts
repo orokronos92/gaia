@@ -1,5 +1,5 @@
 /**
- * Deterministic "particularités" controls (PRO-QHS-013 §3). Applicability is
+ * Deterministic "particularités" controls (PRO-QHS-313 §3). Applicability is
  * gated upstream by the registry predicates; these run only when the point
  * applies. The highlight/visual part stays a manual BAT check.
  */

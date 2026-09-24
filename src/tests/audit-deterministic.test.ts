@@ -45,7 +45,7 @@ const INGREDIENTS_TEXTE =
   "maté vert* 62%, gingembre* 15,5%, guarana* 6%, hibiscus* 6%, menthe poivrée*, huile essentielle d'orange sanguine* 4%, ginseng* 2%, stevia*";
 
 describe("Voie A déterministe — golden MT265", () => {
-  // 12 points PRO-QHS-013 + 4 points MOP-PRO-029 (code article et Gencode).
+  // 12 points PRO-QHS-313 + 4 points MOP-PRO-029 (code article et Gencode).
   it("couvre les 20 points déterministes et valide chaque verdict (Zod)", () => {
     const input: AuditInput = {
       fiche: { listeEtiquette: INGREDIENTS_TEXTE, allergenes: "non" },

@@ -47,7 +47,7 @@ export class AuditWorker {
         const ragContext = RAGService.formatContextForPrompt(ragContextRaw);
 
         return `Tu es l'Agent Qualité IA de GaïaLabel. Tu audites la conformité d'une étiquette produit.
-Tu vérifies strictement les règles INCO et les règles internes PRO-QHS-013.
+Tu vérifies strictement les règles INCO et les règles internes PRO-QHS-313.
 
 RÈGLES EN VIGUEUR (Extraites de la Base de Connaissances RAG) :
 ---

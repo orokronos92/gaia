@@ -36,7 +36,7 @@ const face = (surfaceCm2: number | null, mots: MotBat[]): AnalyseBat => ({
   texte: mots.map((m) => m.texte).join(" "),
 });
 
-describe("tranches de surface — PRO-QHS-013 §12", () => {
+describe("tranches de surface — PRO-QHS-313 §12", () => {
   it("applique 0,9 mm jusqu'à 80 cm² et 1,2 mm au-delà", () => {
     expect(trancheSurface(9).seuilHauteurXmm).toBe(0.9);
     expect(trancheSurface(20).seuilHauteurXmm).toBe(0.9);
@@ -56,7 +56,7 @@ describe("tranches de surface — PRO-QHS-013 §12", () => {
   });
 });
 
-describe("hauteur des chiffres — PRO-QHS-013 §4", () => {
+describe("hauteur des chiffres — PRO-QHS-313 §4", () => {
   it("suit les quatre paliers de grammage", () => {
     expect(seuilHauteurChiffresMm(50)).toBe(2);
     expect(seuilHauteurChiffresMm(50.1)).toBe(3);

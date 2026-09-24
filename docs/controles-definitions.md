@@ -2,7 +2,7 @@
 
 **Objet** : liste exhaustive des contrôles exécutés par GaïaLabel, avec pour
 chacun sa référence réglementaire et la définition de ce qu'il fait réellement.
-Document destiné à être mis en regard de **PRO-QHS-013** et **MOP-PRO-029**,
+Document destiné à être mis en regard de **PRO-QHS-313** et **MOP-PRO-029**,
 paragraphe par paragraphe.
 
 **Source** : registre `src/lib/audit/control-checklist.ts`. Les identifiants,
@@ -76,7 +76,7 @@ est inchangé.
 ### 🟨 1.0 — La dénomination légale décrit-elle objectivement le produit (état physique / traitement subi) ?
 
 **Voie** : Modèle · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §1 ; INCO art. 9 et 13
+**Référence** : PRO-QHS-313 §1 ; INCO art. 9 et 13
 
 Un modèle lit la dénomination portée par la fiche et juge si elle décrit le produit de façon objective — état physique, traitement subi — plutôt que par une formule commerciale. Aucune mesure ne remplace ce jugement de rédaction.
 
@@ -85,7 +85,7 @@ Un modèle lit la dénomination portée par la fiche et juge si elle décrit le 
 ### 🟩 1.1 — Si dénomination « thé » : le produit contient-il ≥ 51 % de Camellia sinensis ?
 
 **Voie** : Code · fiche · *conditionnel* · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §1.1
+**Référence** : PRO-QHS-313 §1.1
 
 Somme les kilos des ingrédients marqués « Camellia sinensis » dans la recette, divise par la masse totale, et compare à 51 %. En dessous, la dénomination « thé » n'est pas due. **Aujourd'hui muet** : le marqueur Camellia n'est renseigné sur aucune ligne de recette du catalogue.
 
@@ -94,7 +94,7 @@ Somme les kilos des ingrédients marqués « Camellia sinensis » dans la recett
 ### 🟨 1.2 — Arôme présent : la mention « aromatisé / goût / saveur » figure-t-elle en dénomination, conforme au tableau §1.2 ?
 
 **Voie** : Modèle · *conditionnel* · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §1.2 ; STEPI ; règl. 1334/2008
+**Référence** : PRO-QHS-313 §1.2 ; STEPI ; règl. 1334/2008
 
 Un modèle confronte la dénomination au tableau §1.2, qui associe chaque nature d'aromatisation à une écriture imposée : « thé à la menthe » pour un aromate seul, « thé aromatisé menthe » dès qu'un arôme entre, etc.
 
@@ -103,7 +103,7 @@ Un modèle confronte la dénomination au tableau §1.2, qui associe chaque natur
 ### 🟨 1.3 — La mention « parfumé » est-elle utilisée UNIQUEMENT pour une aromatisation par enfleurage ?
 
 **Voie** : Modèle · *conditionnel* · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §1.2
+**Référence** : PRO-QHS-313 §1.2
 
 Un modèle vérifie que le mot « parfumé » n'est employé que pour un thé parfumé par enfleurage — fleurs posées sur les feuilles. **Toujours sans objet** : l'application n'a pas de champ déclarant l'enfleurage.
 
@@ -112,7 +112,7 @@ Un modèle vérifie que le mot « parfumé » n'est employé que pour un thé pa
 ### 🟦 1.4 — La dénomination figure-t-elle dans le même champ visuel que le poids net, en caractères droits et lisibles ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §1 ; INCO art. 9/13
+**Référence** : PRO-QHS-313 §1 ; INCO art. 9/13
 
 Deux mesures sur le PDF du BAT. D'abord la position : les mots de la dénomination et ceux du poids net sont-ils sur la même face, et à quelle distance en millimètres. Ensuite le style : la police de chaque mot de la dénomination est interrogée sur son angle d'italique — le §1 exige des caractères droits.
 
@@ -123,7 +123,7 @@ La position ne se mesure pas si la fiche ne porte pas de quantité nette : sans 
 ### 🟦 1.5 — La dénomination portée par la fiche figure-t-elle à l'identique sur le BAT ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §1 ; INCO art. 9 et 13
+**Référence** : PRO-QHS-313 §1 ; INCO art. 9 et 13
 
 Cherche la dénomination de la fiche, mot pour mot, dans le texte du BAT. Le §1 interdit qu'un nom commercial tienne lieu de dénomination de la denrée : si la fiche dit « Thé noir aromatisé » et que l'étiquette imprime « THÉ NOIR », l'écart est signalé.
 
@@ -132,7 +132,7 @@ Cherche la dénomination de la fiche, mot pour mot, dans le texte du BAT. Le §1
 ### 🟩 1.6 — Infusion : la dénomination légale est-elle l'un des noms usuels autorisés (tisane, infusion, mélange de plantes à infusion…) ?
 
 **Voie** : Code · fiche · *conditionnel* · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §1.3 ; STEPI
+**Référence** : PRO-QHS-313 §1.3 ; STEPI
 
 La réglementation ne définit aucune dénomination légale pour les plantes à infusion : la procédure ferme elle-même la liste des noms usuels (tisane, infusion, préparation ou mélange de plantes). Le contrôle vérifie que la dénomination légale de la fiche en contient un.
 
@@ -143,7 +143,7 @@ La réglementation ne définit aucune dénomination légale pour les plantes à 
 ### 🟦 2.1 — Le mot « ingrédients » précède-t-il la liste ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.1
+**Référence** : PRO-QHS-313 §2.1
 
 Localise le mot « INGRÉDIENTS » sur le BAT et vérifie qu'il précède bien la liste, dans l'ordre de lecture de la face.
 
@@ -152,7 +152,7 @@ Localise le mot « INGRÉDIENTS » sur le BAT et vérifie qu'il précède bien l
 ### 🟩 2.2 — Les ingrédients sont-ils listés par ordre d'importance pondérale décroissante ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.1
+**Référence** : PRO-QHS-313 §2.1
 
 Vérifie que les ingrédients de la recette sont classés par masse décroissante, en comparant l'ordre d'affichage aux quantités en kilos.
 
@@ -161,7 +161,7 @@ Vérifie que les ingrédients de la recette sont classés par masse décroissant
 ### 🟩 2.3 — Mono-ingrédient : la liste est-elle correctement omise (dénomination = nom de l'ingrédient) ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.1
+**Référence** : PRO-QHS-313 §2.1
 
 Un produit à un seul ingrédient peut légitimement omettre sa liste, à condition que la dénomination soit le nom de l'ingrédient. Le contrôle vérifie cette équivalence.
 
@@ -170,7 +170,7 @@ Un produit à un seul ingrédient peut légitimement omettre sa liste, à condit
 ### 🟦 2.4 — Étoiles présentes (* bio / ** demeter) avec la mention de certification associée, demeter en gras italique ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §11.1
+**Référence** : PRO-QHS-313 §11.1
 
 Deux lectures du BAT. Les marqueurs d'abord : une étoile pour un ingrédient bio, deux pour un ingrédient Demeter, avec la mention de certification correspondante. Le style ensuite : le mot « demeter » doit être en gras italique — vérifié sur la police du PDF, pas à l'œil.
 
@@ -181,7 +181,7 @@ Quand la mention Demeter est due et que la fiche ne la porte pas, le contrôle *
 ### 🟦 2.5 — La liste d'ingrédients de la fiche (recette étiquette, sinon base Excel) correspond-elle à celle imprimée sur le BAT ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.1
+**Référence** : PRO-QHS-313 §2.1
 
 La recette de production nomme les matières comme le magasinier les pèse — « SORWATHE OP1 » — et l'étiquette imprime la dénomination légale — « thé noir ». La Qualité fait la traduction ligne par ligne sur la carte « recette étiquette » de la fiche produit. Ce contrôle vérifie que le travail a été fait, et qu'il correspond à ce qui est réellement imprimé.
 
@@ -200,7 +200,7 @@ Le contrôle a d'abord été écrit côté fiche, et il a changé de camp le 10 
 ### 🟩 3.1 — Un % est-il déclaré pour chaque ingrédient figurant en dénomination, mis en avant graphiquement, ou source de confusion ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.2
+**Référence** : PRO-QHS-313 §2.2
 
 Vérifie qu'un pourcentage est déclaré pour chaque ingrédient qui figure en dénomination, qui est mis en avant graphiquement, ou qui peut prêter à confusion. Un ingrédient dont le % est volontairement masqué sur l'étiquette (secret industriel) est signalé en alerte explicite, jamais en non-conformité.
 
@@ -209,7 +209,7 @@ Vérifie qu'un pourcentage est déclaré pour chaque ingrédient qui figure en d
 ### 🟩 3.2 — Règle d'arrondi respectée : un chiffre après la virgule (2e décimale 0-4 → inférieur, 5-9 → supérieur) ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.2
+**Référence** : PRO-QHS-313 §2.2
 
 Applique la règle d'arrondi du §2.2 : un chiffre après la virgule, deuxième décimale de 0 à 4 vers le bas, de 5 à 9 vers le haut. Le calcul est fait par le moteur de recette et comparé à ce que porte la fiche.
 
@@ -218,7 +218,7 @@ Applique la règle d'arrondi du §2.2 : un chiffre après la virgule, deuxième 
 ### 🟩 3.3 — Si total > 100 % du fait des arrondis, l'ajustement porte-t-il sur l'ingrédient le plus important ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.2
+**Référence** : PRO-QHS-313 §2.2
 
 Quand la somme des pourcentages arrondis dépasse 100 %, la procédure impose de reporter l'écart sur l'ingrédient le plus important en masse. Le contrôle vérifie que c'est bien celui-là qui a été ajusté.
 
@@ -229,7 +229,7 @@ Quand la somme des pourcentages arrondis dépasse 100 %, la procédure impose de
 ### 🟩 4.1 — Le produit relève-t-il d'une catégorie exemptée (infusions, thés, mélanges sans modification de la valeur nutritionnelle) ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.3 ; annexe 1
+**Référence** : PRO-QHS-313 §2.3 ; annexe 1
 
 Compare la catégorie du produit à la liste fermée des catégories que la procédure déclare exemptées de déclaration nutritionnelle — thés, infusions, mélanges, rooibos, maté, matcha. L'exception prime : dès qu'une allégation de santé est déclarée, l'exemption tombe. Le contrôle vérifie aussi, sur le BAT, si la face la plus grande passe sous 25 cm², seuil d'exemption de l'INCO.
 
@@ -238,7 +238,7 @@ Compare la catégorie du produit à la liste fermée des catégories que la proc
 ### 🟩 4.2 — Si l'aromatisation modifie la valeur nutritionnelle (ex. caramel) : la mention « Informations nutritionnelles moyennes pour 100 ml… » figure-t-elle ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §2.3
+**Référence** : PRO-QHS-313 §2.3
 
 Cherche dans la composition les ingrédients de nature à modifier la valeur nutritionnelle — caramel, sucre, chocolat, cacao, fruits confits, sirop. S'il en trouve, la mention « Informations nutritionnelles moyennes pour 100 ml… » devient obligatoire et le point demande à être regardé.
 
@@ -246,10 +246,10 @@ Cherche dans la composition les ingrédients de nature à modifier la valeur nut
 
 ## 5. Particularités
 
-### 🟩 5.1 — Allergènes présents : mis en évidence (gras / souligné) et conformes à LIS-QHS-008 ?
+### 🟩 5.1 — Allergènes présents : mis en évidence (gras / souligné) et conformes à LIS-QHS-308 ?
 
 **Voie** : Code · fiche · *conditionnel* · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §3.1 ; annexe 2
+**Référence** : PRO-QHS-313 §3.1 ; annexe 2
 
 Trois lectures. Le contrôle vérifie que l'allergène déclaré sur la fiche figure sur le BAT ; que sa police le distingue du reste de la liste (le gras se lit dans le fichier, le soulignement non) ; et, quand l'étiquette ne porte pas de liste d'ingrédients — cas légitime d'un mono-ingrédient —, que l'allergène est annoncé par « contient … ».
 
@@ -258,7 +258,7 @@ Trois lectures. Le contrôle vérifie que l'allergène déclaré sur la fiche fi
 ### 🟨 5.2 — Allégation présente : valeurs nutritionnelles + mention « mode de vie sain… » + « consommation journalière conseillée : x tasses de 25 cl » (+ grammage sur logo tasse si ≠ 2 g) ?
 
 **Voie** : Modèle · *conditionnel* · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §3.2
+**Référence** : PRO-QHS-313 §3.2
 
 Un modèle juge si le texte commercial constitue une allégation. Le code, lui, cherche sur le BAT les trois mentions que le §3.2 rend alors obligatoires : « …dans le cadre d'un mode de vie sain », « consommation journalière conseillée : x tasses de 25 cl », et les valeurs nutritionnelles moyennes.
 
@@ -267,7 +267,7 @@ Un modèle juge si le texte commercial constitue une allégation. Le code, lui, 
 ### 🟩 5.3 — Réglisse présente : mention JDG « Contient de la réglisse – Les personnes souffrant d'hypertension doivent éviter toute consommation excessive » ?
 
 **Voie** : Code · fiche · *conditionnel* · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §3.3 ; annexe 3
+**Référence** : PRO-QHS-313 §3.3 ; annexe 3
 
 Détecte la réglisse dans la composition, puis cherche sur le BAT l'avertissement « Contient de la réglisse — les personnes souffrant d'hypertension doivent éviter toute consommation excessive ». Les Jardins de Gaïa appliquent cette mention à tous leurs produits contenant de la réglisse, sans distinguer les deux seuils du §3.3.
 
@@ -278,7 +278,7 @@ Détecte la réglisse dans la composition, puis cherche sur le BAT l'avertisseme
 ### 🟩 6.1 — Quantité nette exprimée en unité de masse (g ou kg) ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §4
+**Référence** : PRO-QHS-313 §4
 
 Vérifie que la quantité nette est exprimée en unité de masse. Le catalogue stocke le plus souvent un nombre nu : la convention connue s'applique — au-delà de 10, des grammes ; en deçà, des kilos. Une quantité exprimée en volume est une non-conformité. Le BAT est lu en parallèle, et propose sa valeur en un clic quand la fiche est muette : le bouton annonce alors qu'il rouvre aussi les points 1.4 et 6.2, qui butent sur la même absence.
 
@@ -287,7 +287,7 @@ Vérifie que la quantité nette est exprimée en unité de masse. Le catalogue s
 ### 🟦 6.2 — Hauteur des chiffres conforme (2 mm si ≤ 50 g ; 3 mm si 50-200 g ; 4 mm si 200-1000 g ; 6 mm si > 1000 g), dans le même champ visuel que la dénomination ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §4
+**Référence** : PRO-QHS-313 §4
 
 Mesure la hauteur réelle des chiffres du poids net sur le BAT, en millimètres, à partir du corps de la police, et la compare au seuil de la tranche : 2 mm jusqu'à 50 g, 3 mm jusqu'à 200 g, 4 mm jusqu'à 1 kg, 6 mm au-delà. Vérifie aussi que le poids partage le champ visuel de la dénomination.
 
@@ -298,7 +298,7 @@ Le seuil se déduit du grammage : sans quantité nette sur la fiche, il n'y a pa
 ### 🟩 6.3 — Le nombre de tasses annoncé correspond-il au poids net divisé par 2 g ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §3.2 ; §15
+**Référence** : PRO-QHS-313 §3.2 ; §15
 
 Divise le poids net par 2 g — la dose de référence du §3.2 — et compare au nombre de tasses annoncé. Un écart ne prouve pas une erreur : la dose peut être autre, et le § impose alors « x g » sur le logo tasse. Le constat donne la dose implicite. Une demi-tasse ne s'imprimant pas, l'arrondi de l'étiquetage est admis.
 
@@ -309,7 +309,7 @@ Divise le poids net par 2 g — la dose de référence du §3.2 — et compare a
 ### 🟦 7.1 — Mode d'emploi présent si nécessaire (nb sachets/cuillères, température, durée), sans recours exclusif à des symboles ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §5
+**Référence** : PRO-QHS-313 §5
 
 Cherche sur le BAT les éléments du mode d'emploi écrits en toutes lettres — durée, température, dose. Le §5 n'impose pas les trois : il interdit de n'utiliser QUE des symboles. Un seul élément rédigé prouve la règle ; les autres sont nommés comme non retrouvés.
 
@@ -318,7 +318,7 @@ Cherche sur le BAT les éléments du mode d'emploi écrits en toutes lettres —
 ### 🟩 7.2 — Mention JDG « À conserver à l'abri de l'humidité, de la lumière et de la chaleur » présente ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §5
+**Référence** : PRO-QHS-313 §5
 
 Vérifie la présence de la mention JDG « À conserver à l'abri de l'humidité, de la lumière et de la chaleur », sur la fiche puis sur le BAT, par ses mots invariants. Cherche en outre une mention distinguant la conservation APRÈS ouverture, que le §5 demande d'envisager.
 
@@ -329,7 +329,7 @@ Vérifie la présence de la mention JDG « À conserver à l'abri de l'humidité
 ### 🟦 8.1 — Indication de l'origine des matières premières placée sous le code de l'organisme de contrôle, sous l'Eurofeuille ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §6 et §11.1
+**Référence** : PRO-QHS-313 §6 et §11.1
 
 Mesure sur le BAT la position verticale de trois éléments : l'Eurofeuille, le code de l'organisme certificateur et la mention d'origine. Le §6 impose que l'origine figure sous le code, lui-même sous l'Eurofeuille. L'écart est donné en millimètres.
 
@@ -338,7 +338,7 @@ Mesure sur le BAT la position verticale de trois éléments : l'Eurofeuille, le 
 ### 🟨 8.2 — Mention « Agriculture UE / non UE / pays » cohérente avec ≥ 98 % des matières premières de cette origine ?
 
 **Voie** : Modèle · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §6 et §11.1
+**Référence** : PRO-QHS-313 §6 et §11.1
 
 Relève la mention d'origine imprimée — « Agriculture UE/non UE », « Agriculture Inde »… — et la cite. Établir qu'elle reflète bien 98 % des matières premières demande l'origine de chaque matière, que l'application ne connaît pas encore : le point apporte le fait et laisse la conclusion.
 
@@ -347,7 +347,7 @@ Relève la mention d'origine imprimée — « Agriculture UE/non UE », « Agric
 ### 🟨 8.3 — Mention volontaire d'origine réservée à un produit contenant > 50 % de cette origine ?
 
 **Voie** : Modèle · *conditionnel* · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §6
+**Référence** : PRO-QHS-313 §6
 
 Une mention volontaire d'origine n'est admise que si le produit contient plus de 50 % de cette origine. Le contrôle est confié à un modèle, faute de connaître l'origine de chaque matière.
 
@@ -358,7 +358,7 @@ Une mention volontaire d'origine n'est admise que si le produit contient plus de
 ### 🟩 9.1 — Adresse JDG complète présente (LES JARDINS DE GAÏA – Z.A. – 6 rue de l'Écluse – FR-67820 Wittisheim + site web), sans code emballeur ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §7
+**Référence** : PRO-QHS-313 §7
 
 Vérifie la présence de l'adresse complète des Jardins de Gaïa, par ses mots invariants, sur la fiche puis sur le BAT. La procédure précise que l'adresse internet seule ne suffit pas, et que le code emballeur n'est pas utilisé.
 
@@ -369,7 +369,7 @@ Vérifie la présence de l'adresse complète des Jardins de Gaïa, par ses mots 
 ### ⬜ 10.1 — Code-barres IMPRIMÉ sur le BAT identique au Gencode déclaré en fiche ?
 
 **Voie** : Œil · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §8 ; annexe 4 ; MOP-PRO-029 §3
+**Référence** : PRO-QHS-313 §8 ; annexe 4 ; MOP-PRO-029 §3
 
 Comparaison du code-barres IMPRIMÉ au Gencode déclaré. Reste à l'œil : sur les 139 produits mesurés, aucun code-barres ne livre ses chiffres en texte — ils sont dessinés, vectorisés. Les décoder demanderait de lire les barres sur l'image rendue.
 
@@ -380,7 +380,7 @@ Comparaison du code-barres IMPRIMÉ au Gencode déclaré. Reste à l'œil : sur 
 ### 🟦 11.1 — Le « e » métrologique est-il bien ABSENT (politique JDG) ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §9
+**Référence** : PRO-QHS-313 §9
 
 Cherche le signe métrologique « ℮ » dans le texte du BAT. Les Jardins de Gaïa ont décidé de ne pas l'apposer : le contrôle vérifie donc une ABSENCE, et le catalogue la confirme sur 139 produits sur 139.
 
@@ -391,7 +391,7 @@ Cherche le signe métrologique « ℮ » dans le texte du BAT. Les Jardins de Ga
 ### ⬜ 12.1 — Triman présent, ≥ 1×1 cm (ou ≥ 0,6×0,6 cm si contrainte technique) ?
 
 **Voie** : Œil · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §10.1 ; décret 2022-975
+**Référence** : PRO-QHS-313 §10.1 ; décret 2022-975
 
 Présence et dimensions du Triman, au moins 1 × 1 cm, ou 0,6 × 0,6 cm en cas de contrainte technique. Un modèle de vision le cherche lors de l'analyse IA. Aucune empreinte de tracé correspondante n'a été trouvée sur les étiquettes examinées.
 
@@ -400,7 +400,7 @@ Présence et dimensions du Triman, au moins 1 × 1 cm, ou 0,6 × 0,6 cm en cas d
 ### ⬜ 12.2 — Cartouche Info-Tri complet (Triman + « le tri + facile » + éléments séparés par + + destination), règles de dématérialisation selon surface respectées ?
 
 **Voie** : Œil · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §10.2 ; annexe 5 ; loi AGEC art. 17
+**Référence** : PRO-QHS-313 §10.2 ; annexe 5 ; loi AGEC art. 17
 
 Deux volets. Un modèle de vision cherche le cartouche Info-Tri et ses trois éléments. Le code, lui, mesure la surface de la face la plus grande et énonce le régime que le décret 2022-975 ouvre : dématérialisation totale sous 20 cm², du seul cartouche entre 20 et 40 cm², aucune au-delà.
 
@@ -411,7 +411,7 @@ Deux volets. Un modèle de vision cherche le cartouche Info-Tri et ses trois él
 ### 🟦 13.1 — Eurofeuille présente, dimensions ≥ L 13,5 × H 9 mm (proportions 1/1,15), dans le même champ visuel que le code OC et l'origine ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §11.1 ; annexe 6
+**Référence** : PRO-QHS-313 §11.1 ; annexe 6
 
 Reconnaît l'Eurofeuille à son tracé — le feuillage d'étoiles porte une empreinte vectorielle stable — puis mesure le champ vert qui l'englobe, identifié par les proportions du drapeau européen. Compare aux dimensions minimales : 13,5 × 9 mm, ou exactement 9 × 6 mm pour la dérogation « très petits emballages ». Sans modèle, et sans faux positif sur 111 contre-étiquettes.
 
@@ -420,7 +420,7 @@ Reconnaît l'Eurofeuille à son tracé — le feuillage d'étoiles porte une emp
 ### 🟦 13.2 — Code de l'organisme de contrôle du dernier opérateur présent (FR-BIO-01) ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §11.1
+**Référence** : PRO-QHS-313 §11.1
 
 Cherche le code de l'organisme certificateur du dernier opérateur — FR-BIO-01 chez les Jardins de Gaïa — dans le texte du BAT.
 
@@ -429,7 +429,7 @@ Cherche le code de l'organisme certificateur du dernier opérateur — FR-BIO-01
 ### 🟨 13.3 — Labels non officiels (WFTO, Fairtrade, Elephant Friendly, FFL, Demeter…) justifiés par la matière première et correctement apposés ?
 
 **Voie** : Modèle · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §11.2 ; annexe 7
+**Référence** : PRO-QHS-313 §11.2 ; annexe 7
 
 Un modèle de vision reconnaît les logos non officiels — WFTO, Fairtrade, Elephant Friendly, Fair for Life — et juge s'ils sont justifiés par la matière première. Le code, en parallèle, vérifie la mention WFTO en deux marqueurs distincts : la phrase d'appartenance et l'adresse wfto.com, car trois étiquettes du catalogue portent la seconde sans la première.
 
@@ -438,7 +438,7 @@ Un modèle de vision reconnaît les logos non officiels — WFTO, Fairtrade, Ele
 ### ⬜ 13.4 — Logo Point Vert bien ABSENT (interdit depuis le 01/01/2021, loi AGEC) ?
 
 **Voie** : Œil · **Sans IA** : non  
-**Référence** : PRO-QHS-013 §11.2 ; loi 2020-105
+**Référence** : PRO-QHS-313 §11.2 ; loi 2020-105
 
 Le logo Point Vert est interdit depuis le 1ᵉʳ janvier 2021. Le contrôle vise donc une absence — et une absence ne se prouve pas par empreinte : ne pas reconnaître un dessin ne dit pas qu'il n'y est pas. Il restera à l'œil.
 
@@ -447,7 +447,7 @@ Le logo Point Vert est interdit depuis le 1ᵉʳ janvier 2021. Le contrôle vise
 ### 🟦 13.5 — Thé transporté à la voile : bandeau de gamme ET phrase du transporteur imprimés ensemble ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §11.2
+**Référence** : PRO-QHS-313 §11.2
 
 *Conditionnel* — ne s'applique qu'aux gammes qui **déclarent exiger** cette mention. Depuis le 10 septembre 2026, l'obligation est une propriété de la gamme, cochée par la Qualité dans l'écran Référentiels : elle n'est plus devinée en cherchant « voile » dans le libellé, où un renommage ou une casse différente éteignait le contrôle sans le dire.
 
@@ -460,7 +460,7 @@ Quand le BAT porte les deux mais que la zone « Mention Anemos » de la fiche es
 ### 🟦 13.6 — Les Engagés : bandeau de sous-gamme ET ligne de don « 0,50 € reversés à … » imprimés ensemble ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §11.2
+**Référence** : PRO-QHS-313 §11.2
 
 *Conditionnel* — ne s'applique qu'aux gammes qui **déclarent exiger** la ligne de don, cochée par la Qualité dans l'écran Référentiels (voir 13.5). Les Engagés comptent 10 références et 3 sous-gammes ; une onzième, « Malin comme un chimpanzé », est encore rangée sous l'ancien libellé « Les Militants » — question M21 du document de visite.
 
@@ -475,7 +475,7 @@ Le contrôle du texte de l'association lui-même suppose un référentiel des b�
 ### 🟦 14.1 — Hauteur de x des mentions obligatoires conforme à la face la plus grande (0,9 mm si < 80 cm² ; ≥ 1,2 mm si > 80 cm²) ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §12 ; INCO art. 13.2/13.3/16.2
+**Référence** : PRO-QHS-313 §12 ; INCO art. 13.2/13.3/16.2
 
 Mesure la hauteur de x réelle de chaque mention obligatoire sur le BAT, à partir du corps et des métriques de la police, et la compare au seuil que fixe la surface de la face la plus grande : 0,9 mm en dessous de 80 cm², 1,2 mm au-delà. Un mot dont la police n'a pas pu être lue retient le verdict ; une mention absente relève de son propre contrôle.
 
@@ -486,7 +486,7 @@ Mesure la hauteur de x réelle de chaque mention obligatoire sur le BAT, à part
 ### 🟩 15.1 — Code étiquette présent sur la contre-étiquette ?
 
 **Voie** : Code · fiche · **Sans IA** : oui  
-**Référence** : PRO-QHS-013 §13
+**Référence** : PRO-QHS-313 §13
 
 Vérifie que le code étiquette figure sur la fiche, puis qu'il est imprimé sur la contre-étiquette. Quand la fiche est muette, le code lit le code imprimé — forme ET + famille + n° d'article + version — et le propose en un clic, à condition qu'il n'y en ait qu'un et que son n° d'article désigne bien ce produit.
 
@@ -534,7 +534,7 @@ Vérifie qu'aucun autre produit actif ne porte le même Gencode. L'unicité d'un
 
 ## Ce qui n'est pas couvert, et pourquoi
 
-Quatre exigences de PRO-QHS-013 n'ont aujourd'hui aucun contrôle, faute d'une
+Quatre exigences de PRO-QHS-313 n'ont aujourd'hui aucun contrôle, faute d'une
 donnée que l'application ne détient pas :
 
 | Exigence | Référence | Ce qui manque |
@@ -556,7 +556,7 @@ reconnaître toutes ses variantes).
 
 Les références citées dans ce document renvoient à :
 
-- **PRO-QHS-013** — Procédure de vérification d'étiquetage, Les Jardins de Gaïa,
+- **PRO-QHS-313** — Procédure de vérification d'étiquetage, Les Jardins de Gaïa,
   indice v. 1, mise à jour du 30/03/2023, 19 pages. Sections §1 à §15.
 - **MOP-PRO-029** — Mode opératoire de création / modification d'une fiche
   article, indice v. 2. Sections §2.1 (code article) et §3 (Gencode).

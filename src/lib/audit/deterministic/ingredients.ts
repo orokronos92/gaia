@@ -1,5 +1,5 @@
 /**
- * Deterministic ingredient-list controls (PRO-QHS-013 §2.1). Order and
+ * Deterministic ingredient-list controls (PRO-QHS-313 §2.1). Order and
  * mono-ingredient checks read the recette. Absent data → WARNING (never a
  * silent PASS).
  *
