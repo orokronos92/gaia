@@ -239,3 +239,70 @@ laquelle des deux est juste ?
 | TM0316 | `ETBA0316V6` | `ETBA031V6` |
 
 Liste complète des fichiers désactivés et de leurs motifs : `docs/sources/nettoyage-bat.csv`.
+
+## K. Listes d'ingrédients : la base et l'étiquette imprimée diffèrent
+
+GaïaLabel compare maintenant la liste d'ingrédients de la base (colonne « LISTE
+D'INGRÉDIENTS FR ») au texte des bons à tirer du Graphisme. Sur les 332 produits dont le BAT a
+un texte lisible, **284 sont identiques**. Nous partons du principe que **la base est juste**
+et que l'écart vient du BAT, sauf avis contraire de votre part.
+
+**K1. « Pétales de fleurs » dans la base, fleur précise sur le BAT** (15 produits). Sur
+37 autres produits, le BAT imprime bien « pétales de fleurs », comme la base. Faut-il nommer la
+fleur, ou la mention générique suffit-elle ?
+
+| Produit | Base | BAT |
+|---|---|---|
+| TA6052 Surprise de Noël | pétales de fleurs* | pétales de bleuet* |
+| TA6172 Le Songe du Colibri | pétales de fleurs* | pétales de souci* |
+| TA6942 Fruits défendus | pétales de fleurs* | pétales de rose* |
+| TR2032 Parfum des îles | pétales de fleurs* | pétales de souci* |
+| TM0292 Dhyāna SÉRÉNITÉ | pétales de fleurs* | pétales de bleuet* |
+| TH5296 / TU5226 La tisane de Noël | pétales de fleurs* | pétales de fleurs (souci*, bleuet*) |
+
+Autres : TA4022 Earl blue diamond, TA6182 Le joueur de flûte, TA6212 Jardin sous la lune,
+TA7212 Souvenir d'enfance, TA7392 C'est un secret…, TM0262 Dhyāna FEU, TR2072 La voie
+lactée, TR2332 Choco Framboise.
+> Provisoire : signalé en écart à la Qualité à chaque contrôle.
+
+**K2. Pourcentages ou ingrédient différents** (3 produits). Quelle version est la bonne ?
+
+| Produit | Base | BAT |
+|---|---|---|
+| TM0256 Dhyāna EAU | thé blanc* 49 %, thé vert au jasmin* 20 % | 48 %, 19 %, et « amarante* » en plus |
+| TH513 Tisane du jeûne | mélisse* 42 %, feuilles de framboisier* 10 % | mélisse* 40 %, feuilles de framboisier* 13 % |
+| TH538 Ce que racontent les étoiles | pétales de rose* (Rosa damascena) | boutons de rose* (Rosa damascena) |
+
+**K3. Thés japonais « garanti sans résidus de pesticides »** (4 produits).
+- `TJ0766` Silver Matcha et `TUTJ0896` Sencha Kamairicha : la base écrit « thé vert* » et
+  « *Issu de l'agriculture biologique », le BAT « thé vert. Garanti sans résidus de
+  pesticides ». Ces deux thés sont-ils bio ?
+- `TUTJ0746` Sakura : le BAT ajoute « 100% » (« feuilles de cerisier 100%(Prunus Cerasus) »).
+- `TUTJ2296` Mûrier blanc : le BAT n'imprime pas le nom latin « (Morus Alba) ».
+> Provisoire : signalé en écart.
+
+**K4. Deux listes dans la même case.** `TR2212` et `TR2492` Au coin du feu portent la liste
+actuelle puis « Recette à venir fin 2026 » suivie d'une seconde liste. Pour les contrôles,
+nous prenons la **première**. Est-ce la bonne ?
+
+**K5.** Sur 16 produits, le BAT ne contient pas la liste d'ingrédients sous forme de texte
+(texte vectorisé, ou face des ingrédients absente des fichiers reçus) : TV310, TN305,
+TN1062, TN4052, TB715, TB4036, TO205, TO206, TO1145, TJ2022, TJ2152, TV4022, TA6782, TH5226,
+TN2352, TR2462. Le Graphisme peut-il fournir la face qui porte les ingrédients, ou un PDF au
+texte non vectorisé ?
+
+---
+
+## Évolutions de ce document
+
+Ce document s'enrichit au fil de l'import et des contrôles. Chaque ajout ou modification est
+noté ici, pour que vous sachiez ce qui est nouveau depuis votre dernière lecture.
+
+| Date | Évolution |
+|---|---|
+| 2026-09-23 | Ouverture : sections A (formats de vente) à E (fiches modifiées). |
+| 2026-09-23 | Ajout de F (contrôles calculés sur la base : EAN, nombre de tasses). |
+| 2026-09-23 | Ajout de G (textes PMI), H (traductions et codes export) et I (Terra Madre, infusettes). |
+| 2026-09-23 | Ajout de J (références d'étiquette qui ne correspondent pas au fichier). |
+| 2026-09-23 | I1 réécrite : chaque onglet devient un catalogue ; plus de gamme « INFUSETTES » provisoire. |
+| 2026-09-24 | Ajout de K (listes d'ingrédients : base et BAT comparés sur 332 produits). |
