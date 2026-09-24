@@ -87,3 +87,25 @@ ACTION · COMMENTAIRES · HISTORIQUE → `suivi_fabrication` → **🙈 aucun é
 3. **Les imports Excel écrasent sans condition** les champs qu'ils portent.
 
 Il faudra décider, champ par champ, quelle source prime une fois l'Excel abandonné.
+
+## Étape 2 livrée (2026-09-24)
+
+Recâblage des cartes existantes, vérifié à l'écran sur TB4041, TB4042 et TA6262 :
+
+- **Identité** : poids net en kg pour le vrac, en g sinon (TB4041 « 1,5 kg ») ; mention
+  d'origine (colonne ECOCERT, « Agriculture Vietnam ») ; bloc **Producteur & sourcing** avec
+  le jardin de l'Excel (`producteur_jardin`) et, s'il diffère, le producteur de la fiche
+  descriptive ; FLO ID, nom latin, fournisseur, mise en marché ; **Aromatisé** ; les
+  **labels de l'Excel** (AB, WFTO, WT…) en grand, ceux de la matière première en petit s'il
+  y en a. Tout est modifiable depuis la carte.
+- **Conseils** : poids par tasse de 25 cl.
+- **Base documentaire › Identifiants** : réf. facing, réf. contre, code étiquette imprimé,
+  Gencode (TB4042 : ETBN4042V6 / ETCBN4042V6).
+- **Vigilance** : l'allégation retenue par la fiche descriptive quand il n'y a pas d'options.
+- **Dégustation** : le n° de lot dans l'en-tête.
+- **Champ vide** : « non renseigné » en gris italique partout ; l'exemple de saisie ne
+  s'affiche plus comme une valeur.
+- **Carte « Données complémentaires & arbitrages » supprimée**, son contenu est réparti
+  ci-dessus. Les champs des extractions sont conservés.
+
+Reste l'étape 3 : traductions, export, suivi de fabrication.
