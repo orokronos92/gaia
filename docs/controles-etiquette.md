@@ -2,7 +2,7 @@
 
 **Source** : registre `src/lib/audit/control-checklist.ts` — ce document en est
 **généré**, il ne le paraphrase pas. Toute divergence est un bug du document.
-**Dernière génération** : 10 septembre 2026.
+**Dernière génération** : 24 septembre 2026.
 
 L'audit transpose **PRO-QHS-013** (procédure JDG de vérification d'étiquetage,
 v.1 du 30/03/2023), complété par **MOP-PRO-029** pour le code article et le

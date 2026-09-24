@@ -1,6 +1,6 @@
 /**
  * Régénère la section « Les N points » de docs/controles-etiquette.md depuis le
- * registre.
+ * registre, et l'inventaire de docs/journal-controles.md.
  *
  * Le document affirmait en tête être généré ; il ne l'était pas, et il a dérivé
  * deux fois — 39 points annoncés quand le registre en portait 44, et une
@@ -97,3 +97,19 @@ sortie = `${sortie.slice(0, debut)}## 4. Les ${total} points\n\n${tableaux}\n${s
 
 writeFileSync(DOC, sortie);
 console.log(`${DOC} régénéré — ${total} points (${par.deterministic.length}/${par.bat.length}/${par.llm.length}/${par.manual.length}).`);
+
+// ── Journal des contrôles : l'inventaire du registre, entre ses deux repères ─
+const JOURNAL = "docs/journal-controles.md";
+const DEBUT_INVENTAIRE = "<!-- inventaire:debut -->";
+const FIN_INVENTAIRE = "<!-- inventaire:fin -->";
+const journal = readFileSync(JOURNAL, "utf8");
+const i = journal.indexOf(DEBUT_INVENTAIRE);
+const j = journal.indexOf(FIN_INVENTAIRE);
+if (i < 0 || j < i) throw new Error(`Repères de l'inventaire introuvables dans ${JOURNAL}.`);
+const inventaire = [...CONTROL_CHECKLIST]
+  .sort((a, b) => CONTROL_SECTIONS.indexOf(a.section) - CONTROL_SECTIONS.indexOf(b.section) || a.ordre - b.ordre)
+  .map((c) => `| ${c.id}${c.applicableSi ? " †" : ""} | ${TITRE_SECTION[c.section]} | ${c.libelle} | ${VOIE[c.mode]} |`)
+  .join("\n");
+const tableau = `**${total} points au registre** (${par.deterministic.length} code · fiche, ${par.bat.length} code · BAT, ${par.llm.length} modèle, ${par.manual.length} œil). † = conditionnel.\n\n| Point | Rubrique | Ce qui est vérifié | Voie |\n|---|---|---|---|\n${inventaire}`;
+writeFileSync(JOURNAL, `${journal.slice(0, i + DEBUT_INVENTAIRE.length)}\n${tableau}\n${journal.slice(j)}`);
+console.log(`${JOURNAL} : inventaire régénéré.`);
