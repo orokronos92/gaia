@@ -5,7 +5,7 @@ import { Clock, Loader2, Pencil, Printer, ShieldAlert } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { updateChampsAction } from "@/app/actions/fiche-champs"
+import { corrigerDepuisControleAction } from "@/app/actions/correction-controle"
 import { validerPointAction } from "@/app/actions/validation-controle"
 import type { Decision } from "@/lib/audit/decisions"
 import type { ControlResult } from "@/lib/audit/types"
@@ -62,7 +62,7 @@ const ISSUES: Record<Issue, IssueDef> = {
 
 interface IssuesEcartProps {
     ficheId: string
-    r: Pick<ControlResult, "id"> & Partial<Pick<ControlResult, "comparaisonListe">>
+    r: Pick<ControlResult, "id"> & Partial<Pick<ControlResult, "correction" | "mode" | "preuves">>
     pending: boolean
     agir: (action: () => Promise<{ ok: boolean; error?: string }>) => void
 }
@@ -76,32 +76,31 @@ interface IssuesEcartProps {
  * derniers gardent la ligne dans sa liste de travail, avec un badge qui dit qui
  * la tient.
  *
- * « Corriger la fiche » n'est offert que là où la carte sait quel champ écrire :
- * la liste de la base Excel, sur le point 2.5.
+ * « Corriger la fiche » n'est offert que là où le contrôle nomme le champ en
+ * cause (liste Excel du 2.5, poids net du 16.2, Gencode du 16.3 et du 16.4) ;
+ * le serveur relit ce champ lui-même, il ne le reçoit pas du navigateur.
  */
 export function IssuesEcart({ ficheId, r, pending, agir }: IssuesEcartProps) {
     const [issue, setIssue] = useState<Issue | null>(null)
     const [texte, setTexte] = useState("")
-    const corrigeable = r.comparaisonListe?.sourceCle === "excel"
-    const offertes = (Object.keys(ISSUES) as Issue[]).filter((i) => i !== "corriger" || corrigeable)
+    const corrigeable = r.correction !== undefined
+    // A point computed on the fiche alone (16.2: weight against the article
+    // code) has no artwork to redo — unless the BAT was read for it too.
+    const surLeBat = r.mode !== "deterministic" || (r.preuves?.length ?? 0) > 0
+    const offertes = (Object.keys(ISSUES) as Issue[]).filter(
+        (i) => (i !== "corriger" || corrigeable) && (i !== "bat" || surLeBat)
+    )
 
     const ouvrir = (i: Issue) => {
         setIssue(i)
-        setTexte(i === "corriger" ? (r.comparaisonListe?.texteFiche ?? "") : "")
+        setTexte(i === "corriger" ? (r.correction?.valeur ?? "") : "")
     }
 
     const confirmer = () => {
         if (issue === null) return
         const def = ISSUES[issue]
         if (issue === "corriger") {
-            agir(async () => {
-                try {
-                    await updateChampsAction({ table: "fiche", id: ficheId, ficheId, champs: { listeIngredientsBddFr: texte } })
-                    return { ok: true }
-                } catch (e) {
-                    return { ok: false, error: e instanceof Error ? e.message : "Échec de l'enregistrement." }
-                }
-            })
+            agir(() => corrigerDepuisControleAction({ ficheId, pointId: r.id, valeur: texte }))
         } else if (def.decision) {
             const decision = def.decision
             agir(() => validerPointAction({ ficheId, pointId: r.id, decision, justification: texte }))
@@ -113,15 +112,15 @@ export function IssuesEcart({ ficheId, r, pending, agir }: IssuesEcartProps) {
         const def = ISSUES[issue]
         return (
             <div className="space-y-2">
-                {issue === "corriger" && (
+                {issue === "corriger" && r.correction && (
                     <p className="text-[11px] text-stone-500">
-                        Liste d&apos;ingrédients de la fiche — la modification est tracée (avant / après).
+                        {r.correction.libelle} — la modification est tracée (avant / après).
                     </p>
                 )}
                 <textarea
                     value={texte}
                     onChange={(e) => setTexte(e.target.value)}
-                    rows={issue === "corriger" ? 4 : 2}
+                    rows={issue !== "corriger" ? 2 : (r.correction?.valeur?.length ?? 0) > 80 ? 4 : 1}
                     autoFocus
                     placeholder={def.placeholder}
                     className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs text-stone-700 outline-none focus:border-emerald-400"

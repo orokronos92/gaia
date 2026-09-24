@@ -87,11 +87,18 @@ function evaluate(control: ControlPoint, input: AuditInput, ctx: AuditContext): 
     : { statut: "WARNING", justification: "Contrôle déterministe non implémenté." };
   // Le contrôle précise l'action quand le statut seul ne dit pas le geste
   // attendu ; sinon on la déduit.
-  return ControlResultSchema.parse({
-    ...base,
-    ...verdict,
-    action: verdict.action ?? actionParDefaut(verdict.statut),
-  });
+  // The schema strips what it does not know: the face-to-face table and the
+  // correctable field are joined after it.
+  const { faceAFace, correction, ...verdictSchema } = verdict;
+  return {
+    ...ControlResultSchema.parse({
+      ...base,
+      ...verdictSchema,
+      action: verdict.action ?? actionParDefaut(verdict.statut),
+    }),
+    ...(faceAFace ? { faceAFace } : {}),
+    ...(correction ? { correction } : {}),
+  };
 }
 
 /** Runs the deterministic checks among the given control points. */

@@ -200,6 +200,8 @@ export interface BatTextCheck {
   comparaisonListe?: import("./coherence-liste").ComparaisonListe;
   /** Measured against required (14.1, 6.2, 13.1) — only what diverges. */
   faceAFace?: import("./face-a-face").FaceAFace;
+  /** The fiche field this divergence lets Quality correct in place. */
+  correction?: import("../correction").CorrectionFiche;
 }
 
 /**

@@ -33,6 +33,7 @@ export interface PreuveBat {
   reperes?: BatTextCheck["reperes"];
   comparaisonListe?: BatTextCheck["comparaisonListe"];
   faceAFace?: BatTextCheck["faceAFace"];
+  correction?: BatTextCheck["correction"];
 }
 
 const LIBELLE_ORIGINE: Record<PreuveBat["origine"], string> = {
@@ -63,6 +64,7 @@ export function preuvesParPoint(checks: BatTextCheck[]): Record<string, PreuveBa
       reperes: c.reperes,
       comparaisonListe: c.comparaisonListe,
       faceAFace: c.faceAFace,
+      correction: c.correction,
     });
   }
   return parPoint;
@@ -155,6 +157,8 @@ export function appliquerPreuves(
   // The measured-versus-required table, from the findings the card shows.
   const faceAFace = parlantes.find((p) => p.faceAFace)?.faceAFace;
   if (faceAFace) resultat = { ...resultat, faceAFace };
+  const correction = parlantes.find((p) => p.correction)?.correction;
+  if (correction) resultat = { ...resultat, correction };
 
   // Les repères de toutes les preuves du point se cumulent : un contrôle de
   // position en désigne deux ou trois, et Marie doit les voir ensemble.

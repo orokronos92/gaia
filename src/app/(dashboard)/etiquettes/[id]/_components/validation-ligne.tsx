@@ -20,7 +20,7 @@ import { IssuesEcart } from "./issues-ecart"
  * l'être : une anomalie qu'on ne peut pas clore reste éternellement ouverte.
  */
 type ConstatDecidable = Pick<ControlResult, "id" | "statut"> &
-    Partial<Pick<ControlResult, "validation" | "proposition" | "comparaisonListe">>
+    Partial<Pick<ControlResult, "validation" | "proposition" | "correction" | "mode" | "preuves">>
 
 const dateCourte = (d: Date | string) =>
     new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" })

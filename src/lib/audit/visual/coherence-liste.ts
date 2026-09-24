@@ -23,10 +23,6 @@ export type SourceListe = keyof typeof SOURCE_LISTE;
 
 export interface ComparaisonListe {
   source: string;
-  /** Which list was compared — the card offers to correct the workbook one in place. */
-  sourceCle: SourceListe;
-  /** The fiche's list as stored, to prefill the correction. */
-  texteFiche: string;
   /** Items of the fiche's list, for "3 identical out of 4". */
   total: number;
   ecarts: EcartListe[];
@@ -93,7 +89,11 @@ export function controlerListeFiche(
     // Spelled out in full: the justification is what Quality's decision is
     // pinned to, so a different divergence reopens a closed point.
     justification: `Comparée à la ${nomSource} : ${ecarts.map(decrireEcart).join(" ; ")}.${secondeListe}`,
-    comparaisonListe: { source: nomSource, sourceCle: source, texteFiche: liste, total: fiche.elements.length, ecarts },
+    comparaisonListe: { source: nomSource, total: fiche.elements.length, ecarts },
+    // Only the workbook list is a fiche field; a recette is corrected on its own card.
+    ...(source === "excel"
+      ? { correction: { table: "fiche" as const, champ: "listeIngredientsBddFr" as const, valeur: liste, libelle: "Liste d'ingrédients (base Excel)" } }
+      : {}),
     reperes: reperesDesEcarts(ecarts, analyses),
   };
 }

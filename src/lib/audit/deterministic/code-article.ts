@@ -99,6 +99,12 @@ export function checkCodePoidsCoherent(input: AuditInput): DeterministicVerdict 
     statut: "FAIL",
     justification: `Le conditionnement ${d.conditionnement} annonce « ${cond.libelle} », le poids net déclaré est ${poidsNet.trim()}.`,
     suggestionIa: "Corriger le poids net, ou le chiffre de conditionnement du code article.",
+    faceAFace: {
+      colonnes: { element: "Élément", gauche: "Fiche", droite: "Attendu d'après le code" },
+      contexte: `Code ${input.produit.codePf} : chiffre de conditionnement ${d.conditionnement}`,
+      lignes: [{ element: "Poids net", gauche: poidsNet.trim(), droite: cond.libelle }],
+    },
+    correction: { table: "produit", champ: "poidsNet", valeur: poidsNet.trim(), libelle: "Poids net" },
   };
 }
 
@@ -116,25 +122,29 @@ export function checkGencodeCoherent(input: AuditInput): DeterministicVerdict {
   const g = decomposerGencode(ean, d?.article);
   if (!g) return { statut: "WARNING", justification: "Gencode illisible — non vérifiable." };
 
-  const anomalies: string[] = [];
-  if (g.pays !== GENCODE_PAYS) anomalies.push(`préfixe pays ${g.pays} au lieu de ${GENCODE_PAYS}`);
-  if (g.fabricant !== GENCODE_FABRICANT) {
-    anomalies.push(`code fabricant ${g.fabricant} au lieu de ${GENCODE_FABRICANT}`);
-  }
-  if (cleEan13(ean.slice(0, 12)) !== g.cle) {
-    anomalies.push(`clé de contrôle ${g.cle} au lieu de ${cleEan13(ean.slice(0, 12))}`);
-  }
-  if (d && g.article !== d.article) {
-    anomalies.push(`numéro d'article ${g.article} au lieu de ${d.article}`);
-  }
+  // Each divergence: what the barcode says, what it should say.
+  const ecarts: { element: string; dansEan: string; attendu: string }[] = [];
+  if (g.pays !== GENCODE_PAYS) ecarts.push({ element: "Préfixe pays", dansEan: g.pays, attendu: GENCODE_PAYS });
+  if (g.fabricant !== GENCODE_FABRICANT) ecarts.push({ element: "Code fabricant", dansEan: g.fabricant, attendu: GENCODE_FABRICANT });
+  const cleAttendue = cleEan13(ean.slice(0, 12));
+  if (cleAttendue !== g.cle) ecarts.push({ element: "Clé de contrôle", dansEan: g.cle, attendu: cleAttendue });
+  if (d && g.article !== d.article) ecarts.push({ element: "Numéro d'article", dansEan: g.article, attendu: d.article });
   if (d?.conditionnement && g.conditionnement && g.conditionnement !== d.conditionnement) {
-    anomalies.push(`conditionnement ${g.conditionnement} au lieu de ${d.conditionnement}`);
+    ecarts.push({ element: "Conditionnement", dansEan: g.conditionnement, attendu: d.conditionnement });
   }
 
-  if (anomalies.length > 0) {
+  if (ecarts.length > 0) {
     return {
       statut: "FAIL",
-      justification: `Gencode ${ean} incohérent avec le code produit : ${anomalies.join(" ; ")}.`,
+      justification: `Gencode ${ean} incohérent avec le code produit : ${ecarts
+        .map((e) => `${e.element.toLowerCase()} ${e.dansEan} au lieu de ${e.attendu}`)
+        .join(" ; ")}.`,
+      faceAFace: {
+        colonnes: { element: "Élément", gauche: "Dans le Gencode", droite: "Attendu" },
+        contexte: `Gencode ${ean} · code produit ${input.produit.codePf ?? "—"} (MOP-PRO-029)`,
+        lignes: ecarts.map((e) => ({ element: e.element, gauche: e.dansEan, droite: e.attendu })),
+      },
+      correction: { table: "produit", champ: "codeEan", valeur: ean, libelle: "Gencode (EAN)" },
     };
   }
 
@@ -161,5 +171,10 @@ export function checkGencodeUnicite(input: AuditInput): DeterministicVerdict {
     statut: "FAIL",
     justification: `Gencode ${ean} également porté par ${autres.join(", ")} — deux produits distincts ne peuvent pas partager un code-barres.`,
     suggestionIa: "Attribuer un Gencode propre, ou fusionner les références si elles n'en font qu'une.",
+    faceAFace: {
+      colonnes: { element: "Gencode", gauche: "Ce produit", droite: "Aussi porté par" },
+      lignes: [{ element: ean, gauche: input.produit.codePf ?? "—", droite: autres.join(", ") }],
+    },
+    correction: { table: "produit", champ: "codeEan", valeur: ean, libelle: "Gencode (EAN)" },
   };
 }

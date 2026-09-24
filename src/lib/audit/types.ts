@@ -241,6 +241,8 @@ export type ControlResult = z.infer<typeof ControlResultSchema> & {
   comparaisonListe?: import("./visual/coherence-liste").ComparaisonListe;
   /** Mesuré / exigé, ou fiche / étiquette — seulement les lignes en écart. */
   faceAFace?: import("./visual/face-a-face").FaceAFace;
+  /** Le champ de fiche que la Qualité peut corriger depuis la carte. */
+  correction?: import("./correction").CorrectionFiche;
   /** L'état du point avant toute preuve du BAT, pour pouvoir tout réévaluer. */
   socle?: { statut: ControlStatus; action?: ControlAction; justification?: string };
   /** Où regarder sur le BAT, en fractions de la face rendue. */
@@ -344,6 +346,10 @@ export interface DeterministicVerdict {
   action?: ControlAction;
   justification: string;
   suggestionIa?: string;
+  /** Fiche / fiche, or fiche / étiquette — only the diverging lines. */
+  faceAFace?: import("./visual/face-a-face").FaceAFace;
+  /** The fiche field this divergence lets Quality correct in place. */
+  correction?: import("./correction").CorrectionFiche;
 }
 
 /** Action par défaut quand un contrôle ne la précise pas. */
