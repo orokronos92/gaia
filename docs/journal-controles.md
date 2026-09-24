@@ -114,6 +114,7 @@ depuis l'historique git.
 
 | Date | Contrôle | Évolution | Exemple / mesure |
 |---|---|---|---|
+| 2026-09-24 | Tous les points en écart | **Les issues d'un écart, sur la carte.** Un point en non-conformité prouvée offre quatre gestes : **Corriger la fiche** (sur le 2.5 quand la liste vient de l'Excel : la liste s'édite sur place, avant / après tracés dans `audit_logs`), **BAT à refaire** (renvoi au Graphisme, note facultative), **Arbitrer l'écart** (l'ancienne dérogation, motif obligatoire, clôt le point), **En attente d'info** (quoi et de qui, obligatoire). « BAT à refaire » et « En attente » gardent la ligne ouverte avec un badge qui dit qui la tient ; si l'écart change (nouveau BAT, fiche corrigée), le badge se déclare périmé, et disparaît si l'écart est réglé. Les alertes (non prouvées) gardent « Marquer vérifié ». Migration 0032. | Vérifié à l'écran sur `TA6942` : correction « fleurs → rose » ⇒ 2.5 vérifié ; « BAT à refaire » ⇒ badge violet ; test retiré et liste d'origine restaurée ensuite. `issues-ecart.tsx`, `src/lib/audit/decisions.ts` |
 | 2026-09-24 | 2.5 | **Un seul point pour la liste, et un face-à-face qui ne montre que les écarts.** TXT_INGREDIENTS (hors registre) est supprimé : sans recette, le 2.5 compare la liste de l'Excel à la liste lue sous « INGRÉDIENTS » sur le BAT, ingrédient par ingrédient. La carte affiche un tableau fiche / étiquette limité aux lignes qui divergent (remplacé, absent, en plus, ordre changé), le nombre d'ingrédients identiques, et un repère sur le BAT pour chaque écart. Liste illisible sur le BAT → « à comparer à l'œil » ; ni recette ni liste → « à compléter ». Les mots de la colonne voisine glissés dans la liste par la lecture du PDF sont écartés. | 332 BAT lisibles : **279 identiques, 36 avec écarts, 17 sans liste en texte**. Les 36 écarts relus un par un sont tous réels (dont 8 « wulong » / « wu long »). `TA6942` : fiche « pétales de fleurs* », étiquette « pétales de rose* ». `src/lib/audit/visual/comparaison-liste.ts`, `coherence-liste.ts` |
 | 2026-09-24 | TXT_INGREDIENTS | **Liste de l'Excel comparée proprement au BAT.** L'en-tête « Ingrédients : », la note « *Issu de l'agriculture biologique », les paragraphes suivants et les virgules entre parenthèses ne sont plus pris pour des ingrédients ; apostrophes ’ et ' confondues ; virgule sans espace (« tilleul*,mélisse* ») découpée. Une case qui porte une seconde liste est signalée, seule la première est comparée. | 394 produits avec BAT : **avant 269 écarts, après 48** (284 conformes, 62 BAT sans texte lisible). Des 48 : 22 vrais écarts (questions K1–K3), 16 BAT sans liste en texte (K5), 10 mises en page mêlées FR/EN. `src/lib/audit/visual/elements-liste.ts` |
 | 2026-09-23 | Tous ceux qui lisent la liste | **La liste de l'Excel sert quand il n'y a pas de recette** (migration 0031). La recette étiquette reste prioritaire dès qu'elle est intégrée. Concerne TXT_INGREDIENTS, 5.3 réglisse, 4.1 exemption nutritionnelle, TYPO_ALLERGENE_EVIDENCE. Les QUID (3.x) restent sans objet sans recette. | 822 listes JDG. `TR2202` |
@@ -134,7 +135,10 @@ depuis l'historique git.
   non) : il n'a pas encore le face-à-face. À aligner quand des recettes seront réintégrées.
 - **17 BAT portent le texte sans la liste lisible** (titre vectorisé, ex. `TA6952`) : le 2.5
   renvoie à l'œil.
-- **Les trois issues sur la carte** (corriger la fiche, arbitrer, en attente d'info) : lot 3.
+- **Les BAT à refaire ne sont pas encore listés pour le Graphisme** : le badge vit sur la
+  carte de chaque fiche. Une vue « BAT à refaire » pour Fabrice reste à faire.
+- **« Corriger la fiche » n'existe que pour la liste du 2.5** : les autres cartes (dénomination,
+  poids net, mentions) n'ont pas encore l'édition sur place — lot 4.
 - **62 BAT sans texte lisible** (vectorisés ou images) : le robot texte ne dit rien, seule la
   vision peut lire.
 - **Mise en page en colonnes** : la lecture du PDF peut glisser un mot de la colonne voisine
