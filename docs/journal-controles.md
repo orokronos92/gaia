@@ -211,6 +211,20 @@ Noël, TV655 Gyokuro, TV658 Sencha Premium, TN406 Roi du Yunnan d'or, TR204 Magi
 - Ce qui marche encore sur ces BAT : l'**Eurofeuille**, reconnue par son tracé (13.1), et
   la **vision** (logos : Triman, Point Vert, WFTO…), qui regarde l'image et pas le texte.
 
+### Recherche des fichiers d'origine (2026-09-24)
+
+- **PDF retrouvés sur le disque d'Ouro** (`docs/sources/bat_vecto/`) pour TA7092, TA6742 et
+  TN4062 : les 4 sont vectorisés. Trois sont identiques octet pour octet aux BAT de la
+  préprod ; le quatrième, « ETCVA6742V5-Caprice Gourmand.pdf » sans « vecto » (avril 2024),
+  l'est aussi. **Ce lot a été exporté vectorisé dès 2024** : chercher d'autres PDF ne mènera
+  à rien.
+- **Les `.ai` gardent le texte** : sur les anciens `.ai` du versement de mars (stockage de
+  production, dossier « RÉFÉRENCES ÉTIQUETTES »), 38 correspondent à des produits vectorisés
+  et **les 38 ont texte et polices lisibles** (Long Jing, Halloween, Jasmine Flowers, Pin Ho
+  Jade…). Un `.ai` récent est un PDF compatible : il se lit avec les mêmes outils.
+- **À vérifier** avant de généraliser : qu'un `.ai` porte bien la même version et le même
+  texte que le BAT imprimé (le `.ai` peut avoir été modifié après l'export).
+
 ### Pistes (non tranchées)
 
 1. **À la source** : demander au Graphisme des PDF exportés avec le texte conservé, ou les
