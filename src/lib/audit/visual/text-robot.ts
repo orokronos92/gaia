@@ -15,6 +15,7 @@
  */
 
 import { FABRICANT_JDG_TOKENS, normalize } from "../canonical";
+import { elementsListe } from "./elements-liste";
 import {
   DEMETER_PHRASE_TYPE,
   mentionDue,
@@ -367,8 +368,9 @@ function checkDemeter(batN: string, phraseFiche: string | null | undefined): Bat
 }
 
 /** Normalize for comparison: fold case/accents/space AND glue number+unit. */
+/** Curly apostrophes: the workbook mixes ’ and ', the artwork too. */
 function normCmp(value: string): string {
-  return normalize(value).replace(/(\d)\s*(g|kg|mg|ml|cl|%)/gi, "$1$2");
+  return normalize(value).replace(/[’‘]/g, "'").replace(/(\d)\s*(g|kg|mg|ml|cl|%)/gi, "$1$2");
 }
 
 function declares(value?: string | null): boolean {
@@ -383,21 +385,19 @@ function checkIngredients(batN: string, input: BatTextInput): BatTextCheck {
   if (!input.ingredients || input.ingredients.trim() === "") {
     return { ...base, statut: "WARNING", justification: "Liste d'ingrédients absente de la fiche — comparaison impossible." };
   }
-  // Split on list separators (comma + space) only, so French decimals (15,5%) survive.
-  // Drop the trailing "." of the last item; a masked ingredient is just its name
-  // (no "%"), so it matches the BAT whether or not the artwork prints the %.
-  const items = input.ingredients
-    .split(/,\s+/)
-    .map((s) => s.trim().replace(/\.\s*$/, ""))
-    .filter(Boolean);
-  const missing = items.filter((it) => !batN.includes(normCmp(it)));
+  // Heading, organic note and nested commas are layout, not items (elements-liste.ts).
+  // A masked ingredient is just its name (no "%"), so it matches the BAT whether
+  // or not the artwork prints the %.
+  const { elements, autreListeIgnoree } = elementsListe(input.ingredients);
+  const note = autreListeIgnoree ? " La fiche porte une seconde liste après la première : seule la première est comparée." : "";
+  const missing = elements.filter((it) => !batN.includes(normCmp(it)));
   if (missing.length === 0) {
-    return { ...base, statut: "PASS", justification: "Tous les ingrédients et % de la fiche figurent sur le BAT." };
+    return { ...base, statut: "PASS", justification: `Tous les ingrédients et % de la fiche figurent sur le BAT.${note}` };
   }
   return {
     ...base,
     statut: "FAIL",
-    justification: `Non retrouvé(s) à l'identique sur le BAT : ${missing.join(" ; ")}.`,
+    justification: `Non retrouvé(s) à l'identique sur le BAT : ${missing.join(" ; ")}.${note}`,
   };
 }
 
