@@ -37,7 +37,7 @@ Source : `src/lib/audit/control-checklist.ts`.
 | 2.2 | Liste des ingrédients | Les ingrédients sont-ils listés par ordre d'importance pondérale décroissante ? | Code · fiche |
 | 2.3 | Liste des ingrédients | Mono-ingrédient : la liste est-elle correctement omise (dénomination = nom de l'ingrédient) ? | Code · fiche |
 | 2.4 | Liste des ingrédients | Étoiles présentes (* bio / ** demeter) avec la mention de certification associée, demeter en gras italique ? | Code · BAT |
-| 2.5 | Liste des ingrédients | La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ? | Code · BAT |
+| 2.5 | Liste des ingrédients | La liste d'ingrédients de la fiche (recette étiquette, sinon base Excel) correspond-elle à celle imprimée sur le BAT ? | Code · BAT |
 | 3.1 | QUID (pourcentages) | Un % est-il déclaré pour chaque ingrédient figurant en dénomination, mis en avant graphiquement, ou source de confusion ? | Code · fiche |
 | 3.2 | QUID (pourcentages) | Règle d'arrondi respectée : un chiffre après la virgule (2e décimale 0-4 → inférieur, 5-9 → supérieur) ? | Code · fiche |
 | 3.3 | QUID (pourcentages) | Si total > 100 % du fait des arrondis, l'ajustement porte-t-il sur l'ingrédient le plus important ? | Code · fiche |
@@ -84,8 +84,7 @@ point dans la liste de travail de la Qualité. Tenu à la main : à mettre à jo
 | TXT_DENOMINATION | 1.5 | La dénomination de la fiche, à l'identique |
 | TYPO_DENOM_DROITE | 1.4 | La dénomination en caractères droits |
 | MENT_INGREDIENTS | 2.1 | Le mot « ingrédients » devant la liste |
-| **TXT_INGREDIENTS** | hors registre | Chaque ingrédient et son %, à l'identique (voir §3, 2026-09-24) |
-| MENT_COHERENCE_ETIQUETTE | 2.5 | La recette étiquette, ligne par ligne |
+| MENT_COHERENCE_ETIQUETTE | 2.5 | La liste de la fiche face à la liste imprimée : recette étiquette ligne par ligne, sinon liste de l'Excel ingrédient par ingrédient. **Seuls les écarts s'affichent** |
 | MENT_ETOILES, TXT_DEMETER, TYPO_DEMETER_STYLE | 2.4 | Étoiles bio / Demeter, leur mention, « demeter » en gras italique |
 | TXT_ALLERGENES, TXT_ALLERGENE_CONTIENT, TYPO_ALLERGENE_EVIDENCE | 5.1 | Allergènes présents et mis en évidence |
 | TXT_ALLEG_MODE_VIE, TXT_ALLEG_TASSES, TXT_ALLEG_NUTRI | 5.2 | Les trois mentions qui accompagnent une allégation |
@@ -115,6 +114,7 @@ depuis l'historique git.
 
 | Date | Contrôle | Évolution | Exemple / mesure |
 |---|---|---|---|
+| 2026-09-24 | 2.5 | **Un seul point pour la liste, et un face-à-face qui ne montre que les écarts.** TXT_INGREDIENTS (hors registre) est supprimé : sans recette, le 2.5 compare la liste de l'Excel à la liste lue sous « INGRÉDIENTS » sur le BAT, ingrédient par ingrédient. La carte affiche un tableau fiche / étiquette limité aux lignes qui divergent (remplacé, absent, en plus, ordre changé), le nombre d'ingrédients identiques, et un repère sur le BAT pour chaque écart. Liste illisible sur le BAT → « à comparer à l'œil » ; ni recette ni liste → « à compléter ». Les mots de la colonne voisine glissés dans la liste par la lecture du PDF sont écartés. | 332 BAT lisibles : **279 identiques, 36 avec écarts, 17 sans liste en texte**. Les 36 écarts relus un par un sont tous réels (dont 8 « wulong » / « wu long »). `TA6942` : fiche « pétales de fleurs* », étiquette « pétales de rose* ». `src/lib/audit/visual/comparaison-liste.ts`, `coherence-liste.ts` |
 | 2026-09-24 | TXT_INGREDIENTS | **Liste de l'Excel comparée proprement au BAT.** L'en-tête « Ingrédients : », la note « *Issu de l'agriculture biologique », les paragraphes suivants et les virgules entre parenthèses ne sont plus pris pour des ingrédients ; apostrophes ’ et ' confondues ; virgule sans espace (« tilleul*,mélisse* ») découpée. Une case qui porte une seconde liste est signalée, seule la première est comparée. | 394 produits avec BAT : **avant 269 écarts, après 48** (284 conformes, 62 BAT sans texte lisible). Des 48 : 22 vrais écarts (questions K1–K3), 16 BAT sans liste en texte (K5), 10 mises en page mêlées FR/EN. `src/lib/audit/visual/elements-liste.ts` |
 | 2026-09-23 | Tous ceux qui lisent la liste | **La liste de l'Excel sert quand il n'y a pas de recette** (migration 0031). La recette étiquette reste prioritaire dès qu'elle est intégrée. Concerne TXT_INGREDIENTS, 5.3 réglisse, 4.1 exemption nutritionnelle, TYPO_ALLERGENE_EVIDENCE. Les QUID (3.x) restent sans objet sans recette. | 822 listes JDG. `TR2202` |
 | 2026-09-10 | 2.4, 13.5, 13.6 | Les trois zones de mention (Demeter, Anemos, Les Engagés) branchées sur l'audit ; statut AUTO / OUI / NON décidé par la Qualité (migration 0018) ; la gamme déclare ce qu'elle exige. | 42 → 44 points |
@@ -128,13 +128,15 @@ depuis l'historique git.
 
 ## 4. Limites connues et pistes
 
-- **TXT_INGREDIENTS vérifie la présence, pas l'ordre ni l'exhaustivité.** Un ingrédient en
-  plus sur le BAT ou un ordre différent passe inaperçu : `TM0306` imprime « pétales de
-  souci* » en plus et « tilleul* » à une autre place, et sort conforme. Piste : comparer
-  aussi la séquence.
-- **TXT_INGREDIENTS n'est rattaché à aucun point du registre** : il apparaît en constat hors
-  registre. À rattacher au point de la liste des ingrédients.
+- ~~TXT_INGREDIENTS ne voit ni l'ordre ni l'ingrédient en plus ; il est hors registre.~~
+  Réglé le 2026-09-24 par le face-à-face du 2.5.
+- **Avec une recette étiquette, le 2.5 garde sa lecture mot à mot** (dénominations relues ou
+  non) : il n'a pas encore le face-à-face. À aligner quand des recettes seront réintégrées.
+- **17 BAT portent le texte sans la liste lisible** (titre vectorisé, ex. `TA6952`) : le 2.5
+  renvoie à l'œil.
+- **Les trois issues sur la carte** (corriger la fiche, arbitrer, en attente d'info) : lot 3.
 - **62 BAT sans texte lisible** (vectorisés ou images) : le robot texte ne dit rien, seule la
   vision peut lire.
-- **Mise en page FR/EN en colonnes** : la lecture du PDF mêle parfois les deux colonnes
-  (`TUTA6152`, `TO1186`), ce qui produit un faux écart. 10 produits.
+- **Mise en page en colonnes** : la lecture du PDF peut glisser un mot de la colonne voisine
+  dans la liste (`TUTA6152`). Les mots en majuscule hors de place sont écartés ; un mot en
+  minuscule d'une autre colonne produirait encore un faux écart (aucun cas mesuré).
