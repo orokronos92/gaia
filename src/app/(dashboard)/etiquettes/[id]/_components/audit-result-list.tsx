@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { CONTROL_CHECKLIST } from "@/lib/audit/control-checklist"
 import { CONTROL_SECTIONS, type ControlAction, type ControlPoint, type ControlResult } from "@/lib/audit/types"
 import { EcartsListe } from "./ecarts-liste"
+import { FaceAFaceTable } from "./face-a-face"
 import { ValidationLigne } from "./validation-ligne"
 
 const SECTION_LABELS: Record<(typeof CONTROL_SECTIONS)[number], string> = {
@@ -189,6 +190,8 @@ function Ligne({
                 {/* Le face-à-face dit déjà tout ce que la phrase dirait, en lisible. */}
                 {r.comparaisonListe && r.comparaisonListe.ecarts.length > 0 ? (
                     <EcartsListe comparaison={r.comparaisonListe} />
+                ) : r.faceAFace && r.faceAFace.lignes.length > 0 ? (
+                    <FaceAFaceTable donnees={r.faceAFace} />
                 ) : (
                     r.justification && (
                         <p className="text-xs text-stone-500 mt-1.5 leading-relaxed">{r.justification}</p>

@@ -27,6 +27,7 @@
  * sur ~144 — deux sans aucun tracé exploitable, une sur un gabarit différent.
  */
 
+import { COLONNES_MESURE, mm } from "./face-a-face";
 import type { TraceVectoriel } from "@/lib/utils/pdf-vecteurs";
 import { repereBoitePdf, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
@@ -162,6 +163,19 @@ export function controlerEurofeuille(
     Math.abs(logo.largeurMm - EUROFEUILLE_DEROGATION.largeurMm) <= TOLERANCE_DEROGATION &&
     Math.abs(logo.hauteurMm - EUROFEUILLE_DEROGATION.hauteurMm) <= TOLERANCE_DEROGATION;
 
+  // Mesuré contre exigé : le champ vert, face au minimum (et à la dérogation).
+  const faceAFace = {
+    colonnes: COLONNES_MESURE,
+    contexte: "Eurofeuille — dimensions du champ vert (PRO-QHS-313 §11.1)",
+    lignes: [
+      {
+        element: "Largeur × hauteur",
+        gauche: `${mm(logo.largeurMm).replace(" mm", "")} × ${mm(logo.hauteurMm)}`,
+        droite: `≥ ${EUROFEUILLE_MIN.largeurMm.toLocaleString("fr-FR")} × ${EUROFEUILLE_MIN.hauteurMm} mm (dérogation ${EUROFEUILLE_DEROGATION.largeurMm} × ${EUROFEUILLE_DEROGATION.hauteurMm} mm, très petits emballages)`,
+      },
+    ],
+  };
+
   if (dansLaDerogation) {
     // Le logo est à la taille dérogatoire exacte. Le manuel l'autorise pour les
     // « très petits emballages » sans chiffrer ce qu'est un très petit
@@ -171,6 +185,7 @@ export function controlerEurofeuille(
       ...base,
       statut: "WARNING",
       reperes,
+      faceAFace,
       justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — c'est exactement la taille dérogatoire « très petits emballages ». Le manuel ne chiffre pas « très petit » : à assumer explicitement.`,
     };
   }
@@ -179,6 +194,7 @@ export function controlerEurofeuille(
     ...base,
     statut: "FAIL",
     reperes,
+    faceAFace,
     justification: `Eurofeuille reconnue au tracé, champ vert ${taille} — sous le minimum ${EUROFEUILLE_MIN.largeurMm} × ${EUROFEUILLE_MIN.hauteurMm} mm, et ce n'est pas la taille dérogatoire ${EUROFEUILLE_DEROGATION.largeurMm} × ${EUROFEUILLE_DEROGATION.hauteurMm} mm : c'est le logo standard dessiné trop petit.`,
   };
 }

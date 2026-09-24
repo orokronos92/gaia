@@ -239,6 +239,8 @@ export type ControlResult = z.infer<typeof ControlResultSchema> & {
   preuves?: PreuveBatResultat[];
   /** La liste de la fiche face à celle du BAT (point 2.5) — seulement les écarts. */
   comparaisonListe?: import("./visual/coherence-liste").ComparaisonListe;
+  /** Mesuré / exigé, ou fiche / étiquette — seulement les lignes en écart. */
+  faceAFace?: import("./visual/face-a-face").FaceAFace;
   /** L'état du point avant toute preuve du BAT, pour pouvoir tout réévaluer. */
   socle?: { statut: ControlStatus; action?: ControlAction; justification?: string };
   /** Où regarder sur le BAT, en fractions de la face rendue. */

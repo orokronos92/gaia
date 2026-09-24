@@ -32,6 +32,7 @@ export interface PreuveBat {
   proposition?: BatTextCheck["proposition"];
   reperes?: BatTextCheck["reperes"];
   comparaisonListe?: BatTextCheck["comparaisonListe"];
+  faceAFace?: BatTextCheck["faceAFace"];
 }
 
 const LIBELLE_ORIGINE: Record<PreuveBat["origine"], string> = {
@@ -61,6 +62,7 @@ export function preuvesParPoint(checks: BatTextCheck[]): Record<string, PreuveBa
       proposition: c.proposition,
       reperes: c.reperes,
       comparaisonListe: c.comparaisonListe,
+      faceAFace: c.faceAFace,
     });
   }
   return parPoint;
@@ -149,6 +151,10 @@ export function appliquerPreuves(
   // The face-to-face list comparison: only the divergences, shown on the card.
   const comparaisonListe = (preuvesNouvelles ?? []).find((p) => p.comparaisonListe)?.comparaisonListe;
   if (comparaisonListe) resultat = { ...resultat, comparaisonListe };
+
+  // The measured-versus-required table, from the findings the card shows.
+  const faceAFace = parlantes.find((p) => p.faceAFace)?.faceAFace;
+  if (faceAFace) resultat = { ...resultat, faceAFace };
 
   // Les repères de toutes les preuves du point se cumulent : un contrôle de
   // position en désigne deux ou trois, et Marie doit les voir ensemble.

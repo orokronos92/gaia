@@ -19,6 +19,7 @@
  *     décoratif de l'étiquette comme une non-conformité réglementaire.
  */
 
+import { COLONNES_MESURE, mm } from "./face-a-face";
 import { hauteurCapitaleMm, type AnalyseBat } from "@/lib/utils/pdf-bat";
 import {
   facesBat,
@@ -160,6 +161,17 @@ function controlerHauteurX(
       ...base,
       statut: "FAIL",
       reperes,
+      faceAFace: {
+        colonnes: COLONNES_MESURE,
+        contexte: `Hauteur de x — face la plus grande ${surfaceCm2.toLocaleString("fr-FR")} cm² (${tranche.libelle})`,
+        lignes: sousSeuil.map((m) => ({
+          element: m.mention,
+          gauche: mm(m.hauteurXmm),
+          droite: `≥ ${mm(tranche.seuilHauteurXmm)}`,
+          detail: `${m.police} ${m.corpsPt} pt`,
+        })),
+        conformes: mesures.length - sousSeuil.length,
+      },
       justification: `${contexte} Sous le seuil : ${sousSeuil
         .map((m) => `${m.mention} ${m.hauteurXmm} mm`)
         .join(", ")}. Mesuré : ${detail}.${reserve}`,
@@ -239,7 +251,17 @@ function controlerHauteurChiffres(analyses: AnalyseBat[], entree: EntreeTypo): B
       : [];
 
   if (hauteur < seuil) {
-    return { ...base, statut: "FAIL", reperes, justification: `${mesure}. Non conforme.` };
+    return {
+      ...base,
+      statut: "FAIL",
+      reperes,
+      justification: `${mesure}. Non conforme.`,
+      faceAFace: {
+        colonnes: COLONNES_MESURE,
+        contexte: `Hauteur des chiffres de la quantité nette (${grammes} g)`,
+        lignes: [{ element: `« ${trouve.texte} »`, gauche: mm(hauteur), droite: `≥ ${mm(seuil)}`, detail: `${metrique.nom} ${trouve.corpsPt} pt` }],
+      },
+    };
   }
 
   // La hauteur est acquise. Le « même champ visuel que la dénomination » exigé

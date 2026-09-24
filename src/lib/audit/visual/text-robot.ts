@@ -198,6 +198,8 @@ export interface BatTextCheck {
   reperes?: import("./reperes").RepereBat[];
   /** The fiche's list face to face with the printed one — only what diverges. */
   comparaisonListe?: import("./coherence-liste").ComparaisonListe;
+  /** Measured against required (14.1, 6.2, 13.1) — only what diverges. */
+  faceAFace?: import("./face-a-face").FaceAFace;
 }
 
 /**
