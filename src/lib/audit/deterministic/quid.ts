@@ -6,6 +6,7 @@
 
 import {
   computeRecette,
+  PRECISION_PAR_DEFAUT,
   type IngredientRecetteInput,
   type PrecisionArrondi,
 } from "@/lib/business-rules/recette";
@@ -110,12 +111,12 @@ export function checkRounding(input: AuditInput): DeterministicVerdict {
     }
   }
 
-  const attendu = computeRecette({ ingredients: recetteInput, precisionArrondi: 0.5 })
+  const attendu = computeRecette({ ingredients: recetteInput, precisionArrondi: PRECISION_PAR_DEFAUT })
     .ingredients.map((i) => i.pourcentageEtiquette)
     .join(" / ");
   return {
     statut: "FAIL",
-    justification: `Arrondi non conforme. Attendu (pas 0,5) : ${attendu}. Sur l'étiquette : ${stored.join(" / ")}.`,
+    justification: `Arrondi non conforme. Attendu (pas de ${PRECISION_PAR_DEFAUT}) : ${attendu}. Sur l'étiquette : ${stored.join(" / ")}.`,
     suggestionIa: "Recalculer les % via le moteur (méthode du plus grand reste).",
   };
 }

@@ -119,8 +119,10 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
   },
   {
     id: "3.2", ordre: 14, section: "QUID", typeControle: "ROUNDING", mode: "deterministic",
-    libelle: "Règle d'arrondi respectée : un chiffre après la virgule (2e décimale 0-4 → inférieur, 5-9 → supérieur) ?",
-    reference: "PRO-QHS-013 §2.2",
+    // PRO-QHS-313 v2 §2.2: whole percentages; 0.5 kept for aromas under 1 % in
+    // the sub-designation, and selectable by Quality (decision 2026-09-24).
+    libelle: "Règle d'arrondi respectée : % entiers (1ʳᵉ décimale 0-4 → inférieur, 5-9 → supérieur), pas de 0,5 si choisi (arôme < 1 % en sous-désignation) ?",
+    reference: "PRO-QHS-313 §2.2",
   },
   {
     id: "3.3", ordre: 15, section: "QUID", typeControle: "QUID_AJUSTEMENT_100", mode: "deterministic",

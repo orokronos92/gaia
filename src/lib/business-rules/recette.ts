@@ -57,7 +57,13 @@ export interface RecetteCalculee {
 }
 
 const POURCENTAGE_CIBLE = 100;
-const PRECISION_PAR_DEFAUT: PrecisionArrondi = 0.5;
+/**
+ * Whole percentages by default: PRO-QHS-313 v2 §2.2 gives the QUID "sans chiffre
+ * après la virgule". The 0.5 step stays selectable — the procedure keeps it for
+ * aromas named in the sub-designation under 1 %, and Quality uses it in a few
+ * other cases (Ouro, 2026-09-24).
+ */
+export const PRECISION_PAR_DEFAUT: PrecisionArrondi = 1;
 const EPSILON = 1e-9;
 
 const arrondi2 = (v: number): number => Math.round(v * 100) / 100;

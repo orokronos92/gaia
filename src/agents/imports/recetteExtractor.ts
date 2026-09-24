@@ -23,6 +23,7 @@
 import { z } from "zod";
 import {
   computeRecette,
+  PRECISION_PAR_DEFAUT,
   type IngredientRecetteInput,
   type RecetteCalculee,
 } from "@/lib/business-rules/recette";
@@ -31,7 +32,6 @@ import { callMistral, type CallMeta } from "../mistral-call";
 import { TEXT_MODEL } from "../models";
 import { xlsxVersTexte } from "./xlsx-texte";
 
-const PRECISION_PAR_DEFAUT = 0.5 as const;
 
 /** Below this the two percentages are the same number, not a divergence. */
 const TOLERANCE_ECART = 0.001;

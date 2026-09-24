@@ -6,6 +6,7 @@ import {
   computeRecette,
   controleTotal,
   type RecetteCalculee,
+  PRECISION_PAR_DEFAUT,
 } from "@/lib/business-rules/recette";
 import {
   kgVersPct,
@@ -46,7 +47,7 @@ export function etatDepuisRecette(
   recette: RecetteAgentOutput | null
 ): EtatCalculatrice {
   if (!recette || recette.ingredients.length === 0) {
-    return { massePrincipaleKg: null, unitMode: "pct", pas: 0.5, lignes: [] };
+    return { massePrincipaleKg: null, unitMode: "pct", pas: PRECISION_PAR_DEFAUT, lignes: [] };
   }
   const totalKg = recette.totalKg;
   // Principal = heaviest ingredient; its mass anchors the derived lot.
@@ -57,7 +58,7 @@ export function etatDepuisRecette(
   return {
     massePrincipaleKg: massePrincipaleKg > 0 ? massePrincipaleKg : null,
     unitMode: "pct",
-    pas: 0.5,
+    pas: PRECISION_PAR_DEFAUT,
     lignes: recette.ingredients.map((i) => ({
       id: i.codeArticle || uid(),
       codeArticle: i.codeArticle || null,
@@ -86,12 +87,12 @@ export function etatDepuisExtraction(
 ): EtatCalculatrice {
   const items = parseIngredientsTexte(texte);
   if (items.length === 0) {
-    return { massePrincipaleKg: null, unitMode: "pct", pas: 0.5, lignes: [] };
+    return { massePrincipaleKg: null, unitMode: "pct", pas: PRECISION_PAR_DEFAUT, lignes: [] };
   }
   return {
     massePrincipaleKg: null,
     unitMode: "pct",
-    pas: 0.5,
+    pas: PRECISION_PAR_DEFAUT,
     lignes: items.map((it) => ({
       id: uid(),
       codeArticle: null,

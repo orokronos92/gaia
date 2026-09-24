@@ -98,7 +98,7 @@ fermer l'aurait empêché d'y arriver.
 | Point | Ce qui est vérifié | Voie | BAT | Référence |
 |---|---|---|---|---|
 | **3.1** | Un % est-il déclaré pour chaque ingrédient figurant en dénomination, mis en avant graphiquement, ou source de confusion ? | Code · fiche | — | PRO-QHS-013 §2.2 |
-| **3.2** | Règle d'arrondi respectée : un chiffre après la virgule (2e décimale 0-4 → inférieur, 5-9 → supérieur) ? | Code · fiche | — | PRO-QHS-013 §2.2 |
+| **3.2** | Règle d'arrondi respectée : % entiers (1ʳᵉ décimale 0-4 → inférieur, 5-9 → supérieur), pas de 0,5 si choisi (arôme < 1 % en sous-désignation) ? | Code · fiche | — | PRO-QHS-313 §2.2 |
 | **3.3** | Si total > 100 % du fait des arrondis, l'ajustement porte-t-il sur l'ingrédient le plus important ? | Code · fiche | — | PRO-QHS-013 §2.2 |
 
 ### Déclaration nutritionnelle
