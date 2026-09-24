@@ -13,7 +13,16 @@ import type { ControlStatus } from "../types";
 import type { BatTextCheck } from "./text-robot";
 
 export type Presence = "PRESENT" | "ABSENT" | "INCERTAIN";
-type Attendu = "REQUIS" | "INTERDIT" | "OPTIONNEL";
+/**
+ * - REQUIS / INTERDIT / OPTIONNEL : the regulatory expectation.
+ * - A_EVITER : allowed by law, but JDG does not put it forward on its finished
+ *   products (PRO-QHS-313 v2 §11.2 — MH and FFL, except bags and trading).
+ * - ANNEE_EN_COURS : allowed only for the current year (Meilleur produit Bio).
+ * The last two say nothing when the logo is absent: the catalogue carries none
+ * today, and a control that only watches for them must not add a line to every
+ * card.
+ */
+type Attendu = "REQUIS" | "INTERDIT" | "OPTIONNEL" | "A_EVITER" | "ANNEE_EN_COURS";
 
 export interface PictoDef {
   cle: string;
@@ -24,6 +33,8 @@ export interface PictoDef {
   rubrique: string;
   libelle: string;
   attendu: Attendu;
+  /** The model also reads the year printed on the logo. */
+  lireAnnee?: boolean;
 }
 
 /** Logos the visual robot inspects on the BAT. */
@@ -33,7 +44,14 @@ export const PICTOS_A_DETECTER: PictoDef[] = [
   { cle: "INFO_TRI", checklistId: "12.2", desc: "cartouche Info-Tri (consignes de tri détaillées en bloc)", rubrique: "Pictogrammes", libelle: "Info-Tri présent sur le BAT ?", attendu: "OPTIONNEL" },
   { cle: "POINT_VERT", checklistId: "13.4", desc: "Point Vert (deux flèches vertes enlacées formant un cercle)", rubrique: "Labels", libelle: "Point Vert bien absent du BAT (interdit) ?", attendu: "INTERDIT" },
   { cle: "WFTO", checklistId: "13.3", desc: "logo WFTO (World Fair Trade Organization)", rubrique: "Labels", libelle: "Logo WFTO présent sur le BAT ?", attendu: "OPTIONNEL" },
+  // PRO-QHS-313 v2 §11.2 (2026-09-24).
+  { cle: "MAX_HAVELAAR", checklistId: "13.3", desc: "logo Fairtrade / Max Havelaar (personnage stylisé noir, bleu et vert, mention FAIRTRADE MAX HAVELAAR)", rubrique: "Labels", libelle: "Logo Max Havelaar non mis en avant (produits finis JDG) ?", attendu: "A_EVITER" },
+  { cle: "FAIR_FOR_LIFE", checklistId: "13.3", desc: "logo Fair for Life (texte « fair for life » blanc sur fond orange)", rubrique: "Labels", libelle: "Logo Fair for Life non mis en avant (produits finis JDG) ?", attendu: "A_EVITER" },
+  { cle: "MEILLEUR_BIO", checklistId: "13.3", desc: "logo Meilleur produit Bio (médaille dorée « MEILLEUR BIO » portant une année)", rubrique: "Labels", libelle: "Logo Meilleur produit Bio de l'année en cours ?", attendu: "ANNEE_EN_COURS", lireAnnee: true },
 ];
+
+/** Year printed on dated logos, when the model could read it. */
+export type Annees = Record<string, number | null>;
 
 /** Aggregate a logo's presence across faces: any PRESENT wins; all ABSENT → ABSENT; else INCERTAIN. */
 export function aggregate(presences: Presence[]): Presence {
@@ -42,7 +60,29 @@ export function aggregate(presences: Presence[]): Presence {
   return "INCERTAIN";
 }
 
-function verdict(attendu: Attendu, p: Presence): { statut: ControlStatus; justification: string } {
+function verdict(
+  attendu: Attendu,
+  p: Presence,
+  annee: number | null,
+  anneeCourante: number
+): { statut: ControlStatus; justification: string } | null {
+  // Watched-for logos speak only when they are there.
+  if ((attendu === "A_EVITER" || attendu === "ANNEE_EN_COURS") && p !== "PRESENT") return null;
+  if (attendu === "A_EVITER") {
+    return {
+      statut: "WARNING",
+      justification:
+        "Logo détecté : il n'est pas mis en avant sur les produits finis JDG, hors poches et négoce (PRO-QHS-313 §11.2) — à vérifier.",
+    };
+  }
+  if (attendu === "ANNEE_EN_COURS") {
+    if (annee === null) {
+      return { statut: "WARNING", justification: `Logo détecté, année non lue : il n'est autorisé que pour l'année en cours (${anneeCourante}).` };
+    }
+    return annee === anneeCourante
+      ? { statut: "PASS", justification: `Logo ${annee} : année en cours.` }
+      : { statut: "FAIL", justification: `Logo ${annee} : autorisé uniquement pour l'année en cours (${anneeCourante}) — PRO-QHS-313 §11.2.` };
+  }
   if (p === "INCERTAIN") {
     return { statut: "WARNING", justification: "Présence incertaine à l'analyse visuelle — à confirmer sur le BAT." };
   }
@@ -80,10 +120,15 @@ export function reconcile(p1: Presence, p2: Presence): Presence {
 }
 
 /** Builds the verdict checks from a final presence per logo. */
-export function checksFromPresences(presences: Record<string, Presence>): BatTextCheck[] {
-  return PICTOS_A_DETECTER.map((def) => {
-    const v = verdict(def.attendu, presences[def.cle] ?? "INCERTAIN");
-    return {
+export function checksFromPresences(
+  presences: Record<string, Presence>,
+  annees: Annees = {},
+  anneeCourante: number = new Date().getFullYear()
+): BatTextCheck[] {
+  return PICTOS_A_DETECTER.flatMap((def) => {
+    const v = verdict(def.attendu, presences[def.cle] ?? "INCERTAIN", annees[def.cle] ?? null, anneeCourante);
+    if (v === null) return [];
+    return [{
       id: `VIS_${def.cle}`,
       checklistId: def.checklistId,
       origine: "visuel",
@@ -91,7 +136,7 @@ export function checksFromPresences(presences: Record<string, Presence>): BatTex
       libelle: def.libelle,
       statut: v.statut,
       justification: v.justification,
-    };
+    } satisfies BatTextCheck];
   });
 }
 

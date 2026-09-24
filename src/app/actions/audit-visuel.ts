@@ -7,7 +7,7 @@ import { auditSemantique } from "@/agents/audit/semantic-robot"
 import { contreExaminerPictos, detectPictos } from "@/agents/audit/visual-robot"
 import { getBatTextInputForFiche } from "@/db/queries/audit"
 import { writeAuditLog } from "@/db/queries/audit-logs"
-import { aggregateAll, checksFromPresences, reconcile, type Presence } from "@/lib/audit/visual/pictos"
+import { aggregateAll, checksFromPresences, reconcile, type Annees, type Presence } from "@/lib/audit/visual/pictos"
 import type { BatTextCheck } from "@/lib/audit/visual/text-robot"
 import { countByStatus, overallStatus } from "@/lib/audit/synthesis"
 import type { ControlStatus } from "@/lib/audit/types"
@@ -114,10 +114,15 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     // Visual robot — perception per face, then an adversarial counter-exam on the
     // contested logos, reconciled and judged by code (a split opinion → INCERTAIN).
     const detections: Record<string, Presence>[] = []
+    // Year on dated logos: the first face that reads one gives it.
+    const annees: Annees = {}
     for (const b64 of base64s) {
         try {
             const detected = await detectPictos(b64, usageMeta)
             detections.push(detected.presences)
+            for (const [cle, annee] of Object.entries(detected.annees)) {
+                if (annees[cle] === undefined || annees[cle] === null) annees[cle] = annee
+            }
             tokens.vision += detected.tokensUsed
         } catch {
             // Vision unavailable (no key / API error) — degrade to text-only.
@@ -127,7 +132,7 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
     let visualChecks: BatTextCheck[] = []
     if (detections.length > 0) {
         const agg1 = aggregateAll(detections)
-        const contested = checksFromPresences(agg1)
+        const contested = checksFromPresences(agg1, annees)
             .filter((c) => c.statut === "FAIL" || c.statut === "WARNING")
             .map((c) => c.id.replace("VIS_", ""))
 
@@ -148,7 +153,7 @@ export async function auditVisuelTexteAction(raw: unknown): Promise<AuditVisuelT
                 for (const cle of contested) finalPresences[cle] = reconcile(agg1[cle], agg2[cle])
             }
         }
-        visualChecks = checksFromPresences(finalPresences)
+        visualChecks = checksFromPresences(finalPresences, annees)
     }
 
     const checks = [...semanticChecks, ...visualChecks]

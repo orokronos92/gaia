@@ -48,3 +48,38 @@ describe("Robot Visuel — jugement par code (perception → verdict)", () => {
     expect(byId(r, "VIS_TRIMAN").statut).toBe("WARNING"); // plus de FAIL : fausse alarme désamorcée
   });
 });
+
+describe("autres labels — PRO-QHS-313 v2 §11.2", () => {
+  const ANNEE = 2026;
+  const ids = (r: ReturnType<typeof checksFromPresences>) => r.map((c) => c.id);
+
+  it("MH et FFL absents : aucun constat, la carte ne s'allonge pas", () => {
+    const r = checksFromPresences({ MAX_HAVELAAR: "ABSENT", FAIR_FOR_LIFE: "INCERTAIN", MEILLEUR_BIO: "ABSENT" }, {}, ANNEE);
+    expect(ids(r)).not.toContain("VIS_MAX_HAVELAAR");
+    expect(ids(r)).not.toContain("VIS_FAIR_FOR_LIFE");
+    expect(ids(r)).not.toContain("VIS_MEILLEUR_BIO");
+  });
+
+  it("MH présent : à vérifier (permis en poche et en négoce), pas une faute", () => {
+    const c = checksFromPresences({ MAX_HAVELAAR: "PRESENT" }, {}, ANNEE).find((x) => x.id === "VIS_MAX_HAVELAAR");
+    expect(c?.statut).toBe("WARNING");
+    expect(c?.checklistId).toBe("13.3");
+    expect(c?.justification).toContain("hors poches et négoce");
+  });
+
+  it("Meilleur produit Bio de l'année en cours : conforme", () => {
+    const c = checksFromPresences({ MEILLEUR_BIO: "PRESENT" }, { MEILLEUR_BIO: 2026 }, ANNEE).find((x) => x.id === "VIS_MEILLEUR_BIO");
+    expect(c?.statut).toBe("PASS");
+  });
+
+  it("Meilleur produit Bio d'une autre année : non conforme", () => {
+    const c = checksFromPresences({ MEILLEUR_BIO: "PRESENT" }, { MEILLEUR_BIO: 2025 }, ANNEE).find((x) => x.id === "VIS_MEILLEUR_BIO");
+    expect(c?.statut).toBe("FAIL");
+    expect(c?.justification).toContain("2025");
+  });
+
+  it("Meilleur produit Bio, année illisible : à vérifier", () => {
+    const c = checksFromPresences({ MEILLEUR_BIO: "PRESENT" }, { MEILLEUR_BIO: null }, ANNEE).find((x) => x.id === "VIS_MEILLEUR_BIO");
+    expect(c?.statut).toBe("WARNING");
+  });
+});

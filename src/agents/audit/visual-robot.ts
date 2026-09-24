@@ -9,17 +9,26 @@
 
 import { z } from "zod";
 
-import { PICTOS_A_DETECTER, type PictoDef, type Presence } from "@/lib/audit/visual/pictos";
+import { PICTOS_A_DETECTER, type Annees, type PictoDef, type Presence } from "@/lib/audit/visual/pictos";
 import { callMistral, type AgentIA, type CallMeta } from "../mistral-call";
 import { VISION_MODEL } from "../models";
 
 const PRESENCES = ["PRESENT", "ABSENT", "INCERTAIN"] as const;
 const DetectionSchema = z.object({
-  pictos: z.array(z.object({ cle: z.string(), presence: z.enum(PRESENCES) })),
+  pictos: z.array(
+    z.object({
+      cle: z.string(),
+      presence: z.enum(PRESENCES),
+      // Only for dated logos; a year outside this range is a misreading.
+      annee: z.number().int().min(2000).max(2100).nullable().optional(),
+    })
+  ),
 });
 
 export interface VisualRobotResult {
   presences: Record<string, Presence>;
+  /** Year read on dated logos (Meilleur produit Bio), null when unreadable. */
+  annees: Annees;
   tokensUsed: number;
 }
 
@@ -31,7 +40,10 @@ async function askPresence(
   agent: AgentIA,
   meta?: Omit<CallMeta, "agent">
 ): Promise<VisualRobotResult> {
-  const liste = defs.map((p) => `- ${p.cle} : ${p.desc}`).join("\n");
+  const liste = defs.map((p) => `- ${p.cle} : ${p.desc}${p.lireAnnee ? " (lis l'année inscrite sur le logo)" : ""}`).join("\n");
+  const avecAnnee = defs.some((p) => p.lireAnnee)
+    ? `\nPour un logo marqué « lis l'année », ajoute "annee": l'année inscrite (nombre), ou null si illisible.`
+    : "";
 
   const response = await callMistral({
     model: VISION_MODEL,
@@ -40,7 +52,7 @@ async function askPresence(
         role: "user",
         content: [
           { type: "document_url", documentUrl: `data:application/pdf;base64,${pdfBase64}`, documentName: "bat.pdf" },
-          { type: "text", text: `${instruction}\n${liste}\n\nRéponds STRICTEMENT en JSON, sans aucun autre texte :\n{"pictos":[{"cle":"...","presence":"PRESENT|ABSENT|INCERTAIN"}]}` },
+          { type: "text", text: `${instruction}\n${liste}${avecAnnee}\n\nRéponds STRICTEMENT en JSON, sans aucun autre texte :\n{"pictos":[{"cle":"...","presence":"PRESENT|ABSENT|INCERTAIN"}]}` },
         ],
       },
     ],
@@ -53,8 +65,12 @@ async function askPresence(
   const parsed = DetectionSchema.parse(JSON.parse(clean));
 
   const presences: Record<string, Presence> = {};
-  for (const p of parsed.pictos) presences[p.cle] = p.presence;
-  return { presences, tokensUsed: response.usage?.totalTokens ?? 0 };
+  const annees: Annees = {};
+  for (const p of parsed.pictos) {
+    presences[p.cle] = p.presence;
+    if (p.annee !== undefined) annees[p.cle] = p.annee;
+  }
+  return { presences, annees, tokensUsed: response.usage?.totalTokens ?? 0 };
 }
 
 /** First pass: detect all checklist logos on a single BAT face. */
@@ -83,7 +99,7 @@ export async function contreExaminerPictos(
   meta?: Omit<CallMeta, "agent">
 ): Promise<VisualRobotResult> {
   const defs = PICTOS_A_DETECTER.filter((p) => cles.includes(p.cle));
-  if (defs.length === 0) return { presences: {}, tokensUsed: 0 };
+  if (defs.length === 0) return { presences: {}, annees: {}, tokensUsed: 0 };
   return askPresence(
     pdfBase64,
     defs,

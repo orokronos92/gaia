@@ -3,9 +3,9 @@
 > **Fichier généré par `npm run arch:build` — ne pas modifier à la main.**
 > Toute modification manuelle est écrasée à la prochaine génération et fait échouer `npm run arch:check`.
 > La prose (rôle des modules, intentions) vit dans `docs/INTENTION.md`.
-> Base : commit `c6ab280` · généré le 2026-09-24
+> Base : commit `d795e1c` · généré le 2026-09-24
 
-**277 fichiers · 35070 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
+**277 fichiers · 35189 lignes** (src/, scripts/, drizzle/ — hors tests et fichiers de déclaration)
 
 ## Dépendances entre dossiers
 
@@ -169,13 +169,13 @@ graph LR
 | `scripts/architecture` | 4 | 403 | — | `scripts` |
 | `src` | 3 | 96 | `src/db` | `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/agents` | 7 | 811 | `src/agents/knowledge`, `src/agents/recette`, `src/db/queries` | `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/agents/recette`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
-| `src/agents/audit` | 3 | 427 | `src/agents`, `src/agents/knowledge`, `src/db`, `src/db/queries`, `src/lib/audit` | `src/app/actions`, `src/app/api` |
+| `src/agents/audit` | 3 | 443 | `src/agents`, `src/agents/knowledge`, `src/db`, `src/db/queries`, `src/lib/audit` | `src/app/actions`, `src/app/api` |
 | `src/agents/imports` | 3 | 1101 | `src/agents`, `src/agents/knowledge`, `src/db`, `src/db/queries`, `src/lib/business-rules`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/app/actions`, `src/app/api` |
 | `src/agents/knowledge` | 1 | 155 | `src/agents`, `src/db`, `src/db/queries` | `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/app/api` |
 | `src/agents/recette` | 1 | 113 | `src/agents`, `src/lib/business-rules` | `src/agents`, `src/app/(dashboard)`, `src/components/recette`, `src/db/queries`, `src/hooks` |
 | `src/app` | 1 | 34 | — | — |
 | `src/app/(dashboard)` | 59 | 7752 | `src`, `src/agents`, `src/agents/recette`, `src/app/actions`, `src/components/atoms`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/produits`, `src/components/provenance`, `src/components/providers`, `src/components/recette`, `src/components/ui`, `src/db`, `src/db/queries`, `src/lib`, `src/lib/audit`, `src/lib/conditionnement`, `src/lib/etiquettes`, `src/lib/recette`, `src/lib/referentiels`, `src/lib/utils` | — |
-| `src/app/actions` | 15 | 1837 | `src`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/utils` | `src/app/(dashboard)`, `src/components/etiquettes`, `src/components/produits`, `src/components/recette`, `src/hooks` |
+| `src/app/actions` | 15 | 1842 | `src`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/db`, `src/db/queries`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/utils` | `src/app/(dashboard)`, `src/components/etiquettes`, `src/components/produits`, `src/components/recette`, `src/hooks` |
 | `src/app/api` | 10 | 495 | `src`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/db`, `src/db/queries`, `src/lib/utils` | — |
 | `src/app/login` | 2 | 142 | `src/components/ui`, `src/lib` | — |
 | `src/components` | 1 | 45 | — | — |
@@ -189,10 +189,10 @@ graph LR
 | `src/components/recette` | 10 | 1210 | `src/agents/recette`, `src/app/actions`, `src/components/provenance`, `src/components/ui`, `src/hooks`, `src/lib`, `src/lib/business-rules`, `src/lib/recette` | `src/app/(dashboard)` |
 | `src/components/ui` | 15 | 1269 | `src/lib` | `src/app/(dashboard)`, `src/app/login`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/produits`, `src/components/provenance`, `src/components/recette` |
 | `src/db` | 5 | 1067 | `src/lib` | `scripts`, `src`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api`, `src/db/queries` |
-| `src/db/queries` | 19 | 3046 | `src/agents/recette`, `src/db`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/import-catalogue`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
+| `src/db/queries` | 19 | 3047 | `src/agents/recette`, `src/db`, `src/lib`, `src/lib/audit`, `src/lib/business-rules`, `src/lib/import-catalogue`, `src/lib/recette`, `src/lib/utils` | `scripts`, `src/agents`, `src/agents/audit`, `src/agents/imports`, `src/agents/knowledge`, `src/app/(dashboard)`, `src/app/actions`, `src/app/api` |
 | `src/hooks` | 2 | 512 | `src/agents/recette`, `src/app/actions`, `src/lib/business-rules`, `src/lib/recette` | `src/components/recette` |
 | `src/lib` | 6 | 128 | — | `src/app/(dashboard)`, `src/app/actions`, `src/app/login`, `src/components/atoms`, `src/components/etiquettes`, `src/components/features`, `src/components/layout`, `src/components/provenance`, `src/components/recette`, `src/components/ui`, `src/db`, `src/db/queries` |
-| `src/lib/audit` | 33 | 5728 | `src/lib/business-rules`, `src/lib/utils` | `scripts`, `src/agents/audit`, `src/app/(dashboard)`, `src/app/actions`, `src/db/queries` |
+| `src/lib/audit` | 33 | 5825 | `src/lib/business-rules`, `src/lib/utils` | `scripts`, `src/agents/audit`, `src/app/(dashboard)`, `src/app/actions`, `src/db/queries` |
 | `src/lib/business-rules` | 6 | 541 | — | `src/agents/imports`, `src/agents/recette`, `src/app/actions`, `src/components/recette`, `src/db/queries`, `src/hooks`, `src/lib/audit`, `src/lib/recette`, `src/lib/utils` |
 | `src/lib/conditionnement` | 5 | 232 | — | `scripts`, `src/app/(dashboard)`, `src/lib/import-catalogue` |
 | `src/lib/etiquettes` | 1 | 36 | — | `src/app/(dashboard)` |
@@ -211,7 +211,7 @@ Fichiers de plus de 300 lignes. « Importé par » = nombre de fichiers qui l'im
 | `src/db/schema.ts` | 825 | 39 |
 | `src/agents/imports/importWorker.ts` | 802 | 2 |
 | `src/db/queries/fiches.ts` | 657 | 9 |
-| `src/lib/audit/visual/text-robot.ts` | 556 | 19 |
+| `src/lib/audit/visual/text-robot.ts` | 608 | 19 |
 | `src/hooks/useCalculatrice.ts` | 395 | 2 |
 | `src/db/queries/recettes.ts` | 386 | 6 |
 | `src/lib/audit/types.ts` | 352 | 29 |
