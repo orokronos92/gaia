@@ -108,6 +108,10 @@ function checkWfto(batN: string): BatTextCheck {
 export interface BatTextInput {
   denomination?: string | null;
   ingredients?: string | null;
+  /** Product launch date as the fiche holds it (free text), for the "nouveauté" limit. */
+  dateMiseMarche?: string | null;
+  /** Today — injected by tests; defaults to the real date. */
+  aujourdhui?: Date;
   /** Where `ingredients` comes from — the recette étiquette or the workbook. */
   sourceListe?: import("./coherence-liste").SourceListe | null;
   allegation?: string | null;
@@ -431,6 +435,53 @@ function checkFabricant(batN: string): BatTextCheck {
     : { ...base, statut: "PASS", justification: "Adresse non imprimée sur l'étiquette : elle figure sur le sachet non encollé (PRO-QHS-313 §7)." };
 }
 
+/**
+ * §11.2 — « nouveauté », « nouvelle recette » : six mois au plus.
+ *
+ * PRO-QHS-313 v2 applique la notion de nouveauté pendant 6 mois. La règle vise
+ * la mention, pas le mot : « Nouvelle-Zélande » (TO1192) ou « de nouveaux
+ * thés » (TO4162) ne comptent pas — sur les 394 BAT de 2026-09-24, aucun ne
+ * porte la mention. Le contrôle ne parle que si elle apparaît.
+ */
+const MENTION_NOUVEAUTE = /\bnouveautes?\b|\bnouvelle recette\b|\bnouvelle formule\b/;
+const DUREE_NOUVEAUTE_MOIS = 6;
+
+/** A launch date written freely: 2026-03-15, 15/03/2026, 03/2026, 2026. */
+export function lireDateLancement(texte: string | null | undefined): Date | null {
+  const t = texte?.trim() ?? "";
+  let m = t.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3] ?? 1));
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  m = t.match(/^(\d{1,2})\/(\d{4})$/);
+  if (m) return new Date(Number(m[2]), Number(m[1]) - 1, 1);
+  m = t.match(/^(\d{4})$/);
+  if (m) return new Date(Number(m[1]), 0, 1);
+  return null;
+}
+
+function checkNouveaute(batN: string, input: BatTextInput): BatTextCheck | null {
+  const mention = batN.match(MENTION_NOUVEAUTE);
+  if (!mention) return null;
+  const base = { id: "TXT_NOUVEAUTE", origine: "texte" as const, checklistId: "13.3", rubrique: "Labels", libelle: "Mention « nouveauté » de moins de 6 mois ?" };
+  const lancement = lireDateLancement(input.dateMiseMarche);
+  if (lancement === null) {
+    return {
+      ...base,
+      statut: "WARNING",
+      manqueSurLaFiche: "la date de mise en marché",
+      justification: `Mention « ${mention[0]} » sur le BAT : limitée à ${DUREE_NOUVEAUTE_MOIS} mois après le lancement (PRO-QHS-313 §11.2), et la fiche ne donne pas de date de mise en marché.`,
+    };
+  }
+  const limite = new Date(lancement);
+  limite.setMonth(limite.getMonth() + DUREE_NOUVEAUTE_MOIS);
+  const aujourdhui = input.aujourdhui ?? new Date();
+  const date = lancement.toLocaleDateString("fr-FR");
+  return aujourdhui <= limite
+    ? { ...base, statut: "PASS", justification: `Mention « ${mention[0]} » : produit lancé le ${date}, moins de ${DUREE_NOUVEAUTE_MOIS} mois.` }
+    : { ...base, statut: "FAIL", justification: `Mention « ${mention[0]} » sur le BAT, produit lancé le ${date} : plus de ${DUREE_NOUVEAUTE_MOIS} mois (PRO-QHS-313 §11.2).` };
+}
+
 /** Presence of every invariant token of a mandatory JDG mention. */
 function checkTokens(
   batN: string,
@@ -476,6 +527,7 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
       absent: "Mention de conservation JDG non retrouvée sur les faces analysées — à vérifier.",
     }),
     checkFabricant(batN),
+    checkNouveaute(batN, input),
   ];
 
   // The allegation is deliberately NOT a deterministic check: its wording on the

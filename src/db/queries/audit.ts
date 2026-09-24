@@ -185,6 +185,7 @@ export const getBatTextInputForFiche = cache(
         allegation: fiche.allegationsSanteFr ?? fiche.allegationChoisie,
         allergenes: fiche.allergenes,
         poidsNet: produit.poidsNet,
+        dateMiseMarche: produit.dateMiseMarche,
         codeEtiquette: fiche.codeEtiquette,
         mentionConservation: fiche.mentionConservation,
         mentionFabricant: fiche.mentionFabricant,

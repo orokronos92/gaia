@@ -357,3 +357,29 @@ describe("mention Demeter — proposition à la fiche", () => {
     expect(demeter(BAT_AVEC_NOTE, proposee as string)?.statut).toBe("PASS");
   });
 });
+
+describe("mention « nouveauté » — 6 mois (PRO-QHS-313 §11.2)", () => {
+  const le = new Date(2026, 8, 24);
+  const nouveaute = (bat: string, dateMiseMarche: string | null) =>
+    runTextRobot(bat, { dateMiseMarche, aujourdhui: le }).find((c) => c.id === "TXT_NOUVEAUTE");
+
+  it("se tait sans la mention — « Nouvelle-Zélande » n'en est pas une", () => {
+    expect(nouveaute("Dragon Soul wulong Nouvelle-Zélande. De nouveaux thés.", null)).toBeUndefined();
+  });
+
+  it("lancé il y a moins de 6 mois : conforme", () => {
+    expect(nouveaute("NOUVEAUTÉ ! Thé vert", "2026-06-01")?.statut).toBe("PASS");
+  });
+
+  it("lancé il y a plus de 6 mois : non conforme", () => {
+    const c = nouveaute("Nouvelle recette — thé noir", "15/01/2026");
+    expect(c?.statut).toBe("FAIL");
+    expect(c?.checklistId).toBe("13.3");
+  });
+
+  it("sans date de mise en marché : la fiche est à compléter", () => {
+    const c = nouveaute("Nouveauté", null);
+    expect(c?.statut).toBe("WARNING");
+    expect(c?.manqueSurLaFiche).toBe("la date de mise en marché");
+  });
+});
