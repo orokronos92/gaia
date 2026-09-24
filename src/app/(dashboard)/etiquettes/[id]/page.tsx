@@ -10,6 +10,7 @@ import { getRecetteOutputForProduit } from "@/db/queries/recettes"
 import { getConditionnementsConnus } from "@/db/queries/produits"
 import { getChoixGammes } from "@/db/queries/gammes"
 import { getVersionsFiche } from "@/db/queries/fiches"
+import { getComplementsFiche } from "@/db/queries/fiche-complements"
 import { getContexteAbsenceBat } from "@/db/queries/conditionnements"
 import { motifAbsenceBat } from "@/lib/conditionnement/absence-bat"
 
@@ -134,6 +135,9 @@ export default async function EtiquetteDetailPage(
     // Only the ranges of the product's own catalogue are offered.
     const choixGammes = await getChoixGammes(data[0].catalogue ?? undefined);
 
+    // Traductions, export, suivi de fabrication (base étiquettes, lecture seule).
+    const complements = await getComplementsFiche(id);
+
     // Historique des versions (editable-fiche / versioning).
     const versions = await getVersionsFiche(id);
 
@@ -194,6 +198,7 @@ export default async function EtiquetteDetailPage(
             versions={versions}
             documentsSource={documentsSource}
             nbFiches={fichesDuProduit.length}
+            complements={complements}
         />
     )
 }

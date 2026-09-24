@@ -72,9 +72,11 @@ interface BoutonRepliProps {
     vides: number
     /** Teinte du compteur, accordée à la carte. */
     ton?: string
+    /** A read-only card has nothing to fill in: no counter. */
+    sansCompteur?: boolean
 }
 
-export function BoutonRepli({ ouvert, basculer, vides, ton = "text-stone-400" }: BoutonRepliProps) {
+export function BoutonRepli({ ouvert, basculer, vides, ton = "text-stone-400", sansCompteur = false }: BoutonRepliProps) {
     return (
         <button
             type="button"
@@ -83,9 +85,11 @@ export function BoutonRepli({ ouvert, basculer, vides, ton = "text-stone-400" }:
             className="flex shrink-0 items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-white/60"
             title={ouvert ? "Replier" : "Déplier"}
         >
-            <span className={cn("text-[11px] font-semibold tabular-nums", vides > 0 ? "text-amber-600" : ton)}>
-                {vides > 0 ? `${vides} à renseigner` : "complet"}
-            </span>
+            {!sansCompteur && (
+                <span className={cn("text-[11px] font-semibold tabular-nums", vides > 0 ? "text-amber-600" : ton)}>
+                    {vides > 0 ? `${vides} à renseigner` : "complet"}
+                </span>
+            )}
             <ChevronDown className={cn("h-4 w-4 transition-transform", ton, !ouvert && "-rotate-90")} />
         </button>
     )

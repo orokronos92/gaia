@@ -51,6 +51,8 @@ import { RecetteListeCards } from "./_components/recette-liste-cards"
 import { StatutSelect } from "./_components/statut-select"
 import { ChampPmi, NonRenseigne, hasRealValue, valeurOu } from "./_components/champs-dossier"
 import { IdentiteSourcing } from "./_components/identite-sourcing"
+import { CartesComplements } from "./_components/cartes-complements"
+import type { ComplementsFiche } from "@/db/queries/fiche-complements"
 import { formaterPoidsNet } from "@/lib/format-poids"
 import { EmptyState } from "@/components/atoms/empty-state"
 import { BoutonRepli, compterVides, useRepli } from "@/components/etiquettes/carte-repliable"
@@ -231,7 +233,7 @@ function LanguageRow({ lang, sousDes, ingredients }: { lang: string, sousDes: st
     )
 }
 
-export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [], choixGammes = [], absenceBat }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[]; choixGammes?: ChoixGamme[]; absenceBat?: AbsenceBat }) {
+export default function EtiquetteClient({ labelData, recette, versions = [], documentsSource = [], nbFiches = 1, conditionnementsConnus = [], choixGammes = [], absenceBat, complements }: { labelData: any; recette: RecetteAgentOutput | null; versions?: any[]; documentsSource?: DocumentSourceVue[]; nbFiches?: number; conditionnementsConnus?: string[]; choixGammes?: ChoixGamme[]; absenceBat?: AbsenceBat; complements?: ComplementsFiche | null }) {
     // State
     const router = useRouter()
     const [syntheseDet, setSyntheseDet] = useState<SousResultatAudit | null>(null)
@@ -1278,6 +1280,10 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                 </CardContent>
                                 )}
                             </Card>
+
+                            {/* Traductions, export, suivi de fabrication : ce que la base
+                                étiquettes porte au-delà du texte de l'étiquette. */}
+                            {complements && <CartesComplements complements={complements} />}
                     </div>
 
                 </TabsContent>
