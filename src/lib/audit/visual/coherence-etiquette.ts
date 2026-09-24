@@ -18,6 +18,7 @@
  * passé sa semaine à retirer de la lecture des classeurs.
  */
 
+import { controlerListeFiche, type SourceListe } from "./coherence-liste";
 import { motsSitues, normCmp, texteComplet, type MotSitue } from "./mesure-mentions";
 import { repereMot, type RepereBat } from "./reperes";
 import type { BatTextCheck } from "./text-robot";
@@ -44,6 +45,11 @@ export interface LigneEtiquetteBat {
 
 export interface EntreeCoherence {
   lignesEtiquette?: LigneEtiquetteBat[] | null;
+  /** The fiche's printed list, and where it comes from (recette or workbook). */
+  ingredients?: string | null;
+  sourceListe?: SourceListe | null;
+  /** The BAT text with its layout (pdftotext -layout), where the printed list is read. */
+  texteBat?: string;
 }
 
 /**
@@ -101,16 +107,23 @@ export function controlerCoherenceEtiquette(
     origine: "texte" as const,
     rubrique: "Liste des ingrédients",
     libelle:
-      "La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ?",
+      "La liste d'ingrédients de la fiche correspond-elle à celle imprimée sur le BAT ?",
     checklistId: "2.5",
   };
 
   if (lignes.length === 0) {
+    // No recette yet: the workbook list is the only record, and it is compared
+    // face to face (decision 2026-09-24). Without it either, the fiche lacks
+    // the list — nothing the BAT can be blamed for.
+    if (entree.sourceListe === "excel" && entree.ingredients && entree.texteBat !== undefined) {
+      return controlerListeFiche(analyses, entree.texteBat, entree.ingredients, "excel", base);
+    }
     return {
       ...base,
       statut: "WARNING",
+      manqueSurLaFiche: "liste d'ingrédients",
       justification:
-        "Aucune recette étiquette : il n'y a rien à confronter à la liste imprimée.",
+        "Ni recette étiquette ni liste d'ingrédients sur la fiche : rien à comparer à la liste imprimée.",
     };
   }
 

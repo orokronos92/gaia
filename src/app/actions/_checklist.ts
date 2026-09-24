@@ -55,7 +55,7 @@ async function preuvesDesBat(ficheId: string) {
   return {
     checks: [
       ...runTextRobot(textes.join("\n\n"), data.input),
-      ...controlerBat(faces, { ...data.input, estDemeter: data.estDemeter, codePf: data.codePf, lignesEtiquette: data.lignesEtiquette }),
+      ...controlerBat(faces, { ...data.input, estDemeter: data.estDemeter, codePf: data.codePf, lignesEtiquette: data.lignesEtiquette, texteBat: textes.join("\n\n") }),
     ],
     faces: faces.map((f) => f.nom),
     dossiers: [...new Set(bats.map((b) => b.dossier))],

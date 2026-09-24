@@ -178,7 +178,7 @@ Quand la mention Demeter est due et que la fiche ne la porte pas, le contrôle *
 
 *Données lues* : BAT : mots, marqueurs et métriques de police. Fiche : mention Demeter saisie.
 
-### 🟦 2.5 — La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ?
+### 🟦 2.5 — La liste d'ingrédients de la fiche (recette étiquette, sinon base Excel) correspond-elle à celle imprimée sur le BAT ?
 
 **Voie** : Code · BAT · **Sans IA** : oui  
 **Référence** : PRO-QHS-013 §2.1
@@ -191,7 +191,9 @@ Deux absences, deux gravités. Une dénomination que la Qualité a relue et que 
 
 Le contrôle a d'abord été écrit côté fiche, et il a changé de camp le 10 septembre 2026 : depuis la fiche seule, rien ne distingue « SORWATHE OP1 » de « THYM », qui est une dénomination parfaitement valable. Le BAT tranche sans deviner.
 
-*Données lues* : BAT : mots imprimés et pourcentages. Recette étiquette : dénominations relues et % arrondis.
+**Sans recette étiquette** (depuis le 24 septembre 2026), c'est la liste d'ingrédients de la base étiquettes Excel qui est comparée — pour les produits anciens, c'est le seul document qui existe. La liste imprimée est lue sous le titre « INGRÉDIENTS » du BAT, découpée ingrédient par ingrédient, puis mise en face de celle de la fiche. Seuls les écarts s'affichent sur la carte : un ingrédient remplacé (« pétales de fleurs* » sur la fiche, « pétales de rose* » sur l'étiquette), absent, imprimé en plus, ou déplacé. Quand le BAT ne porte pas la liste en texte, le contrôle renvoie à l'œil plutôt que de conclure.
+
+*Données lues* : BAT : mots imprimés et pourcentages, liste sous « INGRÉDIENTS ». Recette étiquette : dénominations relues et % arrondis. Sinon : liste d'ingrédients de la base Excel.
 
 ## 3. Déclaration quantitative (QUID)
 

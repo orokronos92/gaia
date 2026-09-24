@@ -58,8 +58,8 @@ describe("Robot Texte — golden MT265", () => {
   it("confirme ce qui figure sur le BAT, signale ce qui manque", () => {
     const r = runTextRobot(BAT_MT265, FICHE_MT265);
 
-    // Présents sur le BAT → PASS (le % décimal 15,5 ne casse pas le découpage).
-    expect(byId(r, "TXT_INGREDIENTS").statut).toBe("PASS");
+    // La liste d'ingrédients n'est plus comparée ici : point 2.5 (coherence-liste).
+    expect(r.find((x) => x.id === "TXT_INGREDIENTS")).toBeUndefined();
     expect(byId(r, "TXT_DENOMINATION").statut).toBe("PASS");
     expect(byId(r, "TXT_POIDS_NET").statut).toBe("PASS"); // "100 g" fiche ↔ "100g" BAT
     expect(byId(r, "TXT_CODE_ETIQUETTE").statut).toBe("PASS");
@@ -75,28 +75,8 @@ describe("Robot Texte — golden MT265", () => {
     expect(r.find((x) => x.id === "TXT_ALLERGENES")).toBeUndefined();
   });
 
-  it("attrape une divergence de % comme un FAIL", () => {
-    const tampered = BAT_MT265.replace("maté vert* 62%", "maté vert* 60%");
-    const r = runTextRobot(tampered, FICHE_MT265);
-    const ingr = byId(r, "TXT_INGREDIENTS");
-    expect(ingr.statut).toBe("FAIL");
-    expect(ingr.justification).toContain("maté vert* 62%");
-  });
-
-  it("tolère un ingrédient masqué (sans %) — pas de faux mismatch", () => {
-    // Guarana masqué côté fiche (juste le nom), le BAT affiche encore "guarana* 6%".
-    // L'item masqué = son nom → retrouvé en sous-chaîne, donc PASS et non FAIL.
-    const ficheMasquee: BatTextInput = {
-      ...FICHE_MT265,
-      ingredients: FICHE_MT265.ingredients!.replace("guarana* 6%", "guarana*"),
-    };
-    const r = runTextRobot(BAT_MT265, ficheMasquee);
-    expect(byId(r, "TXT_INGREDIENTS").statut).toBe("PASS");
-  });
-
   it("WARNING honnête quand la fiche n'a pas la donnée", () => {
     const r = runTextRobot(BAT_MT265, { ingredients: null });
-    expect(byId(r, "TXT_INGREDIENTS").statut).toBe("WARNING");
     expect(byId(r, "TXT_DENOMINATION").statut).toBe("WARNING");
   });
 });

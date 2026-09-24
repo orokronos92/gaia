@@ -15,7 +15,6 @@
  */
 
 import { FABRICANT_JDG_TOKENS, normalize } from "../canonical";
-import { elementsListe } from "./elements-liste";
 import {
   DEMETER_PHRASE_TYPE,
   mentionDue,
@@ -109,6 +108,8 @@ function checkWfto(batN: string): BatTextCheck {
 export interface BatTextInput {
   denomination?: string | null;
   ingredients?: string | null;
+  /** Where `ingredients` comes from — the recette étiquette or the workbook. */
+  sourceListe?: import("./coherence-liste").SourceListe | null;
   allegation?: string | null;
   allergenes?: string | null;
   poidsNet?: string | null;
@@ -191,6 +192,8 @@ export interface BatTextCheck {
    * dire épargne à Marie de chercher le texte dont il parle.
    */
   reperes?: import("./reperes").RepereBat[];
+  /** The fiche's list face to face with the printed one — only what diverges. */
+  comparaisonListe?: import("./coherence-liste").ComparaisonListe;
 }
 
 /**
@@ -379,28 +382,6 @@ function declares(value?: string | null): boolean {
   return n !== "" && n !== "non" && n !== "aucun" && n !== "aucune";
 }
 
-/** Ingredient list + percentages must appear verbatim on the artwork. */
-function checkIngredients(batN: string, input: BatTextInput): BatTextCheck {
-  const base = { id: "TXT_INGREDIENTS", origine: "texte" as const, rubrique: "Liste des ingrédients", libelle: "Liste d'ingrédients et % conformes à la fiche ?" };
-  if (!input.ingredients || input.ingredients.trim() === "") {
-    return { ...base, statut: "WARNING", justification: "Liste d'ingrédients absente de la fiche — comparaison impossible." };
-  }
-  // Heading, organic note and nested commas are layout, not items (elements-liste.ts).
-  // A masked ingredient is just its name (no "%"), so it matches the BAT whether
-  // or not the artwork prints the %.
-  const { elements, autreListeIgnoree } = elementsListe(input.ingredients);
-  const note = autreListeIgnoree ? " La fiche porte une seconde liste après la première : seule la première est comparée." : "";
-  const missing = elements.filter((it) => !batN.includes(normCmp(it)));
-  if (missing.length === 0) {
-    return { ...base, statut: "PASS", justification: `Tous les ingrédients et % de la fiche figurent sur le BAT.${note}` };
-  }
-  return {
-    ...base,
-    statut: "FAIL",
-    justification: `Non retrouvé(s) à l'identique sur le BAT : ${missing.join(" ; ")}.${note}`,
-  };
-}
-
 /**
  * Presence of a single fiche string on the artwork.
  *
@@ -447,27 +428,17 @@ function checkTokens(
 }
 
 /**
- * Deux contrôles restent volontairement NON rattachés à la checklist :
- *
- *   - `TXT_INGREDIENTS` compare la liste imprimée au texte de la fiche. Le point
- *     2.2, lui, porte sur l'ORDRE pondéral décroissant. Les rattacher ferait
- *     échouer 2.2 sur presque chaque produit, puisque la réglementation impose
- *     que recette et étiquette diffèrent (dénomination légale contre référence
- *     matière, arrondis QUID, regroupement des arômes).
- *   - `TXT_DENOMINATION` vérifie que le NOM COMMERCIAL est imprimé ; le point
- *     1.0 juge la DÉNOMINATION LÉGALE. Le §1 interdit d'ailleurs que l'un tienne
- *     lieu de l'autre — c'est un contrôle qui manque encore au registre.
- *
- * Ils restent affichés dans le panneau BAT. Un rattachement approximatif vaut
- * moins qu'aucun rattachement : il produit un verdict faux sous une référence
- * réglementaire, ce qui est pire que de ne rien dire.
+ * The ingredient list is not compared here any more. `TXT_INGREDIENTS` looked
+ * for each fiche item anywhere in the BAT text, outside the registry, while
+ * point 2.5 asked the same question: two lines for one question on Marie's
+ * screen. The comparison now lives in point 2.5, item by item, face to face
+ * (coherence-etiquette.ts, coherence-liste.ts — decision 2026-09-24).
  */
 
 /** Runs the deterministic text robot over the concatenated BAT text. */
 export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck[] {
   const batN = normCmp(batText);
   const results: (BatTextCheck | null)[] = [
-    checkIngredients(batN, input),
     checkPresence(batN, input.denomination, {
       id: "TXT_DENOMINATION", checklistId: "1.5", rubrique: "Dénomination",
       libelle: "Dénomination de la fiche imprimée à l'identique sur le BAT ?",

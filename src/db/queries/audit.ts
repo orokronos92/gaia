@@ -181,6 +181,7 @@ export const getBatTextInputForFiche = cache(
       input: {
         denomination: produit.denominationFr ?? fiche.denominationLegale,
         ingredients: listeEtiquetteOuBdd(lignes, fiche.listeIngredientsBddFr),
+        sourceListe: lignes.length > 0 ? "recette" : fiche.listeIngredientsBddFr?.trim() ? "excel" : null,
         allegation: fiche.allegationsSanteFr ?? fiche.allegationChoisie,
         allergenes: fiche.allergenes,
         poidsNet: produit.poidsNet,

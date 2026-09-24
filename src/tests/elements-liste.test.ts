@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { elementsListe } from "../lib/audit/visual/elements-liste";
-import { runTextRobot } from "../lib/audit/visual/text-robot";
 
 /** Workbook cells as they are in docs/sources/BDD étiquettes 2025 v2.xlsx. */
 describe("elementsListe — la liste de l'Excel réduite à ses ingrédients", () => {
@@ -50,26 +49,5 @@ describe("elementsListe — la liste de l'Excel réduite à ses ingrédients", (
 
   it("liste générée par la recette étiquette : inchangée", () => {
     expect(elementsListe("thé noir* 62 %, guarana*.").elements).toEqual(["thé noir* 62 %", "guarana*"]);
-  });
-});
-
-describe("TXT_INGREDIENTS sur une liste de l'Excel", () => {
-  const BAT = "INGRÉDIENTS : thé vert*, arômes naturels de (poire*, litchi) 11 %, pétales de fleurs*. *Issu de l'agriculture biologique.";
-
-  it("PASS quand le BAT imprime la même liste, en-tête en majuscules", () => {
-    const r = runTextRobot(BAT, { ingredients: "Ingrédients : thé vert*, arômes naturels de (poire*, litchi) 11%, pétales de fleurs*. *Issu de l’agriculture biologique." });
-    expect(r.find((c) => c.id === "TXT_INGREDIENTS")?.statut).toBe("PASS");
-  });
-
-  it("FAIL qui nomme le seul ingrédient divergent (TA6942 : fleurs → rose)", () => {
-    const r = runTextRobot(BAT.replace("pétales de fleurs*", "pétales de rose*"), { ingredients: "Ingrédients : thé vert*, pétales de fleurs*." });
-    const check = r.find((c) => c.id === "TXT_INGREDIENTS");
-    expect(check?.statut).toBe("FAIL");
-    expect(check?.justification).toBe("Non retrouvé(s) à l'identique sur le BAT : pétales de fleurs*.");
-  });
-
-  it("apostrophes courbes et droites confondues", () => {
-    const r = runTextRobot("écorces d'orange*", { ingredients: "écorces d’orange*." });
-    expect(r.find((c) => c.id === "TXT_INGREDIENTS")?.statut).toBe("PASS");
   });
 });

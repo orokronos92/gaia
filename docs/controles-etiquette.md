@@ -91,7 +91,7 @@ fermer l'aurait empêché d'y arriver.
 | **2.2** | Les ingrédients sont-ils listés par ordre d'importance pondérale décroissante ? | Code · fiche | — | PRO-QHS-013 §2.1 |
 | **2.3** | Mono-ingrédient : la liste est-elle correctement omise (dénomination = nom de l'ingrédient) ? | Code · fiche | — | PRO-QHS-013 §2.1 |
 | **2.4** | Étoiles présentes (* bio / ** demeter) avec la mention de certification associée, demeter en gras italique ? | Code · BAT | — | PRO-QHS-013 §11.1 |
-| **2.5** | La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ? | Code · BAT | — | PRO-QHS-013 §2.1 |
+| **2.5** | La liste d'ingrédients de la fiche (recette étiquette, sinon base Excel) correspond-elle à celle imprimée sur le BAT ? | Code · BAT | — | PRO-QHS-013 §2.1 |
 
 ### QUID (pourcentages)
 

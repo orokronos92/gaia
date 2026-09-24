@@ -103,9 +103,12 @@ export const CONTROL_CHECKLIST: ControlPoint[] = [
      * Contrôle BAT et non déterministe (décision 2026-09-10) : depuis la fiche
      * seule, rien ne distingue « SORWATHE OP1 » de « THYM », qui est une
      * dénomination valable. Le BAT tranche sans deviner — le nom y est ou non.
+     *
+     * Sans recette étiquette, la liste de la base Excel est comparée au BAT
+     * ingrédient par ingrédient, et seuls les écarts s'affichent (2026-09-24).
      */
     id: "2.5", ordre: 12, section: "INGREDIENTS", typeControle: "INGR_COHERENCE_RECETTE", mode: "bat",
-    libelle: "La liste d'ingrédients de la recette étiquette correspond-elle à celle imprimée sur le BAT ?",
+    libelle: "La liste d'ingrédients de la fiche (recette étiquette, sinon base Excel) correspond-elle à celle imprimée sur le BAT ?",
     reference: "PRO-QHS-013 §2.1",
   },
   // 3. QUID
