@@ -47,6 +47,9 @@ export const CHAMPS_FICHE_EDITABLES = [
   "statutEngages",
   "mentionConservation",
   "mentionFabricant",
+  // La liste d'ingrédients de la base Excel : Quality corrects it from the 2.5
+  // card when the label is right and the workbook was not (lot 3, 2026-09-24).
+  "listeIngredientsBddFr",
 ] as const;
 
 export type ChampFicheEditable = (typeof CHAMPS_FICHE_EDITABLES)[number];

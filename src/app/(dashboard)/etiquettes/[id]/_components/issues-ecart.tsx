@@ -1,0 +1,163 @@
+"use client"
+
+import { useState } from "react"
+import { Clock, Loader2, Pencil, Printer, ShieldAlert } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { updateChampsAction } from "@/app/actions/fiche-champs"
+import { validerPointAction } from "@/app/actions/validation-controle"
+import type { Decision } from "@/lib/audit/decisions"
+import type { ControlResult } from "@/lib/audit/types"
+
+type Issue = "corriger" | "bat" | "arbitrer" | "attente"
+
+interface IssueDef {
+    libelle: string
+    icon: typeof Pencil
+    ton: string
+    placeholder: string
+    obligatoire: boolean
+    confirmer: string
+    decision?: Decision
+}
+
+const ISSUES: Record<Issue, IssueDef> = {
+    corriger: {
+        libelle: "Corriger la fiche",
+        icon: Pencil,
+        ton: "border-sky-200 text-sky-700 hover:bg-sky-50",
+        placeholder: "",
+        obligatoire: true,
+        confirmer: "Enregistrer sur la fiche",
+    },
+    bat: {
+        libelle: "BAT à refaire",
+        icon: Printer,
+        ton: "border-violet-200 text-violet-700 hover:bg-violet-50",
+        placeholder: "Ce que le Graphisme doit corriger (facultatif)…",
+        obligatoire: false,
+        confirmer: "Signaler au Graphisme",
+        decision: "BAT_A_REFAIRE",
+    },
+    arbitrer: {
+        libelle: "Arbitrer l'écart",
+        icon: ShieldAlert,
+        ton: "border-amber-300 text-amber-800 hover:bg-amber-50",
+        placeholder: "Pourquoi l'écart est accepté (obligatoire)…",
+        obligatoire: true,
+        confirmer: "Accepter l'écart",
+        decision: "DEROGATION",
+    },
+    attente: {
+        libelle: "En attente d'info",
+        icon: Clock,
+        ton: "border-stone-300 text-stone-600 hover:bg-stone-50",
+        placeholder: "Quelle information, et de qui (obligatoire)…",
+        obligatoire: true,
+        confirmer: "Mettre en attente",
+        decision: "EN_ATTENTE",
+    },
+}
+
+interface IssuesEcartProps {
+    ficheId: string
+    r: Pick<ControlResult, "id"> & Partial<Pick<ControlResult, "comparaisonListe">>
+    pending: boolean
+    agir: (action: () => Promise<{ ok: boolean; error?: string }>) => void
+}
+
+/**
+ * Les issues d'un écart, sur la carte même (lot 3, 2026-09-24).
+ *
+ * Face à une divergence prouvée, Marie a quatre gestes : corriger la fiche si
+ * c'est elle qui se trompe, renvoyer le BAT au Graphisme si c'est lui, accepter
+ * l'écart par écrit, ou le laisser ouvert le temps d'avoir la réponse. Les deux
+ * derniers gardent la ligne dans sa liste de travail, avec un badge qui dit qui
+ * la tient.
+ *
+ * « Corriger la fiche » n'est offert que là où la carte sait quel champ écrire :
+ * la liste de la base Excel, sur le point 2.5.
+ */
+export function IssuesEcart({ ficheId, r, pending, agir }: IssuesEcartProps) {
+    const [issue, setIssue] = useState<Issue | null>(null)
+    const [texte, setTexte] = useState("")
+    const corrigeable = r.comparaisonListe?.sourceCle === "excel"
+    const offertes = (Object.keys(ISSUES) as Issue[]).filter((i) => i !== "corriger" || corrigeable)
+
+    const ouvrir = (i: Issue) => {
+        setIssue(i)
+        setTexte(i === "corriger" ? (r.comparaisonListe?.texteFiche ?? "") : "")
+    }
+
+    const confirmer = () => {
+        if (issue === null) return
+        const def = ISSUES[issue]
+        if (issue === "corriger") {
+            agir(async () => {
+                try {
+                    await updateChampsAction({ table: "fiche", id: ficheId, ficheId, champs: { listeIngredientsBddFr: texte } })
+                    return { ok: true }
+                } catch (e) {
+                    return { ok: false, error: e instanceof Error ? e.message : "Échec de l'enregistrement." }
+                }
+            })
+        } else if (def.decision) {
+            const decision = def.decision
+            agir(() => validerPointAction({ ficheId, pointId: r.id, decision, justification: texte }))
+        }
+        setIssue(null)
+    }
+
+    if (issue !== null) {
+        const def = ISSUES[issue]
+        return (
+            <div className="space-y-2">
+                {issue === "corriger" && (
+                    <p className="text-[11px] text-stone-500">
+                        Liste d'ingrédients de la fiche — la modification est tracée (avant / après).
+                    </p>
+                )}
+                <textarea
+                    value={texte}
+                    onChange={(e) => setTexte(e.target.value)}
+                    rows={issue === "corriger" ? 4 : 2}
+                    autoFocus
+                    placeholder={def.placeholder}
+                    className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs text-stone-700 outline-none focus:border-emerald-400"
+                />
+                <div className="flex items-center gap-2">
+                    <Button size="sm" disabled={pending || (def.obligatoire && texte.trim() === "")} onClick={confirmer}>
+                        {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                        {def.confirmer}
+                    </Button>
+                    <button onClick={() => setIssue(null)} className="text-[11px] text-stone-400 hover:text-stone-600">
+                        annuler
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-1.5">
+            {offertes.map((i) => {
+                const def = ISSUES[i]
+                return (
+                    <button
+                        key={i}
+                        onClick={() => ouvrir(i)}
+                        disabled={pending}
+                        className={cn(
+                            "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors",
+                            def.ton
+                        )}
+                    >
+                        <def.icon className="h-3.5 w-3.5" />
+                        {def.libelle}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
