@@ -115,7 +115,7 @@ export function IssuesEcart({ ficheId, r, pending, agir }: IssuesEcartProps) {
             <div className="space-y-2">
                 {issue === "corriger" && (
                     <p className="text-[11px] text-stone-500">
-                        Liste d'ingrédients de la fiche — la modification est tracée (avant / après).
+                        Liste d&apos;ingrédients de la fiche — la modification est tracée (avant / après).
                     </p>
                 )}
                 <textarea

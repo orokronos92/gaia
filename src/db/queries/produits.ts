@@ -72,6 +72,17 @@ export const CHAMPS_PRODUIT_EDITABLES = [
   // l'action serveur les convertit avant écriture.
   "volumineux",
   "labelsMP",
+  // Moved from the retired "Données complémentaires" card into Identité and
+  // Conseils (2026-09-24): the workbook fills them, Quality corrects them where
+  // she reads them.
+  "producteurJardin",
+  "labelsClient",
+  "estAromatise",
+  "poidsTasse",
+  "floId",
+  "nomLatin",
+  "fournisseur",
+  "dateMiseMarche",
 ] as const;
 
 export type ChampProduitEditable = (typeof CHAMPS_PRODUIT_EDITABLES)[number];

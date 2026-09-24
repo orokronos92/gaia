@@ -49,7 +49,9 @@ import { phraseSaisie } from "@/lib/audit/statut-mention"
 import { RecettePanel } from "@/components/recette/RecettePanel"
 import { RecetteListeCards } from "./_components/recette-liste-cards"
 import { StatutSelect } from "./_components/statut-select"
-import { DossierComplementaire } from "@/components/recette/DossierComplementaire"
+import { ChampPmi, NonRenseigne, hasRealValue, valeurOu } from "./_components/champs-dossier"
+import { IdentiteSourcing } from "./_components/identite-sourcing"
+import { formaterPoidsNet } from "@/lib/format-poids"
 import { EmptyState } from "@/components/atoms/empty-state"
 import { BoutonRepli, compterVides, useRepli } from "@/components/etiquettes/carte-repliable"
 import type { RecetteAgentOutput } from "@/agents/recette/RecetteAgent"
@@ -61,67 +63,11 @@ import { AuditSynthese, type SousResultatAudit } from "./_components/audit-synth
 import { ReintegrerDocumentMenu } from "./_components/reintegrer-recette"
 import type { RecetteCalculatorHandle } from "@/components/recette/RecetteCalculator"
 
-// --- Helper pour vérifier si un champ "vide" Excel contient une vraie valeur
-/**
- * Ce qu'on affiche à la place d'un champ vide.
- *
- * Un champ masqué quand il est vide n'existe pas : personne ne sait qu'il
- * existe, donc personne ne le remplit — et la structure de la page change d'un
- * produit à l'autre sans qu'on comprenne pourquoi. Le vide se dit.
- */
-const NonRenseigne = () => (
-    <span className="font-normal italic text-stone-400">non renseigné</span>
-);
-
-const valeurOu = (val: string | null | undefined) =>
-    hasRealValue(val) ? val : <NonRenseigne />;
-
-const hasRealValue = (val: string | null | undefined) => {
-    if (!val) return false;
-    const clean = val.trim().toLowerCase();
-    return !['/', 'aucun', 'néant', 'non', 'n/a', 'na', '', '-'].includes(clean);
-}
-
 function DegField({ section, field, label, value }: { section: EditableSection, field: string, label: string, value: any }) {
     return (
         <div>
             <span className="text-[10px] font-bold text-stone-400 uppercase">{label}</span>
             <EditableText section={section} field={field} value={value ?? null} placeholder="—" className="text-sm text-stone-800" />
-        </div>
-    )
-}
-
-/**
- * Un champ du dossier PMI : libellé court au-dessus, valeur en dessous.
- *
- * En lecture il dit « non renseigné » plutôt que de disparaître ; en édition il
- * devient une saisie. C'est le même geste que pour les champs déjà éditables —
- * le rendre visible sans le rendre saisissable ne faisait que la moitié du
- * chemin : Marie voyait ce qui manque sans pouvoir le combler.
- */
-function ChampPmi({ label, field, value, section, tonLabel = "text-blue-500", tonValeur = "text-blue-950", placeholder }: {
-    label: string
-    field: string
-    value: string | null | undefined
-    section: EditableSection
-    tonLabel?: string
-    tonValeur?: string
-    placeholder?: string
-}) {
-    return (
-        <div>
-            <p className={cn("text-[9px] font-bold uppercase tracking-widest mb-0.5", tonLabel)}>{label}</p>
-            {section.editing ? (
-                <input
-                    type="text"
-                    value={section.draft[field] ?? ""}
-                    onChange={(e) => section.setField(field, e.target.value)}
-                    placeholder={placeholder}
-                    className="w-full bg-transparent border-b border-emerald-300 text-xs font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
-                />
-            ) : (
-                <p className={cn("text-xs font-semibold", tonValeur)}>{valeurOu(value)}</p>
-            )}
         </div>
     )
 }
@@ -371,14 +317,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             ...useRepli("identite"),
             vides: compterVides([
                 labelData.typeTheFr, labelData.origine, labelData.conditionnement, labelData.poidsNet,
-                labelData.mentionEcocert, labelData.infoProducteur, labelData.origineMpa,
+                labelData.mentionEcocert, labelData.producteurJardin, labelData.origineMpa,
                 labelData.epoqueRecolte, labelData.techniqueRecolte, labelData.grade,
                 Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? "x" : null,
             ]),
         },
         preparation: {
             ...useRepli("preparation"),
-            vides: compterVides([labelData.tempsInfusion, labelData.tempInfusion, labelData.nbTasses]),
+            vides: compterVides([labelData.tempsInfusion, labelData.tempInfusion, labelData.nbTasses, labelData.poidsTasse]),
         },
         vigilance: {
             ...useRepli("vigilance"),
@@ -417,6 +363,8 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             // qui rassemble les identifiants, pas dans un en-tête devenu du
             // mobilier permanent.
             codeEtiquette: labelData.code,
+            refFacing: labelData.refFacing,
+            refContre: labelData.refContre,
             texteCommercialFr: labelData.texteCommercialFr,
             texteCommercialCourtFr: labelData.texteCommercialCourtFr,
             phraseWftoFr: labelData.phraseWftoFr,
@@ -452,6 +400,14 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             // l'action serveur les reconvertit avant d'écrire.
             volumineux: labelData.volumineux === null || labelData.volumineux === undefined ? "" : String(labelData.volumineux),
             labelsMP: Array.isArray(labelData.labelsMP) ? labelData.labelsMP.join(", ") : "",
+            labelsClient: Array.isArray(labelData.labelsClient) ? labelData.labelsClient.join(", ") : "",
+            estAromatise: String(!!labelData.estAromatise),
+            mentionEcocert: labelData.mentionEcocert,
+            producteurJardin: labelData.producteurJardin,
+            fournisseur: labelData.fournisseur,
+            floId: labelData.floId,
+            nomLatin: labelData.nomLatin,
+            dateMiseMarche: labelData.dateMiseMarche,
         },
     })
 
@@ -464,6 +420,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
             tempsInfusion: labelData.tempsInfusion,
             tempInfusion: labelData.tempInfusion,
             nbTasses: labelData.nbTasses,
+            poidsTasse: labelData.poidsTasse,
         },
     })
 
@@ -824,7 +781,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         <DataPointEdit section={identiteSection} icon={Leaf} label="Type de Thé" field="typeTheFr" value={labelData.typeTheFr} />
                                         <DataPointEdit section={identiteSection} icon={Globe2} label="Origine" field="origine" value={labelData.origine || "Non spécifiée"} />
                                         <DataPointEdit section={identiteSection} icon={Package} label="Conditionnement" field="conditionnement" value={labelData.conditionnement} suggestions={conditionnementsConnus} />
-                                        <DataPointEdit section={identiteSection} icon={AlignLeft} label="Poids Net" field="poidsNet" value={labelData.poidsNet} suffix="g" />
+                                        {/* « POIDS G OU KG » : grammes pour le détail, kilos pour le vrac. */}
+                                        <DataPointEdit section={identiteSection} icon={AlignLeft} label="Poids Net" field="poidsNet" value={formaterPoidsNet(labelData.poidsNet)} />
+                                        {/* La colonne ECOCERT de la base : la mention d'origine des
+                                            matières premières imprimée sous l'Eurofeuille (§8.2). */}
+                                        <DataPointEdit section={identiteSection} icon={Globe2} label="Mention d'origine (Ecocert)" field="mentionEcocert" value={labelData.mentionEcocert} />
                                     </div>
 
                                     {/* L'encart lisait `mentionEcocert` — une colonne vide sur
@@ -856,75 +817,24 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                         </div>
                                     </div>
 
-                                    <div className="mt-4 p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-3">
-                                            <h4 className="text-[10px] font-bold text-stone-400 uppercase tracking-widest flex items-center gap-1.5"><Globe2 className="w-3 h-3" /> Détails Producteur & MPA</h4>
-                                            <div className="space-y-2">
-                                                <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Producteur:</span> {valeurOu(labelData.infoProducteur)} {labelData.typeProducteur && `(${labelData.typeProducteur})`}</p>
-                                                {identiteSection.editing ? (
-                                                    <ChampPmi section={identiteSection} label="Origine MPA" field="origineMpa" value={labelData.origineMpa} tonLabel="text-stone-400" tonValeur="text-stone-700" />
-                                                ) : (
-                                                    <p className="text-xs text-stone-600"><span className="font-bold text-stone-800">Origine MPA:</span> {valeurOu(labelData.origineMpa)}</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                    {/* NOUVEAU: Données Brutes PMI Extensives */}
-                                    <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                                            <ChampPmi section={identiteSection} label="Époque Récolte" field="epoqueRecolte" value={labelData.epoqueRecolte} />
-                                            <ChampPmi section={identiteSection} label="Technique" field="techniqueRecolte" value={labelData.techniqueRecolte} />
-                                            <ChampPmi section={identiteSection} label="Grade / Granulométrie" field="grade" value={labelData.grade} />
-                                            <div>
-                                                <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mb-0.5">Volumineux</p>
-                                                {identiteSection.editing ? (
-                                                    // Trois états, pas deux : vide veut dire « non renseigné »,
-                                                    // ce qui n'est pas la même chose que « non ».
-                                                    <select
-                                                        value={identiteSection.draft.volumineux ?? ""}
-                                                        onChange={(e) => identiteSection.setField("volumineux", e.target.value)}
-                                                        className="w-full bg-transparent border-b border-emerald-300 text-xs font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
-                                                    >
-                                                        <option value="">non renseigné</option>
-                                                        <option value="true">Oui</option>
-                                                        <option value="false">Non</option>
-                                                    </select>
-                                                ) : labelData.volumineux === null || labelData.volumineux === undefined ? (
-                                                    <p className="text-xs font-semibold text-blue-950"><NonRenseigne /></p>
-                                                ) : (
-                                                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 uppercase border-none", labelData.volumineux ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-800")}>
-                                                        {labelData.volumineux ? "OUI" : "NON"}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    {/* Les pastilles étaient minuscules alors qu'un label est
-                                        ce qu'on cherche du regard sur une fiche. Les vrais
-                                        logos viendront quand JDG nous aura fourni les
-                                        fichiers ; en attendant le texte se lit de loin. */}
-                                    {/* Taille de logo, pas de pastille : ces marques tiennent
-                                        lieu des vrais logos en attendant les fichiers de JDG,
-                                        et un label se repère de loin ou ne sert à rien.
-                                        L'intitulé passe au-dessus — à cette taille, une
-                                        légende sur la même ligne ne tient plus. */}
-                                    <div className="mt-4 space-y-2">
-                                        <span className="block text-[10px] font-bold text-stone-400 uppercase tracking-widest">Labels matière première</span>
-                                        <div className="flex flex-wrap items-center gap-3">
-                                        {identiteSection.editing ? (
-                                            <input
-                                                type="text"
-                                                value={identiteSection.draft.labelsMP ?? ""}
-                                                onChange={(e) => identiteSection.setField("labelsMP", e.target.value)}
-                                                placeholder="AB, FLO, MH — séparés par des virgules"
-                                                className="min-w-[16rem] flex-1 bg-transparent border-b border-emerald-300 text-xs font-semibold text-stone-800 focus:border-emerald-500 focus:outline-none"
-                                            />
-                                        ) : Array.isArray(labelData.labelsMP) && labelData.labelsMP.length > 0 ? (
-                                            labelData.labelsMP.map((lbl: string, i: number) => (
-                                                <Badge key={i} variant="outline" className="rounded-2xl border-2 border-stone-300 bg-white px-8 py-5 text-3xl font-black tracking-wide text-stone-700 shadow-sm">{lbl}</Badge>
-                                            ))
-                                        ) : (
-                                            <span className="text-xs"><NonRenseigne /></span>
-                                        )}
-                                        </div>
-                                    </div>
+                                    <IdentiteSourcing
+                                        section={identiteSection}
+                                        producteurJardin={labelData.producteurJardin}
+                                        infoProducteur={labelData.infoProducteur}
+                                        typeProducteur={labelData.typeProducteur}
+                                        origineMpa={labelData.origineMpa}
+                                        fournisseur={labelData.fournisseur}
+                                        floId={labelData.floId}
+                                        nomLatin={labelData.nomLatin}
+                                        dateMiseMarche={labelData.dateMiseMarche}
+                                        epoqueRecolte={labelData.epoqueRecolte}
+                                        techniqueRecolte={labelData.techniqueRecolte}
+                                        grade={labelData.grade}
+                                        volumineux={labelData.volumineux}
+                                        estAromatise={labelData.estAromatise}
+                                        labelsClient={labelData.labelsClient}
+                                        labelsMP={labelData.labelsMP}
+                                    />
                                 </CardContent>
                                 )}
                             </Card>
@@ -947,10 +857,11 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                 </CardHeader>
                                 {deploye.preparation && (
                                 <CardContent className="p-5">
-                                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
                                         <DataPointEdit section={prepSection} icon={Clock} label="Infusion" field="tempsInfusion" value={labelData.tempsInfusion} suffix="min" />
                                         <DataPointEdit section={prepSection} icon={Thermometer} label="Température" field="tempInfusion" value={labelData.tempInfusion} suffix="°C" />
                                         <DataPointEdit section={prepSection} icon={Coffee} label="Tasses / Cuillères" field="nbTasses" value={labelData.nbTasses} />
+                                        <DataPointEdit section={prepSection} icon={Leaf} label="Poids / tasse de 25 cl" field="poidsTasse" value={labelData.poidsTasse} suffix="g" />
                                         <DataPoint icon={Info} label="Plusieurs Infusions" value={labelData.plusieursInfusions ? "Oui" : "Non"} />
                                     </div>
                                 </CardContent>
@@ -1003,6 +914,15 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                     <EditableText section={vigilanceSection} field="allegationsSanteFr" value={labelData.allegationsSanteFr} placeholder="Aucune allégation santé renseignée." multiline className="text-sm font-medium text-stone-800 italic" />
                                                 </div>
                                             </div>
+                                        )}
+                                        {/* L'allégation retenue, quand la fiche descriptive l'a fixée
+                                            sans proposer d'options — elle vivait dans la carte
+                                            « Données complémentaires », retirée. */}
+                                        {!hasAllegationsPossibles && hasRealValue(labelData.allegationChoisie) && (
+                                            <p className="text-xs text-stone-600">
+                                                <span className="font-bold text-stone-800">Allégation retenue :</span> {labelData.allegationChoisie}
+                                                {hasRealValue(labelData.nbTassesAllegation) && ` — ${labelData.nbTassesAllegation}`}
+                                            </p>
                                         )}
                                         {hasAllegationsPossibles && (
                                             <div className="p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100 flex flex-col gap-3">
@@ -1069,6 +989,7 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                                 <div className="flex items-center gap-2 text-[10px] font-bold text-stone-500 uppercase">
                                                     <span>{deg.degustateur?.length ? deg.degustateur.join(", ") : "Comité"}</span> •
                                                     <span>{deg.dateDegustation || "Date non précisée"}</span>
+                                                    {deg.numeroDeLot && <> • <span>Lot {deg.numeroDeLot}</span></>}
                                                 </div>
                                             )}
                                             {deploye.degustation && <EditButtons section={degustationSection} />}
@@ -1177,8 +1098,18 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                                             Identifiants
                                         </h3>
                                         <div className="grid gap-4 lg:grid-cols-2">
+                                            {/* Les deux références de la base (REF FACING / RÉF CONTRE
+                                                2025) : ce sont elles qui rattachent les PDF du Graphisme. */}
                                             <div className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
-                                                <Badge variant="outline" className="mb-2 border-stone-200 bg-white text-[10px] font-bold uppercase tracking-widest text-stone-500">Code étiquette</Badge>
+                                                <Badge variant="outline" className="mb-2 border-stone-200 bg-white text-[10px] font-bold uppercase tracking-widest text-stone-500">Réf. facing</Badge>
+                                                <EditableText section={textesSection} field="refFacing" value={labelData.refFacing} placeholder="ex. ETB404V6" className="font-mono text-base font-semibold text-stone-800" />
+                                            </div>
+                                            <div className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                                                <Badge variant="outline" className="mb-2 border-stone-200 bg-white text-[10px] font-bold uppercase tracking-widest text-stone-500">Réf. contre</Badge>
+                                                <EditableText section={textesSection} field="refContre" value={labelData.refContre} placeholder="ex. ETCB4042V6" className="font-mono text-base font-semibold text-stone-800" />
+                                            </div>
+                                            <div className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                                                <Badge variant="outline" className="mb-2 border-stone-200 bg-white text-[10px] font-bold uppercase tracking-widest text-stone-500">Code étiquette (imprimé)</Badge>
                                                 <EditableText
                                                     section={textesSection}
                                                     field="codeEtiquette"
@@ -1349,26 +1280,6 @@ export default function EtiquetteClient({ labelData, recette, versions = [], doc
                             </Card>
                     </div>
 
-                    {/* SPEC-03 §6 — bloc additif : champs complémentaires + arbitrages */}
-                    <div className="mt-6">
-                        <DossierComplementaire
-                            ficheId={labelData.id}
-                            produitId={labelData.produitId}
-                            degustationId={labelData.degustation?.id ?? null}
-                            floId={labelData.floId}
-                            nomLatin={labelData.nomLatin}
-                            dateMiseMarche={labelData.dateMiseMarche}
-                            labelsClient={labelData.labelsClient}
-                            estAromatise={labelData.estAromatise}
-                            fournisseur={labelData.fournisseur}
-                            producteurJardin={labelData.producteurJardin}
-                            infoProducteur={labelData.infoProducteur}
-                            typeProducteur={labelData.typeProducteur}
-                            numeroDeLot={labelData.degustation?.numeroDeLot}
-                            allegationChoisie={labelData.allegationChoisie}
-                            nbTassesAllegation={labelData.nbTassesAllegation}
-                        />
-                    </div>
                 </TabsContent>
 
                 {/* RECETTE / QUID (SPEC-03) */}

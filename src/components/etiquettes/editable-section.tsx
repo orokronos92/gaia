@@ -147,7 +147,7 @@ export function EditableText({
   section: EditableSection;
   field: string;
   value: string | null;
-  /** Fallback shown when empty (read mode) and as the input placeholder. */
+  /** Input hint in edit mode. An empty value reads "non renseigné". */
   placeholder?: string;
   multiline?: boolean;
   /** Applied to the read-mode element so the card keeps its look. */
@@ -175,8 +175,19 @@ export function EditableText({
     );
   }
 
-  const display = value && value.trim() !== "" ? value : placeholder;
-  return <p className={className}>{display}</p>;
+  // Empty reads as empty. The placeholder is an input hint ("Informations
+  // nutritionnelles moyennes… Energie 3 kJ"): shown in the card's own style it
+  // was taken for a real value (2026-09-24).
+  if (!value || value.trim() === "") {
+    return (
+      <p className={className}>
+        <span className="font-normal not-italic text-stone-400">
+          <em>non renseigné</em>
+        </span>
+      </p>
+    );
+  }
+  return <p className={className}>{value}</p>;
 }
 
 /**
