@@ -54,7 +54,7 @@ export type VerdictChecklist = (typeof VERDICTS_CHECKLIST)[number];
 type Verdictable = {
   statut: ControlStatus;
   action?: "RIEN" | "COMPLETER" | "VERIFIER" | "CORRIGER";
-  validation?: { decision: "VERIFIE" | "DEROGATION"; perimee: boolean };
+  validation?: { decision: import("./decisions").Decision; perimee: boolean };
 };
 
 export interface SyntheseChecklist {

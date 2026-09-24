@@ -211,7 +211,7 @@ export interface PreuveBatResultat {
 
 export type ControlResult = z.infer<typeof ControlResultSchema> & {
   validation?: {
-    decision: "VERIFIE" | "DEROGATION";
+    decision: import("./decisions").Decision;
     parNom: string;
     le: Date;
     justification: string | null;

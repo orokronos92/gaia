@@ -22,6 +22,14 @@ const RetirerSchema = z.object({
     pointId: z.string().min(1).max(64),
 })
 
+/** How each decision reads in the audit trail. */
+const ACTION_JOURNAL: Record<(typeof DECISIONS)[number], string> = {
+    VERIFIE: "VALIDATION_CONTROLE",
+    DEROGATION: "DEROGATION_CONTROLE",
+    BAT_A_REFAIRE: "BAT_A_REFAIRE_CONTROLE",
+    EN_ATTENTE: "EN_ATTENTE_CONTROLE",
+}
+
 export interface ValidationResult {
     ok: boolean
     error?: string
@@ -72,7 +80,7 @@ export async function validerPointAction(raw: unknown): Promise<ValidationResult
     await writeAuditLog({
         typeEntite: "fiche_etiquette",
         entiteId: ficheId,
-        action: decision === "DEROGATION" ? "DEROGATION_CONTROLE" : "VALIDATION_CONTROLE",
+        action: ACTION_JOURNAL[decision],
         utilisateurId: session.user.id,
         changements: { pointId, statut: point.statut, justification, constat: point.justification },
     })

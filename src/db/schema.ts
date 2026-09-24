@@ -790,7 +790,7 @@ export const knowledgeDocuments = pgTable("knowledge_documents", {
  * justification devient obligatoire et la ligne reste marquée, parce qu'une
  * dérogation assumée doit rester lisible, pas disparaître dans du vert.
  */
-export const DecisionControle = pgEnum("decision_controle", ["VERIFIE", "DEROGATION"]);
+export const DecisionControle = pgEnum("decision_controle", ["VERIFIE", "DEROGATION", "BAT_A_REFAIRE", "EN_ATTENTE"]);
 
 /**
  * Les décisions de la Qualité sur les points de la checklist.

@@ -19,6 +19,7 @@
  * regarder, jamais quelque chose à ignorer.
  */
 
+import { estTranche } from "./decisions";
 import type { BatTextCheck } from "./visual/text-robot";
 import { actionParDefaut, type ControlResult } from "./types";
 
@@ -121,7 +122,7 @@ export function appliquerPreuves(
   // à la ligne, elle ne rouvre pas la décision. C'est l'empreinte du constat,
   // calculée côté serveur, qui décide de la péremption — pas l'arrivée d'un
   // élément supplémentaire à l'écran.
-  const dejaTranche = resultat.validation && !resultat.validation.perimee;
+  const dejaTranche = estTranche(resultat.validation);
 
   const pire = preuves.some((p) => p.statut === "FAIL")
     ? "FAIL"

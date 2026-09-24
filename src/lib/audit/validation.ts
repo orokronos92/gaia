@@ -23,8 +23,9 @@ import { createHash } from "crypto";
 
 import type { ControlResult } from "./types";
 
-export const DECISIONS = ["VERIFIE", "DEROGATION"] as const;
-export type Decision = (typeof DECISIONS)[number];
+import { estDecisionOuverte, type Decision } from "./decisions";
+
+export { DECISIONS, type Decision } from "./decisions";
 
 export interface ValidationControle {
   pointId: string;
@@ -93,6 +94,10 @@ export function appliquerValidation<T extends ConstatValidable>(
 
   if (perimee) return { ...resultat, validation: etat };
 
+  // BAT à refaire, en attente d'info : la ligne reste à traiter, elle porte
+  // seulement qui la tient.
+  if (estDecisionOuverte(validation.decision)) return { ...resultat, validation: etat };
+
   // La décision close le point : le statut reste ce que la mesure a trouvé — on
   // ne réécrit pas l'histoire —, mais il n'y a plus rien à faire dessus.
   return { ...resultat, action: "RIEN", validation: etat };
@@ -121,6 +126,9 @@ export function refusMotif(
 ): string | null {
   if (decision === "DEROGATION" && !justification?.trim()) {
     return "Une dérogation demande un motif écrit.";
+  }
+  if (decision === "EN_ATTENTE" && !justification?.trim()) {
+    return "Dites quelle information est attendue, et de qui.";
   }
   if (decision === "VERIFIE" && statut === "FAIL") {
     return "Ce point est en non-conformité prouvée : il se lève par une dérogation motivée, pas par une simple vérification.";
