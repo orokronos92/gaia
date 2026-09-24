@@ -135,6 +135,13 @@ depuis l'historique git.
   non) : il n'a pas encore le face-à-face. À aligner quand des recettes seront réintégrées.
 - **17 BAT portent le texte sans la liste lisible** (titre vectorisé, ex. `TA6952`) : le 2.5
   renvoie à l'œil.
+- **Lot 4 suspendu (2026-09-24)** : Marie a rédigé un nouveau PRO-QHS-013 après la visite
+  d'Ouro ; les contrôles vont changer. État des lieux fait sur 394 produits avant l'arrêt :
+  les cartes en écart les plus lourdes sont 14.1 (76), 13.1 (71), 6.2 (42), 16.4 (24),
+  16.3 (12), 16.2 (10) ; le 6.2, le 2.4 et le 1.4 mêlent un sous-constat conforme à l'écart ;
+  le 1.5 (77 « à vérifier ») ne dit ni ce que porte la fiche ni ce qu'imprime le BAT. Pistes
+  proposées : masquer les sous-constats conformes, face-à-face mesuré / exigé, face-à-face
+  fiche / fiche avec correction sur place. À reprendre sur le nouveau document.
 - **Les BAT à refaire ne sont pas encore listés pour le Graphisme** : le badge vit sur la
   carte de chaque fiche. Une vue « BAT à refaire » pour Fabrice reste à faire.
 - **« Corriger la fiche » n'existe que pour la liste du 2.5** : les autres cartes (dénomination,
