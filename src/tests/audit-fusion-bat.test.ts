@@ -115,14 +115,33 @@ describe("fusions successives — les preuves s'ajoutent, jamais ne se remplacen
     expect(r.action).toBe("CORRIGER");
   });
 
-  it("Marie lit les deux constats, pas seulement le dernier arrivé", () => {
+  it("sur un écart, la carte ne dit que l'écart — les deux preuves restent gardées", () => {
+    // Décision 2026-09-24 : seules les divergences s'affichent. « Logo détecté »
+    // ne s'efface pas du dossier (il reste dans `preuves`, et compte pour le
+    // verdict), il cesse seulement de noyer « trop petit » sur la carte.
     const r = enDeuxTemps(
       [mesure("FAIL", "champ vert 12,78 × 8,52 mm — sous la taille minimale")],
       [modele("PASS", "Logo obligatoire détecté sur le BAT.")]
     );
     expect(r.justification).toContain("12,78");
-    expect(r.justification).toContain("détecté");
+    expect(r.justification).not.toContain("détecté");
     expect(r.preuves).toHaveLength(2);
+  });
+
+  it("sur un écart prouvé, une réserve « à vérifier » ne s'ajoute pas à la carte", () => {
+    const r = enDeuxTemps(
+      [mesure("FAIL", "chiffres 1,43 mm, seuil 2 mm")],
+      [mesure("WARNING", "même champ visuel — à confirmer")]
+    );
+    expect(r.justification).toContain("1,43 mm");
+    expect(r.justification).not.toContain("champ visuel");
+    expect(r.preuves).toHaveLength(2);
+  });
+
+  it("tout conforme : chaque preuve reste dite", () => {
+    const r = enDeuxTemps([mesure("PASS", "aux dimensions")], [modele("PASS", "détecté")]);
+    expect(r.justification).toContain("aux dimensions");
+    expect(r.justification).toContain("détecté");
   });
 
   it("l'ordre des clics ne change pas le verdict", () => {

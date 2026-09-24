@@ -130,9 +130,15 @@ export function appliquerPreuves(
       ? "WARNING"
       : "PASS";
 
-  // Chaque preuve garde sa voix : Marie lit « le logo est là » ET « il est trop
-  // petit ». Fondre les deux en une phrase ferait disparaître l'une des deux.
-  const detail = preuves
+  // Chaque preuve reste gardée (`preuves`) et compte pour le verdict : « le logo
+  // est là » ne fait pas disparaître « il est trop petit ». Mais la carte ne dit
+  // que les constats du niveau le plus grave : « étoiles présentes », ou la
+  // réserve « même champ visuel, à confirmer », collés à « chiffres de 1,4 mm,
+  // seuil 2 mm » noyaient l'écart (6.2, 2.4, 1.4 — décision 2026-09-24). Les
+  // autres reparaissent quand l'écart est réglé. Tout conforme : tout est dit,
+  // c'est la preuve du vert.
+  const parlantes = preuves.filter((p) => p.statut === pire);
+  const detail = parlantes
     .map((p) => `${libelleOrigine(p.origine)} : ${p.justification}`)
     .join(" · ");
 
@@ -148,7 +154,8 @@ export function appliquerPreuves(
   // position en désigne deux ou trois, et Marie doit les voir ensemble.
   const reperes = [
     ...(resultatInitial.reperes ?? []),
-    ...(preuvesNouvelles ?? []).flatMap((p) => p.reperes ?? []),
+    // Idem pour les repères : sur un écart, on montre où est l'écart.
+    ...(preuvesNouvelles ?? []).filter((p) => p.statut === pire).flatMap((p) => p.reperes ?? []),
   ];
   if (reperes.length > 0) resultat = { ...resultat, reperes };
 
