@@ -31,11 +31,13 @@ export type StatutMention = "AUTO" | "OUI" | "NON";
  * Elle vit ici parce que trois endroits en ont besoin et ne doivent pas en
  * garder chacun une copie : le contrôle qui la cherche sur le BAT, la
  * proposition qui l'offre à la fiche, et la validation de recette qui la
- * renseigne. Le mot « demeter » reste en minuscules — le §11.1 le veut en gras
+ * renseigne. Le texte est celui du cahier des charges Demeter France 2025 §4.3.1
+ * et de PRO-QHS-313 v2 §2.1 (décision 2026-09-24). Le mot « demeter » reste en
+ * minuscules — la procédure le veut en gras
  * italique, ce que le style du BAT vérifie à part.
  */
 export const DEMETER_PHRASE_TYPE =
-  "**Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée.";
+  "**Issu de l'agriculture biologique et biodynamique. demeter est le label des produits issus de l'agriculture biodynamique.";
 
 /**
  * La mention est-elle due ?

@@ -145,7 +145,7 @@ export interface BatTextCheck {
   statut: ControlStatus;
   justification: string;
   /**
-   * Point de la checklist auquel ce contrôle répond (PRO-QHS-013).
+   * Point de la checklist auquel ce contrôle répond (PRO-QHS-313).
    *
    * L'audit BAT ouvrait sa propre liste à côté de celle de Marie : deux
    * réponses à la même question, dans deux écrans, sans lien. Rattaché, il
@@ -302,18 +302,19 @@ function checkMentionGamme(
  * §11.1 — la note ** qui accompagne un ingrédient Demeter.
  *
  * Le déclencheur n'est pas l'étiquette mais la RECETTE : dès qu'une ligne porte
- * la certification, la note devient obligatoire. Elle est due au mot près, et
- * l'écart se mesure : TA6212 « Jardin sous la lune » imprime « demeter est LE
- * LABEL des produits issus de l'agriculture biodynamique. » là où le §11.1
- * demande « demeter est LA MARQUE des produits issus de l'agriculture
- * biodynamique CERTIFIÉE ». Deux mots, sur une mention de cahier des charges.
+ * la certification, la note devient obligatoire. Elle est due au mot près :
+ * « demeter est LE LABEL des produits issus de l'agriculture biodynamique »,
+ * texte du cahier des charges Demeter France 2025 (§4.3.1) et de PRO-QHS-313 v2
+ * §2.1. L'encadré du §11.1 porte encore une ancienne formulation (« la marque…
+ * certifiée ») : le contrôle l'exigeait, et signalait à tort les 14 BAT qui
+ * impriment la bonne, dont TA6212 « Jardin sous la lune » (décision 2026-09-24).
  *
  * D'où deux marqueurs séparés : la note existe-t-elle, et est-elle dans les
  * termes. Un contrôle qui n'aurait cherché que la phrase entière aurait répondu
  * « absente » — et personne n'aurait vu qu'elle est là, à deux mots près.
  */
 const DEMETER_NOTE = "biologique et biodynamique";
-const DEMETER_TERMES = "demeter est la marque des produits issus";
+const DEMETER_TERMES = "demeter est le label des produits issus";
 
 /** La fiche n'a pas la mention : on lui propose celle de la procédure. */
 const propositionDemeter = () =>
@@ -321,7 +322,7 @@ const propositionDemeter = () =>
     table: "fiche",
     champ: "phraseDemeterFr",
     valeur: DEMETER_PHRASE_TYPE,
-    source: "PRO-QHS-013 §11.1",
+    source: "PRO-QHS-313 §2.1 ; cahier des charges Demeter France §4.3.1",
   }) as const;
 
 function checkDemeter(batN: string, phraseFiche: string | null | undefined): BatTextCheck {
@@ -330,7 +331,7 @@ function checkDemeter(batN: string, phraseFiche: string | null | undefined): Bat
     origine: "texte" as const,
     checklistId: "2.4",
     rubrique: "Labels",
-    libelle: "Note ** Demeter imprimée dans les termes du §11.1 ?",
+    libelle: "Note ** Demeter imprimée dans les termes du cahier des charges Demeter ?",
   };
   const note = batN.includes(DEMETER_NOTE);
   const termes = batN.includes(DEMETER_TERMES);
@@ -340,7 +341,7 @@ function checkDemeter(batN: string, phraseFiche: string | null | undefined): Bat
       ...base,
       statut: phraseSaisie(phraseFiche) ? "PASS" : "WARNING",
       justification: phraseSaisie(phraseFiche)
-        ? "Note ** Demeter présente sur le BAT, dans les termes du §11.1."
+        ? "Note ** Demeter présente sur le BAT, dans les termes du cahier des charges Demeter."
         : "Note ** Demeter présente sur le BAT, mais la mention Demeter n'est pas renseignée sur la fiche.",
       ...(phraseSaisie(phraseFiche)
         ? {}
@@ -357,7 +358,7 @@ function checkDemeter(batN: string, phraseFiche: string | null | undefined): Bat
     return {
       ...base,
       statut: "WARNING",
-      justification: `La note ** est imprimée, mais pas dans les termes du §11.1 : « ${DEMETER_PHRASE_TYPE} ».`,
+      justification: `La note ** est imprimée, mais pas dans les termes du cahier des charges Demeter : « ${DEMETER_PHRASE_TYPE} ».`,
       ...manque,
     };
   }
@@ -414,6 +415,22 @@ function checkPresence(
   return { ...base, statut: "WARNING", justification: cfg.absent };
 }
 
+/**
+ * §7 — l'adresse du fabricant.
+ *
+ * PRO-QHS-313 v2 précise que le nom et l'adresse « figurent sur les sachets
+ * non-encollés » : ils sont imprimés sur le sachet, pas sur l'étiquette. Leur
+ * absence du BAT est donc la règle, pas un écart — 5 BAT sur 139 la portent.
+ * Le contrôle alertait sur les autres ; il dit maintenant où elle se trouve
+ * (décision 2026-09-24).
+ */
+function checkFabricant(batN: string): BatTextCheck {
+  const base = { id: "TXT_FABRICANT", origine: "texte" as const, checklistId: "9.1", rubrique: "Fabricant", libelle: "Adresse fabricant JDG" };
+  return FABRICANT_JDG_TOKENS.every((t) => batN.includes(t))
+    ? { ...base, statut: "PASS", justification: "Adresse fabricant JDG présente sur le BAT." }
+    : { ...base, statut: "PASS", justification: "Adresse non imprimée sur l'étiquette : elle figure sur le sachet non encollé (PRO-QHS-313 §7)." };
+}
+
 /** Presence of every invariant token of a mandatory JDG mention. */
 function checkTokens(
   batN: string,
@@ -458,10 +475,7 @@ export function runTextRobot(batText: string, input: BatTextInput): BatTextCheck
       id: "TXT_CONSERVATION", checklistId: "7.2", rubrique: "Conservation", libelle: "Mention de conservation présente sur le BAT ?",
       absent: "Mention de conservation JDG non retrouvée sur les faces analysées — à vérifier.",
     }),
-    checkTokens(batN, FABRICANT_JDG_TOKENS, {
-      id: "TXT_FABRICANT", checklistId: "9.1", rubrique: "Fabricant", libelle: "Adresse fabricant présente sur le BAT ?",
-      absent: "Adresse fabricant JDG non retrouvée sur les faces analysées — à vérifier.",
-    }),
+    checkFabricant(batN),
   ];
 
   // The allegation is deliberately NOT a deterministic check: its wording on the

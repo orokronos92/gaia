@@ -69,7 +69,9 @@ describe("Robot Texte — golden MT265", () => {
 
     // Mentions obligatoires absentes des faces analysées → WARNING (pas FAIL).
     expect(byId(r, "TXT_CONSERVATION").statut).toBe("WARNING");
-    expect(byId(r, "TXT_FABRICANT").statut).toBe("WARNING"); // adresse JDG non imprimée
+    // PRO-QHS-313 §7 : l'adresse est sur le sachet non encollé, pas sur l'étiquette.
+    expect(byId(r, "TXT_FABRICANT").statut).toBe("PASS");
+    expect(byId(r, "TXT_FABRICANT").justification).toContain("sachet non encollé");
 
     // Allergènes "non" → non déclaré → pas de contrôle généré.
     expect(r.find((x) => x.id === "TXT_ALLERGENES")).toBeUndefined();
@@ -168,8 +170,8 @@ ETCBA5086V5`;
 
 /**
  * Golden Demeter — ETCVA6212V7 « Jardin sous la lune ». La note ** y est
- * imprimée, mais « demeter est LE LABEL … biodynamique. » au lieu de
- * « demeter est LA MARQUE … biodynamique CERTIFIÉE » (§11.1).
+ * imprimée dans les termes du cahier des charges Demeter France 2025 §4.3.1 :
+ * « demeter est LE LABEL … biodynamique. » (PRO-QHS-313 v2 §2.1).
  */
 const BAT_TA6212 = `Thé vert**, écorces de mandarine**, tulsi* 10%,
 cardamome* 9%, amarante*. *Issu de l'agriculture
@@ -244,24 +246,24 @@ describe("mentions de gamme — la gamme déclare ce qu'elle exige", () => {
 });
 
 describe("note ** Demeter — déclenchée par la recette, jugée sur les termes", () => {
-  it("prend la formulation de TA6212 en défaut, sans la déclarer absente", () => {
-    const c = byId(runTextRobot(BAT_TA6212, { estDemeter: true }), "TXT_DEMETER");
+  it("valide la formulation de TA6212, celle du cahier des charges Demeter", () => {
+    const c = byId(
+      runTextRobot(BAT_TA6212, { estDemeter: true, phraseDemeter: "**Issu de l'agriculture…" }),
+      "TXT_DEMETER"
+    );
     expect(c.checklistId).toBe("2.4");
-    expect(c.statut).toBe("WARNING");
-    expect(c.justification).toContain("pas dans les termes du §11.1");
-    expect(c.justification).toContain("demeter est la marque");
+    expect(c.statut).toBe("PASS");
   });
 
-  it("valide la formulation du §11.1", () => {
-    const conforme = BAT_TA6212.replace(
+  it("prend l'ancienne formulation du §11.1 en défaut, sans la déclarer absente", () => {
+    const ancienne = BAT_TA6212.replace(
       "demeter est le label des produits issus\nde l'agriculture biodynamique.",
       "demeter est la marque des produits issus de l'agriculture biodynamique certifiée"
     );
-    const c = byId(
-      runTextRobot(conforme, { estDemeter: true, phraseDemeter: "**Issu de l'agriculture…" }),
-      "TXT_DEMETER"
-    );
-    expect(c.statut).toBe("PASS");
+    const c = byId(runTextRobot(ancienne, { estDemeter: true }), "TXT_DEMETER");
+    expect(c.statut).toBe("WARNING");
+    expect(c.justification).toContain("pas dans les termes du cahier des charges Demeter");
+    expect(c.justification).toContain("demeter est le label");
   });
 
   it("signale la note absente quand la recette porte un ingrédient Demeter", () => {
@@ -317,7 +319,7 @@ describe("statut de mention — la Qualité décide, la donnée déduit", () => 
 describe("mention Demeter — proposition à la fiche", () => {
   const BAT_AVEC_NOTE =
     "INGRÉDIENTS thé noir**, honeybush**. **Issu de l'agriculture biologique et biodynamique. " +
-    "demeter est la marque des produits issus de l'agriculture biodynamique certifiée.";
+    "demeter est le label des produits issus de l'agriculture biodynamique.";
 
   const demeter = (bat: string, phrase: string | null) =>
     runTextRobot(bat, {
@@ -327,13 +329,13 @@ describe("mention Demeter — proposition à la fiche", () => {
       phraseDemeter: phrase,
     }).find((c) => c.id === "TXT_DEMETER");
 
-  it("propose le texte du §11.1 quand la fiche ne le porte pas", () => {
+  it("propose le texte du cahier des charges Demeter quand la fiche ne le porte pas", () => {
     const c = demeter(BAT_AVEC_NOTE, null);
     expect(c?.proposition?.champ).toBe("phraseDemeterFr");
     expect(c?.proposition?.table).toBe("fiche");
-    expect(c?.proposition?.source).toContain("§11.1");
+    expect(c?.proposition?.source).toContain("Demeter");
     expect(c?.proposition?.valeur).toContain("biologique et biodynamique");
-    expect(c?.proposition?.valeur).toContain("demeter est la marque");
+    expect(c?.proposition?.valeur).toContain("demeter est le label");
   });
 
   it("propose aussi quand le BAT n'imprime pas la note — la fiche dit au graphisme quoi imprimer", () => {
@@ -343,7 +345,7 @@ describe("mention Demeter — proposition à la fiche", () => {
   it("ne propose plus rien une fois la mention saisie, et le point passe", () => {
     const c = demeter(
       BAT_AVEC_NOTE,
-      "**Issu de l'agriculture biologique et biodynamique. demeter est la marque des produits issus de l'agriculture biodynamique certifiée."
+      "**Issu de l'agriculture biologique et biodynamique. demeter est le label des produits issus de l'agriculture biodynamique."
     );
     expect(c?.proposition).toBeUndefined();
     expect(c?.statut).toBe("PASS");
