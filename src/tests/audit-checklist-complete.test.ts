@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 
 import { compterResteAFaire, construireChecklist } from "../lib/audit/checklist-complete";
-import { compterResteAFaire } from "@/lib/audit/checklist-complete";
 import { verdictChecklist } from "@/lib/audit/synthesis";
 import { CONTROL_CHECKLIST, partitionByMode } from "../lib/audit/control-checklist";
 import type { AuditInput } from "../lib/audit/types";
