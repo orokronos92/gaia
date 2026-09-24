@@ -153,9 +153,20 @@ depuis l'historique git.
   l'Alsace, Elephant Friendly et Thés à la voile ne sont pas recherchés par la vision.
 - **Nouveauté** : sans date de mise en marché dans la base, une mention trouvée demandera
   toujours de compléter la fiche.
-- **1.5 dénomination (77 « à vérifier »)** : pas encore de face-à-face. Il faudrait repérer la
-  dénomination imprimée (par exemple le texte au plus gros corps) : à mesurer sur les 77 cas
-  avant de le proposer.
+- **1.5 dénomination — mesuré le 2026-09-24 (77 « à vérifier »)** :
+  - **62 sont des BAT sans texte lisible** (vectorisés) : la carte dit « non retrouvée à
+    l'identique » alors que rien n'a pu être lu. Même chose sur 12 autres points pour ces 62
+    produits (1.4, 2.1, 2.4, 2.5, 4.1, 5.2, 6.2, 7.1, 8.1, 13.2, 13.3, 14.1) : ~800 cartes « à
+    vérifier » qui viennent toutes de là.
+  - **15 BAT lisibles** : « wulong » imprimé « Wu Long » (4 : TO1132, TO1246, TUTO1316,
+    TUTO1326) ; nom plus court sur l'étiquette (5 : TJ2202/TJ2206 « Matcha pour la cuisine » →
+    « Matcha », TL1002/TL1004 « Lapacho nature » → « Lapacho », TB715) ; nom différent (2 :
+    TUTJ0896 « Sencha Kamairicha » → « Kama-Iri Cha », TR2142 « Zoulou Digest ») ; deux noms
+    dans la case Excel (TA6902 « Lézar'thé ⏎ Green tonic ») ; guillemets (TUTB3106) ; artefact
+    de lecture « P 'tit Déj » (TM7862) ; titre non lisible (TA6952).
+  - **Repérer le nom imprimé par le plus gros corps ne marche pas** (≈ 1 sur 2 : attrape
+    « 100g », un mot d'un titre sur deux lignes, « INFUSION DE PLANTES », « 1.76 2024 © ») :
+    écarté.
 - **Les BAT à refaire ne sont pas encore listés pour le Graphisme** : le badge vit sur la
   carte de chaque fiche. Une vue « BAT à refaire » pour Fabrice reste à faire.
 - **« Corriger la fiche » n'existe que pour la liste du 2.5** : les autres cartes (dénomination,
