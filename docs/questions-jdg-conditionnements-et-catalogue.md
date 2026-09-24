@@ -291,6 +291,15 @@ TN1062, TN4052, TB715, TB4036, TO205, TO206, TO1145, TJ2022, TJ2152, TV4022, TA6
 TN2352, TR2462. Le Graphisme peut-il fournir la face qui porte les ingrédients, ou un PDF au
 texte non vectorisé ?
 
+## L. Textes visiblement copiés d'un autre produit
+
+**L1.** `TB4042` Ché Chun 100 g, un thé blanc : le texte commercial anglais de la base est
+« Short text: roasted wulong. Notes of garrigue flowers, brown sugar, stewed fruit, toasted
+thyme cookies. », qui décrit un wulong torréfié. Le même thé en 50 g (`TB4046`) porte le bon
+texte (« The buds and first two leaves of this white tea… »). Faut-il reprendre celui de
+TB4046 ?
+> Provisoire : affiché tel quel sur la fiche, en lecture seule.
+
 ---
 
 ## Évolutions de ce document
@@ -306,3 +315,4 @@ noté ici, pour que vous sachiez ce qui est nouveau depuis votre dernière lectu
 | 2026-09-23 | Ajout de J (références d'étiquette qui ne correspondent pas au fichier). |
 | 2026-09-23 | I1 réécrite : chaque onglet devient un catalogue ; plus de gamme « INFUSETTES » provisoire. |
 | 2026-09-24 | Ajout de K (listes d'ingrédients : base et BAT comparés sur 332 produits). |
+| 2026-09-24 | Ajout de L (textes copiés d'un autre produit), trouvé en affichant les traductions sur la fiche. |

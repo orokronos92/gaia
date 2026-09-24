@@ -108,4 +108,23 @@ Recâblage des cartes existantes, vérifié à l'écran sur TB4041, TB4042 et TA
 - **Carte « Données complémentaires & arbitrages » supprimée**, son contenu est réparti
   ci-dessus. Les champs des extractions sont conservés.
 
-Reste l'étape 3 : traductions, export, suivi de fabrication.
+## Étape 3 livrée (2026-09-24)
+
+Trois cartes en lecture seule sous « Mentions légales », repliables, marquées « base
+étiquettes · lecture seule ». Elles ne montrent que les champs remplis, sauf les champs
+attendus (dénomination, sous-dénomination, type de thé, texte commercial et liste en
+anglais ; export anglais et code PF export), qui disent « non renseigné » :
+
+- **Traductions** : anglais complet (y compris origine, mention d'origine, ancienne
+  dénomination, texte de présentation, texte tube) ; allemand, italien, néerlandais quand
+  la base en porte (17 fiches), sinon une ligne qui le dit.
+- **Export** : export anglais, code PF export, réf. facing / contre export, conditionnement
+  export, poids en oz, gamme et priorité export ; « Pas d'export anglais » sinon.
+- **Suivi de fabrication** : étiquette (prêt pour l'interne, finalisée, contre, action,
+  note), impression (imprimeur, date d'envoi, premier lot V5), PMI (libellé, OK projet
+  plantes, F9, date, switch, langues), clients (Sonnentor, Biocoop), colonnes à confirmer
+  (COND., priorité), historique (commentaires, historique, ancienne réf. facing, ancien
+  texte commercial).
+
+Vérifié sur TB4042, TA6262 et TUTA7452 (seul produit à cumuler DE/IT/NL et export). La
+lecture de TB4042 a fait apparaître un texte anglais copié d'un wulong : question L1.
