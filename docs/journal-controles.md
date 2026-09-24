@@ -176,3 +176,54 @@ depuis l'historique git.
 - **Mise en page en colonnes** : la lecture du PDF peut glisser un mot de la colonne voisine
   dans la liste (`TUTA6152`). Les mots en majuscule hors de place sont écartés ; un mot en
   minuscule d'une autre colonne produirait encore un faux écart (aucun cas mesuré).
+
+## 5. Dossier ouvert : les BAT au texte vectorisé
+
+**Ouvert le** 2026-09-24, à la demande d'Ouro : sujet mis en pause pour être repris à part,
+rien n'est modifié dans les contrôles.
+
+### Constat
+
+Sur les 394 produits de préprod qui ont un BAT, **62 ont des BAT dont le texte ne se lit
+pas** : 123 faces PDF sur 741. Exemples : TA6102 Fraises au basilic, TA6132 Surprise de
+Noël, TV655 Gyokuro, TV658 Sencha Premium, TN406 Roi du Yunnan d'or, TR204 Magie des bois.
+
+### Nature des fichiers (mesuré)
+
+- **Ni police ni image** dans les 123 faces : le texte a été converti en tracés dans
+  Illustrator (« vectoriser le texte »). Ce ne sont pas des scans : la forme des lettres est
+  intacte, seule l'information « ceci est un texte » a disparu.
+- **Un lot bien daté** : 119 faces créées en 2024, 121 en version **V5**, 100 avec
+  **Illustrator 28.2**. Les BAT lisibles sont surtout de 2025-2026 (V6, V7, V8), avec des
+  versions d'Illustrator plus récentes, et 595 de leurs 618 faces portent des polices.
+  C'est une façon d'exporter qui a changé, pas un défaut au cas par cas.
+- **Aucun fichier source `.ai`** pour ces produits dans GaïaLabel : l'archive reçue ne
+  contenait que les PDF.
+
+### Ce que ça produit dans l'audit
+
+- Tout contrôle qui lit le texte du BAT ne trouve rien et répond « non retrouvé », « à
+  vérifier à l'œil » ou « cela ne prouve pas son absence », chacun à sa façon. Pour ces 62
+  produits, **13 points** sont concernés : 1.4, 1.5, 2.1, 2.4, 2.5, 4.1, 5.2, 6.2, 7.1, 8.1,
+  13.2, 13.3, 14.1, soit **≈ 800 cartes « à vérifier »** qui disent en fait une seule chose.
+- Certaines formulations laissent croire à un écart (1.5 : « dénomination non retrouvée à
+  l'identique ») alors que rien n'a été comparé.
+- Ce qui marche encore sur ces BAT : l'**Eurofeuille**, reconnue par son tracé (13.1), et
+  la **vision** (logos : Triman, Point Vert, WFTO…), qui regarde l'image et pas le texte.
+
+### Pistes (non tranchées)
+
+1. **À la source** : demander au Graphisme des PDF exportés avec le texte conservé, ou les
+   `.ai` (question K5 à JDG, à compléter avec ces chiffres). Tout redevient mesurable, sans
+   rien coder. Question : les imprimeurs exigent-ils des textes vectorisés ?
+2. **Dans l'audit, sans rien lire de plus** : détecter une fois « BAT vectorisé », l'annoncer
+   en tête de l'audit, et remplacer les ≈ 13 messages par une phrase unique sur chaque carte
+   concernée. Honnête, gratuit, mais ne contrôle rien de plus.
+3. **Lire quand même le texte** :
+   - OCR sur l'image rendue du BAT (outil libre, sans IA) : retrouve le texte, mais pas la
+     police ni le corps, donc pas les contrôles de taille (14.1, 6.2) sans mesure à part ;
+   - modèle de vision / OCR IA : coût en jetons par face ;
+   - mesurer directement les tracés des lettres : les hauteurs sont exactes (ce sont les
+     contours réels), mais il faut regrouper les tracés en mots, ce qui est un chantier.
+4. **Combiner** : 2 tout de suite, 1 en parallèle, 3 seulement si le Graphisme ne peut pas
+   changer d'export.
