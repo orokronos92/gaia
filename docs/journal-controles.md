@@ -225,6 +225,13 @@ Noël, TV655 Gyokuro, TV658 Sencha Premium, TN406 Roi du Yunnan d'or, TR204 Magi
 - **À vérifier** avant de généraliser : qu'un `.ai` porte bien la même version et le même
   texte que le BAT imprimé (le `.ai` peut avoir été modifié après l'export).
 
+### Bilan sur tout le stockage (2026-09-24)
+
+Liste complète, produit par produit : **`docs/pdf-vectorises.md`**. Sur les 1 066 PDF du
+stockage de préprod, **266 sont vectorisés** ; sur les 732 BAT utilisés par un produit,
+**140**. **62 produits** ont tous leurs BAT vectorisés, **23** une face seulement ; 121 PDF
+vectorisés ne sont rattachés à aucun produit (Terra Madre, infusettes, archives).
+
 ### Pistes (non tranchées)
 
 1. **À la source** : demander au Graphisme des PDF exportés avec le texte conservé, ou les
