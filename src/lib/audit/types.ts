@@ -237,6 +237,8 @@ export type ControlResult = z.infer<typeof ControlResultSchema> & {
    * Eurofeuille mesurée hors norme (constaté sur TA737 le 2026-09-10).
    */
   preuves?: PreuveBatResultat[];
+  /** La liste de la fiche face à celle du BAT (point 2.5) — seulement les écarts. */
+  comparaisonListe?: import("./visual/coherence-liste").ComparaisonListe;
   /** L'état du point avant toute preuve du BAT, pour pouvoir tout réévaluer. */
   socle?: { statut: ControlStatus; action?: ControlAction; justification?: string };
   /** Où regarder sur le BAT, en fractions de la face rendue. */

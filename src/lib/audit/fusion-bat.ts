@@ -30,6 +30,7 @@ export interface PreuveBat {
   manqueSurLaFiche?: string;
   proposition?: BatTextCheck["proposition"];
   reperes?: BatTextCheck["reperes"];
+  comparaisonListe?: BatTextCheck["comparaisonListe"];
 }
 
 const LIBELLE_ORIGINE: Record<PreuveBat["origine"], string> = {
@@ -58,6 +59,7 @@ export function preuvesParPoint(checks: BatTextCheck[]): Record<string, PreuveBa
       manqueSurLaFiche: c.manqueSurLaFiche,
       proposition: c.proposition,
       reperes: c.reperes,
+      comparaisonListe: c.comparaisonListe,
     });
   }
   return parPoint;
@@ -136,6 +138,10 @@ export function appliquerPreuves(
   // Ce que le BAT propose d'enregistrer suit le point, quel que soit son verdict.
   const proposition = (preuvesNouvelles ?? []).find((p) => p.proposition)?.proposition;
   if (proposition) resultat = { ...resultat, proposition };
+
+  // The face-to-face list comparison: only the divergences, shown on the card.
+  const comparaisonListe = (preuvesNouvelles ?? []).find((p) => p.comparaisonListe)?.comparaisonListe;
+  if (comparaisonListe) resultat = { ...resultat, comparaisonListe };
 
   // Les repères de toutes les preuves du point se cumulent : un contrôle de
   // position en désigne deux ou trois, et Marie doit les voir ensemble.
